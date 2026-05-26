@@ -42,6 +42,10 @@ var _is_typing  : bool       = false
 var _npc_name   : String     = ""
 
 
+func _ready() -> void:
+	_panel.hide()
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 ## Opens the dialogue box and begins at start_node_id.

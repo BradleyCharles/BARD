@@ -1,0 +1,76 @@
+{
+  "bounties": [
+    {
+      "id": "slime1_zone_a_small",
+      "monster_type": "slime1",
+      "zone": "zone_a",
+      "quantity": 5,
+      "flavor": "A small number of oozing creatures have been spotted near the outer trails. Travelers report slick residue on the stones.",
+      "reward_text": "5 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_a_medium",
+      "monster_type": "slime1",
+      "zone": "zone_a",
+      "quantity": 10,
+      "flavor": "A gathering of slimes has taken hold along the forest road. Merchants are refusing the route until the threat is cleared.",
+      "reward_text": "12 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_a_large",
+      "monster_type": "slime1",
+      "zone": "zone_a",
+      "quantity": 20,
+      "flavor": "A large group of the creatures has colonized the old waystation. The guild considers this an urgent culling.",
+      "reward_text": "25 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_b_small",
+      "monster_type": "slime1",
+      "zone": "zone_b",
+      "quantity": 5,
+      "flavor": "A few of the glutinous things have crept into the fen paths. Locals say the water tastes wrong near the crossing.",
+      "reward_text": "8 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_b_medium",
+      "monster_type": "slime1",
+      "zone": "zone_b",
+      "quantity": 10,
+      "flavor": "A sizable cluster of slimes has settled in the marsh hollows. Trappers have lost more than one snare to the muck.",
+      "reward_text": "18 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_b_large",
+      "monster_type": "slime1",
+      "zone": "zone_b",
+      "quantity": 20,
+      "flavor": "A large group of slimes thrives in the deeper fen. Something is drawing them together — the guild wants answers and fewer of them.",
+      "reward_text": "38 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_c_small",
+      "monster_type": "slime1",
+      "zone": "zone_c",
+      "quantity": 5,
+      "flavor": "A handful of slimes have been sighted on the ridge approach. Few hunters go that way willingly, which is why we're posting this.",
+      "reward_text": "14 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_c_medium",
+      "monster_type": "slime1",
+      "zone": "zone_c",
+      "quantity": 10,
+      "flavor": "A troubling mass of the creatures has spread across the ridge shelf. The last party to scout it did not linger to count them.",
+      "reward_text": "28 gold upon verified completion."
+    },
+    {
+      "id": "slime1_zone_c_large",
+      "monster_type": "slime1",
+      "zone": "zone_c",
+      "quantity": 20,
+      "flavor": "A great seething host of slimes blankets the upper ridge. This is not a nuisance — it is an infestation. The guild pays well for resolution.",
+      "reward_text": "55 gold upon verified completion."
+    }
+  ]
+}

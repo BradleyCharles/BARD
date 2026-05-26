@@ -187,6 +187,95 @@ def describe_bounty_quota(quota: int) -> str:
     ])
 
 
+# ── Bounty state (full game_state) ───────────────────────────────────────────
+
+def describe_bounties(game_state: dict) -> str:
+    """
+    Convert available_bounties and active_bounties into a natural-language
+    paragraph suitable for LLM prompt injection.
+
+    Design rules:
+      - No raw numbers and no reference to the quantity field.
+      - Flavor text from the bounty definition is embedded verbatim as the
+        situational description; status commentary is appended around it.
+      - random.choice() pools keep adjacent NPC days from echoing each other.
+    """
+    available: list[dict] = game_state.get("available_bounties", [])
+    active:    list[dict] = game_state.get("active_bounties", [])
+
+    if not available and not active:
+        return random.choice([
+            "No guild bounties are currently posted or active.",
+            "The bounty board carries no contracts today, and the hunter has taken on no guild work.",
+        ])
+
+    sentences: list[str] = []
+
+    # ── Available bounties: brief aggregate note, no per-entry detail ──────────
+    n = len(available)
+    if n == 1:
+        sentences.append(random.choice([
+            "One guild contract is posted on the board and has not yet been accepted.",
+            "The board carries a single unclaimed bounty.",
+        ]))
+    elif n == 2:
+        sentences.append(random.choice([
+            "Two guild contracts are posted and unclaimed.",
+            "A pair of bounties sit available on the board.",
+        ]))
+    elif n >= 3:
+        sentences.append(random.choice([
+            "Several contracts are posted on the guild board and remain unclaimed.",
+            "The board is well stocked — multiple bounties await a taker.",
+        ]))
+
+    # ── Active bounties: per-entry narrative ───────────────────────────────────
+    if not active:
+        sentences.append(random.choice([
+            "The hunter has not taken on any guild work.",
+            "No active contracts are on record for this hunter.",
+        ]))
+    else:
+        for bounty in active:
+            flavor: str = bounty.get("flavor", "").strip().rstrip(".")
+            status: str = bounty.get("status", "active")
+
+            if status == "active":
+                prefix = random.choice([
+                    "The hunter has taken on a guild contract.",
+                    "An active bounty is underway.",
+                    "The hunter accepted a guild commission.",
+                ])
+                suffix = random.choice([
+                    "The work is still in progress.",
+                    "The hunter is working through it.",
+                    "Progress is being made, though the job is not yet done.",
+                ])
+                sentences.append(f"{prefix} {flavor}. {suffix}")
+
+            elif status == "complete":
+                prefix = random.choice([
+                    "The hunter has fulfilled a guild contract.",
+                    "A bounty has been completed.",
+                    "The hunter met the terms of a guild commission.",
+                ])
+                suffix = random.choice([
+                    "The work appears to be done, though the reward has not yet been collected.",
+                    "The quota has been met, but the hunter has not yet turned it in.",
+                    "The job is done — the reward awaits collection at the guild.",
+                ])
+                sentences.append(f"{prefix} {flavor}. {suffix}")
+
+            elif status == "turned_in":
+                prefix = random.choice([
+                    "A guild contract was recently concluded and the reward collected.",
+                    "The hunter finished a bounty and turned it in.",
+                ])
+                sentences.append(f"{prefix} {flavor}.")
+
+    return " ".join(sentences)
+
+
 # ── Day context ───────────────────────────────────────────────────────────────
 
 def describe_day(day: int) -> str:

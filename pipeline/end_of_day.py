@@ -49,7 +49,7 @@ from nl_descriptors import (
     describe_slime_kills,
     describe_field_activity,
     describe_kill_history,
-    describe_bounty_progress,
+    describe_bounties,
     describe_day,
     describe_first_meeting,
     describe_bounty_acceptance,
@@ -218,6 +218,7 @@ def build_prompt(
     field_nl      = describe_field_activity(total_kills)
     slime_nl      = describe_slime_kills(slime_count)
     history_nl    = describe_kill_history(history, "slime1")
+    bounty_nl     = describe_bounties(game_state)
     day_nl        = describe_day(day)
 
     met_flag   = flags.get(f"met_{npc_id.split('_')[0]}", False)
@@ -228,22 +229,11 @@ def build_prompt(
     # ── Role-specific context ──────────────────────────────────────────────────
     role_context = ""
     if role == "guild_commander":
-        bounties = game_state.get("active_bounties", [])
-        if bounties:
-            b         = bounties[0]
-            quota     = b.get("quota", 0)
-            quota_nl  = b.get("quota_nl", "")
-            progress  = b.get("kills_toward_quota", 0)
-            completed = b.get("completed", False)
-            role_context = (
-                "\n[Bounty context]\n"
-                f"  Active bounty: {quota_nl}\n"
-                f"  {describe_bounty_progress(progress, quota, quota_nl)}\n"
-                f"  Bounty accepted: {describe_bounty_acceptance(flags.get('first_bounty_accepted', False))}\n"
-                f"  Bounty completed: {describe_bounty_completion(flags.get('first_bounty_completed', False))}"
-            )
-        else:
-            role_context = "\n[Bounty context]\n  No active bounties at this time."
+        role_context = (
+            "\n[Guild records]\n"
+            f"  {describe_bounty_acceptance(flags.get('first_bounty_accepted', False))}\n"
+            f"  {describe_bounty_completion(flags.get('first_bounty_completed', False))}"
+        )
 
     elif role == "innkeeper":
         role_context = (
@@ -261,6 +251,9 @@ def build_prompt(
   {field_nl}
   {slime_nl}
   {history_nl}
+
+[Bounty status]
+  {bounty_nl}
 
 [Your knowledge of this hunter]
   {meeting_nl}

@@ -21,6 +21,7 @@ var player_name     : String = "Hunter"
 var monsters_killed_today   : Dictionary        = {}
 var monsters_killed_history : Array[Dictionary] = []
 var active_bounties         : Array             = []
+var available_bounties      : Array             = []
 
 var flags : Dictionary = {
 	"met_mira":                 false,
@@ -31,6 +32,11 @@ var flags : Dictionary = {
 	"player_slept_at_inn":      false,
 	"aldric_warned_about_east": false,
 }
+
+
+# ── Signals ───────────────────────────────────────────────────────────────────
+
+signal bounties_updated
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -95,6 +101,7 @@ var _project_path : String = ""
 func _ready() -> void:
 	_project_path = ProjectSettings.globalize_path("res://")
 	set_process(false)
+	refresh_daily_bounties()
 
 
 func _process(delta: float) -> void:
@@ -146,13 +153,81 @@ func get_flag(key: String) -> bool:
 	return flags.get(key, false)
 
 
+func refresh_daily_bounties() -> void:
+	var path := _project_path + "data/bounty_pool.json"
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		push_error("SceneManager: could not open bounty_pool.json")
+		return
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		push_error("SceneManager: failed to parse bounty_pool.json")
+		file.close()
+		return
+	file.close()
+	var pool : Array = parser.get_data().get("bounties", [])
+
+	var cap : int = min(day, 3)
+	var occupied_zones : Array = active_bounties.map(func(b): return b.get("zone", ""))
+
+	var zones := ["zone_a", "zone_b", "zone_c"]
+	zones.shuffle()
+
+	available_bounties.clear()
+	for zone in zones:
+		if available_bounties.size() >= cap:
+			break
+		if zone in occupied_zones:
+			continue
+		var candidates : Array = pool.filter(func(b): return b.get("zone") == zone)
+		if candidates.is_empty():
+			continue
+		candidates.shuffle()
+		available_bounties.append(candidates[0].duplicate())
+
+	bounties_updated.emit()
+
+
+func accept_bounty(bounty_id: String) -> void:
+	for i in available_bounties.size():
+		if available_bounties[i].get("id") == bounty_id:
+			var bounty : Dictionary = available_bounties[i].duplicate()
+			bounty["killed"]        = 0
+			bounty["status"]        = "active"
+			bounty["day_accepted"]  = day
+			active_bounties.append(bounty)
+			available_bounties.remove_at(i)
+			bounties_updated.emit()
+			return
+
+
+func record_bounty_kill(monster_type: String, zone: String) -> void:
+	for bounty in active_bounties:
+		if bounty.get("monster_type") == monster_type and bounty.get("zone") == zone \
+				and bounty.get("status") == "active":
+			bounty["killed"] = bounty.get("killed", 0) + 1
+			if bounty["killed"] >= bounty.get("quantity", INF):
+				bounty["status"] = "complete"
+			bounties_updated.emit()
+			return
+
+
+func turn_in_bounty(bounty_id: String) -> void:
+	for bounty in active_bounties:
+		if bounty.get("id") == bounty_id:
+			bounty["status"] = "turned_in"
+			bounties_updated.emit()
+			return
+
+
 # ── End Day ───────────────────────────────────────────────────────────────────
 
 func end_day() -> void:
 	monsters_killed_history.append(monsters_killed_today.duplicate())
 	monsters_killed_today.clear()
 	day += 1
-	_expire_bounties()
+	active_bounties = active_bounties.filter(func(b): return b.get("status") == "turned_in")
+	refresh_daily_bounties()
 	_write_game_state()
 	_start_pipeline("eod")
 
@@ -168,14 +243,6 @@ func trigger_chronicle() -> void:
 		return
 	_write_game_state()
 	_start_pipeline("chronicle")
-
-
-# ── Bounty expiry ─────────────────────────────────────────────────────────────
-
-func _expire_bounties() -> void:
-	active_bounties = active_bounties.filter(
-		func(b): return not (b.get("day_expires", INF) < day)
-	)
 
 
 # ── Game state serialisation ──────────────────────────────────────────────────
@@ -202,8 +269,9 @@ func _write_game_state() -> void:
 			"monsters_killed_today":   monsters_killed_today,
 			"monsters_killed_history": monsters_killed_history,
 		},
-		"active_bounties": active_bounties,
-		"flags":           flags,
+		"available_bounties": available_bounties,
+		"active_bounties":   active_bounties,
+		"flags":             flags,
 		"npc_facts":       npc_facts,
 	}
 

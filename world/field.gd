@@ -38,7 +38,9 @@ extends Node
 const MAX_MOBS   : int   = 14
 const MOB_MARGIN : float = 180.0   # min distance from world edge for mob spawns
 
-var _active_mobs : int = 0
+var _active_mobs    : int        = 0
+var _bounty_timers  : Dictionary = {}   # zone -> Timer
+var _zone_rects     : Dictionary = {}   # zone -> Rect2 (populated in _ready)
 
 @onready var _player        = $Player
 @onready var _entrance      : Area2D  = $TownEntrance
@@ -55,9 +57,17 @@ func _ready() -> void:
 	_player.mob_killed.connect(_on_mob_killed)
 	_entrance.area_entered.connect(_on_entrance_entered)
 
+	_zone_rects = {
+		"zone_a": Rect2(0.0,                    0.0, world_size.x / 3.0, world_size.y),
+		"zone_b": Rect2(world_size.x / 3.0,     0.0, world_size.x / 3.0, world_size.y),
+		"zone_c": Rect2(world_size.x * 2.0/3.0, 0.0, world_size.x / 3.0, world_size.y),
+	}
+
 	_day_label.text = "Day  %d" % SceneManager.day
 
 	_spawn_initial_mobs()
+	_start_bounty_spawning()
+	SceneManager.bounties_updated.connect(_on_bounties_updated)
 
 
 # ── Spawning ──────────────────────────────────────────────────────────────────
@@ -89,16 +99,93 @@ func _spawn_mob() -> void:
 	_active_mobs += 1
 
 
+# ── Bounty Spawning ───────────────────────────────────────────────────────────
+
+func _start_bounty_spawning() -> void:
+	var all_bounties : Array = []
+	all_bounties.append_array(SceneManager.available_bounties)
+	all_bounties.append_array(SceneManager.active_bounties)
+	for bounty in all_bounties:
+		_start_bounty_zone(bounty)
+
+
+func _start_bounty_zone(bounty: Dictionary) -> void:
+	var zone         : String = bounty.get("zone", "")
+	var monster_type : String = bounty.get("monster_type", "")
+	var quantity     : int    = bounty.get("quantity", 0)
+	var killed       : int    = bounty.get("killed", 0)
+	var to_spawn     : int    = max(0, quantity - killed)
+
+	if zone in _bounty_timers or to_spawn <= 0 or zone not in _zone_rects:
+		return
+	if _get_mob_scene(monster_type) == null:
+		return
+
+	var spawned := [0]
+	var timer   := Timer.new()
+	timer.wait_time = 8.0
+	timer.one_shot  = false
+	add_child(timer)
+	_bounty_timers[zone] = timer
+
+	timer.timeout.connect(func() -> void:
+		if spawned[0] >= to_spawn:
+			timer.stop()
+			timer.queue_free()
+			_bounty_timers.erase(zone)
+			return
+		_spawn_bounty_mob(monster_type, zone)
+		spawned[0] += 1
+	)
+
+	_spawn_bounty_mob(monster_type, zone)
+	spawned[0] = 1
+	if to_spawn > 1:
+		timer.start()
+
+
+func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
+	var scene := _get_mob_scene(monster_type)
+	if scene == null:
+		return
+	var zone_rect : Rect2 = _zone_rects[zone]
+	var mob               = scene.instantiate()
+	mob.set_meta("bounty_zone", zone)
+	if mob.has_method("set_world_size"):
+		mob.set_world_size(world_size)
+	mob.position = Vector2(
+		randf_range(max(zone_rect.position.x, MOB_MARGIN), min(zone_rect.end.x, world_size.x - MOB_MARGIN)),
+		randf_range(MOB_MARGIN, world_size.y - MOB_MARGIN)
+	)
+	_mob_container.add_child(mob)
+
+
+func _get_mob_scene(monster_type: String) -> PackedScene:
+	match monster_type:
+		"slime1": return slime1_scene
+	push_error("Field: no scene registered for monster_type '%s'" % monster_type)
+	return null
+
+
+func _on_bounties_updated() -> void:
+	_start_bounty_spawning()
+
+
 # ── Events ────────────────────────────────────────────────────────────────────
 
 func _on_mob_killed(mob_body: Node) -> void:
-	var monster_type: String = mob_body.get_meta("monster_type", "unknown")
+	var monster_type : String = mob_body.get_meta("monster_type", "unknown")
 	SceneManager.record_kill(monster_type)
-	mob_body.queue_free()
-	_active_mobs -= 1
-	# Respawn a replacement after a short delay
-	var t := get_tree().create_timer(randf_range(5.0, 14.0))
-	t.timeout.connect(_spawn_mob)
+
+	if mob_body.has_meta("bounty_zone"):
+		var zone : String = mob_body.get_meta("bounty_zone")
+		SceneManager.record_bounty_kill(monster_type, zone)
+		mob_body.queue_free()
+	else:
+		mob_body.queue_free()
+		_active_mobs -= 1
+		var t := get_tree().create_timer(randf_range(5.0, 14.0))
+		t.timeout.connect(_spawn_mob)
 
 
 func _on_entrance_entered(area: Area2D) -> void:
