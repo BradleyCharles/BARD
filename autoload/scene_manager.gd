@@ -33,10 +33,15 @@ var flags : Dictionary = {
 	"aldric_warned_about_east": false,
 }
 
+var scripts                  : int   = 0
+var _scripts_earned_today    : int   = 0
+var _bounties_turned_in_today: Array = []
+
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
 signal bounties_updated
+signal scripts_updated
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -212,24 +217,46 @@ func record_bounty_kill(monster_type: String, zone: String) -> void:
 			return
 
 
+func earn_scripts(amount: int) -> void:
+	scripts += amount
+	_scripts_earned_today += amount
+	scripts_updated.emit()
+
+
 func turn_in_bounty(bounty_id: String) -> void:
 	for bounty in active_bounties:
 		if bounty.get("id") == bounty_id:
 			bounty["status"] = "turned_in"
+			_bounties_turned_in_today.append(bounty.duplicate())
+			earn_scripts(_scripts_for_bounty(bounty))
 			bounties_updated.emit()
 			return
+
+
+func _scripts_for_bounty(bounty: Dictionary) -> int:
+	var tier: String = bounty.get("id", "").split("_").back()
+	match tier:
+		"small":  return 10
+		"medium": return 25
+		"large":  return 50
+	return 10
 
 
 # ── End Day ───────────────────────────────────────────────────────────────────
 
 func end_day() -> void:
+	var earned  : int   = _scripts_earned_today
+	var turned  : Array = _bounties_turned_in_today.duplicate()
+	_scripts_earned_today     = 0
+	_bounties_turned_in_today.clear()
+
 	monsters_killed_history.append(monsters_killed_today.duplicate())
 	monsters_killed_today.clear()
 	day += 1
 	active_bounties = active_bounties.filter(func(b): return b.get("status") == "turned_in")
 	refresh_daily_bounties()
 	_write_game_state()
-	_start_pipeline("eod")
+	_show_day_summary(earned, turned)
 
 
 # ── Chronicle Trigger ─────────────────────────────────────────────────────────
@@ -265,6 +292,7 @@ func _write_game_state() -> void:
 			"day":            day,
 		},
 		"player_name":  player_name,
+		"scripts":      scripts,
 		"world_state":  {
 			"monsters_killed_today":   monsters_killed_today,
 			"monsters_killed_history": monsters_killed_history,
@@ -360,6 +388,98 @@ func _on_pipeline_result(status: String, message: String) -> void:
 		"crashed":
 			push_error("SceneManager: pipeline crashed -- " + message)
 			_show_crash_message(message)
+
+
+# ── Day summary ───────────────────────────────────────────────────────────────
+
+func _show_day_summary(earned: int, turned: Array) -> void:
+	var layer        := CanvasLayer.new()
+	layer.layer       = 150
+	get_tree().root.add_child(layer)
+
+	var bg            := ColorRect.new()
+	bg.color           = Color(0.0, 0.0, 0.0, 0.92)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(bg)
+
+	var font_path  := "res://fonts/almendra.regular.ttf"
+	var font       : Font = null
+	if ResourceLoader.exists(font_path):
+		font = load(font_path)
+
+	var panel           := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	var style           := StyleBoxFlat.new()
+	style.bg_color       = Color(0.07, 0.05, 0.03, 1.0)
+	style.border_color   = Color(0.55, 0.45, 0.25, 1.0)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.set_content_margin_all(28)
+	panel.add_theme_stylebox_override("panel", style)
+	panel.custom_minimum_size = Vector2(520, 0)
+	layer.add_child(panel)
+
+	var vbox            := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	panel.add_child(vbox)
+
+	var _add_label := func(text: String, size: int, color: Color) -> void:
+		var lbl := Label.new()
+		lbl.text = text
+		lbl.add_theme_font_size_override("font_size", size)
+		lbl.add_theme_color_override("font_color", color)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if font:
+			lbl.add_theme_font_override("font", font)
+		vbox.add_child(lbl)
+
+	var day_shown := day - 1
+	_add_label.call("── Day %d Summary ──" % day_shown, 30, Color(0.95, 0.85, 0.45))
+
+	var sep := HSeparator.new()
+	sep.add_theme_color_override("color", Color(0.55, 0.45, 0.25, 0.6))
+	vbox.add_child(sep)
+
+	if turned.is_empty():
+		_add_label.call("No contracts turned in today.", 22, Color(0.65, 0.60, 0.52))
+	else:
+		_add_label.call("Contracts turned in:", 22, Color(0.75, 0.70, 0.60))
+		for b in turned:
+			var tier   := b.get("id", "").split("_").back()
+			var reward := _scripts_for_bounty(b)
+			var row    := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			vbox.add_child(row)
+
+			var name_lbl := Label.new()
+			name_lbl.text = b.get("flavor", b.get("id", "")).substr(0, 48) + "…"
+			name_lbl.add_theme_font_size_override("font_size", 18)
+			name_lbl.add_theme_color_override("font_color", Color(0.82, 0.76, 0.64))
+			name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			name_lbl.clip_text = true
+			if font:
+				name_lbl.add_theme_font_override("font", font)
+			row.add_child(name_lbl)
+
+			var reward_lbl := Label.new()
+			reward_lbl.text = "+%d Scripts" % reward
+			reward_lbl.add_theme_font_size_override("font_size", 18)
+			reward_lbl.add_theme_color_override("font_color", Color(0.55, 0.85, 0.45))
+			if font:
+				reward_lbl.add_theme_font_override("font", font)
+			row.add_child(reward_lbl)
+
+	var sep2 := HSeparator.new()
+	sep2.add_theme_color_override("color", Color(0.55, 0.45, 0.25, 0.6))
+	vbox.add_child(sep2)
+
+	var summary := "Scripts earned: %d     Total: %d" % [earned, scripts]
+	_add_label.call(summary, 24, Color(0.95, 0.85, 0.45))
+	_add_label.call("[ press any key ]", 18, Color(0.50, 0.46, 0.40))
+
+	await _wait_for_keypress()
+	layer.queue_free()
+	_start_pipeline("eod")
 
 
 # ── Overlay ───────────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player.tscn" id="4_js14o"]
 [ext_resource type="PackedScene" uid="uid://b6kyjdax715ba" path="res://ui/dialog_box.tscn" id="5_kmbyx"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="6_js14o"]
+[ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="8_sh"]
 [ext_resource type="PackedScene" uid="uid://mj3jtusi28r6" path="res://world/bounty_board_object.tscn" id="7_kmbyx"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mfqvo"]
@@ -120,6 +121,8 @@ theme_override_fonts/font = ExtResource("3_4u7cj")
 theme_override_font_sizes/font_size = 32
 
 [node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("6_js14o")]
+
+[node name="ScriptsHud" parent="." instance=ExtResource("8_sh")]
 
 [node name="BountyBoardObject" parent="." unique_id=937433113 instance=ExtResource("7_kmbyx")]
 position = Vector2(1050, 1340)

@@ -174,6 +174,12 @@ func _handle_response(r: Dictionary) -> void:
 			close()
 			SceneManager.go_to_town()
 			return
+		"open_turn_in":
+			close()
+			var turnin := preload("res://ui/bounty_turnin.tscn").instantiate()
+			get_tree().root.add_child(turnin)
+			turnin.open()
+			return
 
 	if next == null:
 		close()

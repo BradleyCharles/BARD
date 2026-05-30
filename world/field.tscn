@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://ddwgglepq5c3y" path="res://fonts/almendra.regular.ttf" id="3_1x2kq"]
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player.tscn" id="4_mdjat"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="5_mdjat"]
+[ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="6_sh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_enpdi"]
 size = Vector2(60, 200)
@@ -90,3 +91,5 @@ theme_override_fonts/font = ExtResource("3_1x2kq")
 theme_override_font_sizes/font_size = 32
 
 [node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("5_mdjat")]
+
+[node name="ScriptsHud" parent="." instance=ExtResource("6_sh")]

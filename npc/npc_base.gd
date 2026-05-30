@@ -108,6 +108,12 @@ const ROLE_ROOT_NODES : Dictionary = {
 				{"key": 1, "text": "Right.", "next": "root"}
 			]
 		},
+		"turnin_confirm": {
+			"text": "Let me see what you have.",
+			"responses": [
+				{"key": 1, "text": "Here.", "next": null, "action": "open_turn_in"}
+			]
+		},
 		"root_farewell": {
 			"text": "Dismissed.",
 			"responses": [
@@ -263,10 +269,26 @@ func _open_dialogue() -> void:
 	if _dialogue_box == null:
 		push_warning("NPC '%s': no node in group 'dialogue_box' found in scene." % npc_name)
 		return
+	if npc_role == "guild_commander":
+		_patch_guild_commander_root()
 	# Named NPCs with a role always start at the hardcoded root menu.
 	# Wanderers and roleless NPCs start at "greeting" as before.
 	var start_node := "root" if ROLE_ROOT_NODES.has(npc_role) else "greeting"
 	_dialogue_box.open(_dialogue_nodes, start_node, npc_name)
+
+
+func _patch_guild_commander_root() -> void:
+	var has_complete := SceneManager.active_bounties.any(
+		func(b: Dictionary) -> bool: return b.get("status") == "complete"
+	)
+	var responses : Array = _dialogue_nodes["root"]["responses"]
+	for i in responses.size():
+		if responses[i].get("key") == 1:
+			if has_complete:
+				responses[i] = {"key": 1, "text": "I have completed a bounty.", "next": "turnin_confirm"}
+			else:
+				responses[i] = {"key": 1, "text": "I want to check the bounty board.", "next": "bounty_stub"}
+			break
 
 
 func _close_dialogue() -> void:
