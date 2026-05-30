@@ -57,9 +57,21 @@ func _input(event: InputEvent) -> void:
 		return
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
+	get_viewport().set_input_as_handled()
+
 	if event.keycode == KEY_ESCAPE:
-		get_viewport().set_input_as_handled()
 		close()
+		return
+
+	const KEY_MAP := {KEY_1: 0, KEY_2: 1, KEY_3: 2, KEY_4: 3}
+	var idx : int = KEY_MAP.get(event.keycode, -1)
+	if idx == -1:
+		return
+	var complete : Array = SceneManager.active_bounties.filter(
+		func(b: Dictionary) -> bool: return b.get("status") == "complete"
+	)
+	if idx < complete.size():
+		SceneManager.turn_in_bounty(complete[idx].get("id", ""))
 
 
 # ── UI Construction ───────────────────────────────────────────────────────────
@@ -143,7 +155,7 @@ func _bounty_row(bounty: Dictionary) -> HBoxContainer:
 	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(flavor)
 
-	var reward := SceneManager._scripts_for_bounty(bounty)
+	var reward := SceneManager.scripts_for_bounty(bounty)
 	var btn    := _button("+%d Scripts" % reward)
 	var bid    : String = bounty.get("id", "")
 	btn.pressed.connect(func() -> void: SceneManager.turn_in_bounty(bid))

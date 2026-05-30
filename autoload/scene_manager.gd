@@ -237,12 +237,12 @@ func turn_in_bounty(bounty_id: String) -> void:
 		if bounty.get("id") == bounty_id:
 			bounty["status"] = "turned_in"
 			_bounties_turned_in_today.append(bounty.duplicate())
-			earn_scripts(_scripts_for_bounty(bounty))
+			earn_scripts(scripts_for_bounty(bounty))
 			bounties_updated.emit()
 			return
 
 
-func _scripts_for_bounty(bounty: Dictionary) -> int:
+func scripts_for_bounty(bounty: Dictionary) -> int:
 	var tier: String = bounty.get("id", "").split("_").back()
 	match tier:
 		"small":  return 10
@@ -454,7 +454,7 @@ func _show_day_summary(earned: int, turned: Array) -> void:
 	else:
 		_add_label.call("Contracts turned in:", 22, Color(0.75, 0.70, 0.60))
 		for b in turned:
-			var reward := _scripts_for_bounty(b)
+			var reward := scripts_for_bounty(b)
 			var row    := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 8)
 			vbox.add_child(row)

@@ -26,6 +26,8 @@ extends CanvasLayer
 
 signal closed
 
+const _TURNIN_SCENE := preload("res://ui/bounty_turnin.tscn")
+
 @onready var _panel      : PanelContainer = $Panel
 @onready var _name_label : Label          = $Panel/MarginContainer/VBox/NameLabel
 @onready var _text_label : RichTextLabel  = $Panel/MarginContainer/VBox/TextLabel
@@ -176,7 +178,7 @@ func _handle_response(r: Dictionary) -> void:
 			return
 		"open_turn_in":
 			close()
-			var turnin := preload("res://ui/bounty_turnin.tscn").instantiate()
+			var turnin := _TURNIN_SCENE.instantiate()
 			get_tree().root.add_child(turnin)
 			turnin.open()
 			return
