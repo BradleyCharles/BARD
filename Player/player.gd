@@ -217,6 +217,8 @@ func take_damage(amount: int) -> void:
 	health -= amount
 	SceneManager.set_player_health(health)
 	_iframes = IFRAME_TIME
+	is_attacking = false
+	_sword.monitoring = false
 	if health <= 0:
 		_start_dying("hit")
 	else:

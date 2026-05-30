@@ -35,17 +35,18 @@ extends Node
 ## Logical size of the playable field world in pixels.
 @export var world_size   : Vector2 = Vector2(3840.0, 2160.0)
 
-const MAX_MOBS   : int   = 14
-const MOB_MARGIN : float = 180.0   # min distance from world edge for mob spawns
+const SPAWN_MARGIN : float = 40.0   # inset from terrain edge when placing mobs
 
-var _active_mobs    : int        = 0
 var _bounty_timers  : Dictionary = {}   # zone -> Timer
 var _zone_rects     : Dictionary = {}   # zone -> Rect2 (populated in _ready)
 
 @onready var _player        = $Player
-@onready var _entrance      : Area2D  = $TownEntrance
-@onready var _mob_container : Node2D  = $MobContainer
-@onready var _day_label     : Label   = $DayLabel
+@onready var _entrance      : Area2D   = $TownEntrance
+@onready var _mob_container : Node2D   = $MobContainer
+@onready var _day_label     : Label    = $DayLabel
+@onready var _terrain_nw    : ColorRect = $TerrainNW
+@onready var _terrain_ne    : ColorRect = $TerrainNE
+@onready var _terrain_se    : ColorRect = $TerrainSE
 
 
 func _ready() -> void:
@@ -58,45 +59,15 @@ func _ready() -> void:
 	_entrance.area_entered.connect(_on_entrance_entered)
 
 	_zone_rects = {
-		"zone_a": Rect2(0.0,                    0.0, world_size.x / 3.0, world_size.y),
-		"zone_b": Rect2(world_size.x / 3.0,     0.0, world_size.x / 3.0, world_size.y),
-		"zone_c": Rect2(world_size.x * 2.0/3.0, 0.0, world_size.x / 3.0, world_size.y),
+		"zone_a": Rect2(_terrain_nw.position, _terrain_nw.size),
+		"zone_b": Rect2(_terrain_ne.position, _terrain_ne.size),
+		"zone_c": Rect2(_terrain_se.position, _terrain_se.size),
 	}
 
 	_day_label.text = "Day  %d" % SceneManager.day
 
-	_spawn_initial_mobs()
 	_start_bounty_spawning()
 	SceneManager.bounties_updated.connect(_on_bounties_updated)
-
-
-# ── Spawning ──────────────────────────────────────────────────────────────────
-
-func _spawn_initial_mobs() -> void:
-	for _i in MAX_MOBS:
-		_spawn_mob()
-
-
-func _spawn_mob() -> void:
-	if slime1_scene == null:
-		push_error("Field: slime1_scene export not set.")
-		return
-	if _active_mobs >= MAX_MOBS:
-		return
-
-	var mob = slime1_scene.instantiate()
-
-	# Set the mob's world bounds to match the field
-	if mob.has_method("set_world_size"):
-		mob.set_world_size(world_size)
-
-	mob.position = Vector2(
-		randf_range(MOB_MARGIN, world_size.x - MOB_MARGIN),
-		randf_range(MOB_MARGIN, world_size.y - MOB_MARGIN)
-	)
-
-	_mob_container.add_child(mob)
-	_active_mobs += 1
 
 
 # ── Bounty Spawning ───────────────────────────────────────────────────────────
@@ -154,8 +125,8 @@ func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
 	if mob.has_method("set_world_size"):
 		mob.set_world_size(world_size)
 	mob.position = Vector2(
-		randf_range(max(zone_rect.position.x, MOB_MARGIN), min(zone_rect.end.x, world_size.x - MOB_MARGIN)),
-		randf_range(MOB_MARGIN, world_size.y - MOB_MARGIN)
+		randf_range(zone_rect.position.x + SPAWN_MARGIN, zone_rect.end.x - SPAWN_MARGIN),
+		randf_range(zone_rect.position.y + SPAWN_MARGIN, zone_rect.end.y - SPAWN_MARGIN)
 	)
 	_mob_container.add_child(mob)
 
@@ -180,12 +151,7 @@ func _on_mob_killed(mob_body: Node) -> void:
 	if mob_body.has_meta("bounty_zone"):
 		var zone : String = mob_body.get_meta("bounty_zone")
 		SceneManager.record_bounty_kill(monster_type, zone)
-		mob_body.queue_free()
-	else:
-		mob_body.queue_free()
-		_active_mobs -= 1
-		var t := get_tree().create_timer(randf_range(5.0, 14.0))
-		t.timeout.connect(_spawn_mob)
+	mob_body.queue_free()
 
 
 func _on_entrance_entered(area: Area2D) -> void:
