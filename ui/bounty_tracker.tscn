@@ -1,7 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://coxbni81lv4i5"]
 
-[ext_resource type="Script" path="res://ui/bounty_tracker.gd" id="1_bt"]
+[ext_resource type="Script" uid="uid://bm42afpoul6e3" path="res://ui/bounty_tracker.gd" id="1_bt"]
 
-[node name="BountyTracker" type="CanvasLayer"]
-layer = 15
+[node name="BountyTracker" type="CanvasLayer" unique_id=1168553287]
+layer = 5
 script = ExtResource("1_bt")

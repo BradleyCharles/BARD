@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://bslime1scene1" path="res://mob/slime1.tscn" id="2_r2512"]
 [ext_resource type="FontFile" uid="uid://ddwgglepq5c3y" path="res://fonts/almendra.regular.ttf" id="3_1x2kq"]
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player.tscn" id="4_mdjat"]
+[ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="5_mdjat"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_enpdi"]
 size = Vector2(60, 200)
@@ -87,3 +88,5 @@ offset_bottom = 39.0
 grow_horizontal = 0
 theme_override_fonts/font = ExtResource("3_1x2kq")
 theme_override_font_sizes/font_size = 32
+
+[node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("5_mdjat")]
