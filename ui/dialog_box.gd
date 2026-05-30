@@ -178,12 +178,16 @@ func _handle_response(r: Dictionary) -> void:
 			return
 		"open_turn_in":
 			close()
-			var turnin := _TURNIN_SCENE.instantiate()
-			get_tree().root.add_child(turnin)
-			turnin.open()
+			call_deferred(&"_open_turnin_panel")
 			return
 
 	if next == null:
 		close()
 	else:
 		_go_to(str(next))
+
+
+func _open_turnin_panel() -> void:
+	var turnin := _TURNIN_SCENE.instantiate()
+	get_tree().root.add_child(turnin)
+	turnin.open()

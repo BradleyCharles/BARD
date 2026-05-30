@@ -26,21 +26,22 @@ grow_vertical = 2
 color = Color(0.46135613, 0.60124344, 0.38109186, 1)
 
 [node name="TerrainNW" type="ColorRect" parent="." unique_id=2059210385]
-offset_right = 900.0
+offset_left = -1.0
+offset_right = 899.0
 offset_bottom = 700.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
 [node name="TerrainNE" type="ColorRect" parent="." unique_id=1117204345]
-offset_left = 2940.0
-offset_right = 3840.0
+offset_left = 2939.0
+offset_right = 3839.0
 offset_bottom = 550.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
 [node name="TerrainSE" type="ColorRect" parent="." unique_id=1000965301]
 custom_minimum_size = Vector2(900, 400)
-offset_left = 2940.0
+offset_left = 2939.0
 offset_top = 1760.0
-offset_right = 3840.0
+offset_right = 3839.0
 offset_bottom = 2160.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
@@ -93,6 +94,6 @@ theme_override_font_sizes/font_size = 32
 
 [node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("5_mdjat")]
 
-[node name="ScriptsHud" parent="." instance=ExtResource("6_sh")]
+[node name="ScriptsHud" parent="." unique_id=1863720017 instance=ExtResource("6_sh")]
 
-[node name="HealthBar" parent="." instance=ExtResource("7_hb")]
+[node name="HealthBar" parent="." unique_id=603998431 instance=ExtResource("7_hb")]
