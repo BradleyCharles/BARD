@@ -243,7 +243,9 @@ func turn_in_bounty(bounty_id: String) -> void:
 
 
 func scripts_for_bounty(bounty: Dictionary) -> int:
-	var tier: String = bounty.get("id", "").split("_").back()
+	var id: String = bounty.get("id", "")
+	var parts: PackedStringArray = id.split("_")
+	var tier: String = parts[parts.size() - 1] if parts.size() > 0 else ""
 	match tier:
 		"small":  return 10
 		"medium": return 25

@@ -10,7 +10,8 @@ extends Node
 func _ready() -> void:
 	_player.set_world_bounds(Rect2(Vector2.ZERO, world_size))
 	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.80))
-	_field_exit.area_entered.connect(_on_field_exit_entered)
+	if not _field_exit.area_entered.is_connected(_on_field_exit_entered):
+		_field_exit.area_entered.connect(_on_field_exit_entered)
 	_day_label.text = "Day  %d" % SceneManager.day
 	_apply_world_registry()
 	_reload_all_dialogue()
