@@ -122,6 +122,6 @@ theme_override_font_sizes/font_size = 32
 [node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("6_js14o")]
 
 [node name="BountyBoardObject" parent="." unique_id=937433113 instance=ExtResource("7_kmbyx")]
-position = Vector2(1050, 0)
+position = Vector2(1050, 1340)
 
 [connection signal="area_entered" from="FieldExit" to="." method="_on_field_exit_entered"]
