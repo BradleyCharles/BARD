@@ -19,6 +19,12 @@ var is_attacking: bool = false
 var is_dying: bool = false
 var _death_signal: String = ""
 
+const MAX_HEALTH   : int   = 100
+const IFRAME_TIME  : float = 1.0   # seconds of invincibility after a hit
+var health         : int   = MAX_HEALTH
+var _iframes       : float = 0.0
+var _is_hurt       : bool  = false
+
 # Sprite sheet rows: Down=0, Left=1, Right=2, Up=3
 const ROW_DOWN  = 0
 const ROW_LEFT  = 1
@@ -102,6 +108,8 @@ func _build_sprite_frames() -> void:
 func _process(delta: float) -> void:
 	if is_dying:
 		return
+	if _iframes > 0.0:
+		_iframes -= delta
 
 	var velocity := Vector2.ZERO
 	if Input.is_action_pressed("move_right"):  velocity.x += 1
@@ -120,7 +128,7 @@ func _process(delta: float) -> void:
 	# Clamp to world bounds rather than screen size
 	position = position.clamp(_world_bounds.position, _world_bounds.end)
 
-	if not is_attacking:
+	if not is_attacking and not _is_hurt:
 		_update_animation(velocity)
 
 
@@ -180,8 +188,12 @@ func _on_animation_finished() -> void:
 		_sword.monitoring = false
 		_update_animation(Vector2.ZERO)
 	elif anim == "hurt":
+		_is_hurt = false
 		_sprite.flip_h = false
-		_sprite.play("death")
+		if health <= 0:
+			_sprite.play("death")
+		else:
+			_update_animation(Vector2.ZERO)
 	elif anim == "death":
 		if _death_signal == "hit":
 			hit.emit()
@@ -195,10 +207,21 @@ func _on_animation_finished() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if is_dying:
 		return
-	if body.is_in_group("flying_mobs"):
-		call_deferred("_start_dying", "fly_caught")
-	elif body.is_in_group("ground_mobs"):
-		call_deferred("_start_dying", "hit")
+	if body.is_in_group("flying_mobs") or body.is_in_group("ground_mobs"):
+		call_deferred("take_damage", 1)
+
+
+func take_damage(amount: int) -> void:
+	if is_dying or _iframes > 0.0:
+		return
+	health -= amount
+	SceneManager.set_player_health(health)
+	_iframes = IFRAME_TIME
+	if health <= 0:
+		_start_dying("hit")
+	else:
+		_is_hurt = true
+		_sprite.play("hurt")
 
 
 func _start_dying(signal_name: String) -> void:
@@ -230,6 +253,10 @@ func start(pos: Vector2) -> void:
 	_body_shape.disabled = false
 	_sword.monitoring = false
 	_sprite.flip_h = false
+	_iframes  = 0.0
+	_is_hurt  = false
+	health    = MAX_HEALTH
+	SceneManager.set_player_health(health)
 	_sprite.play("idle")
 	position = pos
 	show()

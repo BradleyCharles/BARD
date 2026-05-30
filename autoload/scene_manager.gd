@@ -37,11 +37,15 @@ var scripts                  : int   = 0
 var _scripts_earned_today    : int   = 0
 var _bounties_turned_in_today: Array = []
 
+var player_health     : int = 100
+var player_max_health : int = 100
+
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
 signal bounties_updated
 signal scripts_updated
+signal player_health_changed
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -215,6 +219,11 @@ func record_bounty_kill(monster_type: String, zone: String) -> void:
 				bounty["status"] = "complete"
 			bounties_updated.emit()
 			return
+
+
+func set_player_health(hp: int) -> void:
+	player_health = clamp(hp, 0, player_max_health)
+	player_health_changed.emit()
 
 
 func earn_scripts(amount: int) -> void:
@@ -445,7 +454,6 @@ func _show_day_summary(earned: int, turned: Array) -> void:
 	else:
 		_add_label.call("Contracts turned in:", 22, Color(0.75, 0.70, 0.60))
 		for b in turned:
-			var tier   := b.get("id", "").split("_").back()
 			var reward := _scripts_for_bounty(b)
 			var row    := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 8)
