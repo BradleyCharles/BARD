@@ -71,7 +71,13 @@ func _process(_delta: float) -> void:
 		_navigate(-1)
 	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
 		_navigate(1)
-	elif Input.is_action_just_pressed(PlayerInput.INTERACT):
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _is_open:
+		return
+	if event.is_action_pressed(PlayerInput.INTERACT):
+		get_viewport().set_input_as_handled()
 		_accept_selected()
 
 

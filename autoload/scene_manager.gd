@@ -180,7 +180,7 @@ func refresh_daily_bounties() -> void:
 	file.close()
 	var pool : Array = parser.get_data().get("bounties", [])
 
-	var cap : int = min(day, 3)
+	var cap : int = 3
 	var occupied_zones : Array = active_bounties.map(func(b): return b.get("zone", ""))
 
 	var zones := ["zone_a", "zone_b", "zone_c"]
