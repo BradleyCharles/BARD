@@ -52,17 +52,37 @@ All GDScript variables must have explicit types. Never rely on `:=` inference wh
 
 **Rule:** if `:=` would infer `Variant`, write the type explicitly instead.
 
+## Component Separation
+
+Features with distinct data or configuration concerns get their own script. Follow the existing patterns in `Player/`:
+
+- **Stats / tuning data** (damage, speed, health, timers): live in a `*_stats.gd` or `*_data.gd` file with `class_name`, using `const` for primitive types and `static var` for Vector/object types. Never hardcode balance numbers inside logic scripts.
+- **Per-weapon data**: add `Player/weapons/<weapon>_data.gd` using `sword_data.gd` or `axe_data.gd` as a template. Register the new weapon in `player.gd:_ready()` by adding an entry to `_weapon_stats`.
+- **Input actions**: all input action name strings live in `Player/player_input.gd` (`class_name PlayerInput`). Use `PlayerInput.ATTACK` etc. throughout the project — never a bare `"attack"` string.
+- **Distinct system behaviors**: if a node script grows to handle two unrelated responsibilities, split them into a host node + a child component node.
+
+**Do not split when:**
+- Logic is tightly coupled to the node's lifecycle (`_process`, `_ready`, signals wired to that node).
+- The extracted file has no standalone meaning or re-use outside its host.
+- It is under ~40 lines and a new file would only add navigation overhead.
+
+---
+
 ## Repo Layout (Short Form)
 
 ```
-autoload/scene_manager.gd   ← global singleton
-Player/player.gd            ← player movement, combat, health
-npc/npc_base.gd             ← all NPCs share this base
-world/field.gd              ← Ashfield (hunting zone)
-world/town.gd               ← Thornwall (town scene)
-ui/                         ← all HUD and overlay scripts
-mob/slime1.gd               ← only active enemy type
-pipeline/                   ← Python LLM pipeline
-data/bounty_pool.json       ← static bounty definitions
-dialogue/                   ← LLM-generated per-NPC per-day JSON
+autoload/scene_manager.gd          ← global singleton
+Player/player.gd                   ← player movement, combat, health
+Player/player_stats.gd             ← tuning constants (health, speed, dodge)
+Player/player_input.gd             ← input action name constants (PlayerInput)
+Player/weapons/sword_data.gd       ← sword stats (use as template for new weapons)
+Player/weapons/axe_data.gd         ← axe stats
+npc/npc_base.gd                    ← all NPCs share this base
+world/field.gd                     ← Ashfield (hunting zone)
+world/town.gd                      ← Thornwall (town scene)
+ui/                                ← all HUD and overlay scripts
+mob/slime1.gd                      ← only active enemy type
+pipeline/                          ← Python LLM pipeline
+data/bounty_pool.json              ← static bounty definitions
+dialogue/                          ← LLM-generated per-NPC per-day JSON
 ```

@@ -37,7 +37,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not _player_in_range or _board_instance != null:
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed(PlayerInput.INTERACT):
 		get_viewport().set_input_as_handled()
 		_open_board()
 

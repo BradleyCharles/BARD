@@ -65,13 +65,13 @@ func is_board_open() -> bool:
 func _process(_delta: float) -> void:
 	if not _is_open:
 		return
-	if Input.is_action_just_pressed("menu_cancel"):
+	if Input.is_action_just_pressed(PlayerInput.MENU_CANCEL):
 		close()
-	elif Input.is_action_just_pressed("menu_up"):
+	elif Input.is_action_just_pressed(PlayerInput.MENU_UP):
 		_navigate(-1)
-	elif Input.is_action_just_pressed("menu_down"):
+	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
 		_navigate(1)
-	elif Input.is_action_just_pressed("interact"):
+	elif Input.is_action_just_pressed(PlayerInput.INTERACT):
 		_accept_selected()
 
 

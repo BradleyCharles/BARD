@@ -4,7 +4,7 @@ signal hit
 signal fly_caught
 signal weapon_changed(weapon_name: String)
 
-@export var speed: float = 300.0
+@export var speed: float = PlayerStats.BASE_SPEED
 
 @onready var _sprite     : AnimatedSprite2D  = $AnimatedSprite2D
 @onready var _body_shape : CollisionShape2D  = $CollisionShape2D
@@ -17,17 +17,11 @@ var is_attacking : bool    = false
 var is_dying     : bool    = false
 var _death_signal: String  = ""
 
-const MAX_HEALTH  : int   = 100
-const IFRAME_TIME : float = 1.0
-var health        : int   = MAX_HEALTH
-var _iframes      : float = 0.0
-var _is_hurt      : bool  = false
+var health  : int   = PlayerStats.MAX_HEALTH
+var _iframes: float = 0.0
+var _is_hurt: bool  = false
 
 # ── Dodge ────────────────────────────────────────────────────────────────────
-
-const DODGE_SPEED    : float = 900.0
-const DODGE_DURATION : float = 0.15
-const DODGE_COOLDOWN : float = 0.5
 
 var is_dodging      : bool    = false
 var _dodge_timer    : float   = 0.0
@@ -36,25 +30,33 @@ var _last_move_dir  : Vector2 = Vector2.RIGHT
 
 # ── Weapon system ─────────────────────────────────────────────────────────────
 
-const WEAPON_STATS : Dictionary = {
-	"sword": {"damage": 1, "swing_fps": 40.0, "knockback": 200.0,
-			  "hitbox": Vector2(40, 20.0)},
-	"axe":   {"damage": 2, "swing_fps": 24.0, "knockback": 400.0,
-			  "hitbox": Vector2(16.0, 28.0)},
-}
-
-var active_weapon: String = "sword"
+var _weapon_stats: Dictionary = {}
+var active_weapon: String     = SwordData.ID
 
 # ── Sprite sheet rows ─────────────────────────────────────────────────────────
 
-const ROW_DOWN  = 0
-const ROW_LEFT  = 1
-const ROW_RIGHT = 2
-const ROW_UP    = 3
+const ROW_DOWN   = 0
+const ROW_LEFT   = 1
+const ROW_RIGHT  = 2
+const ROW_UP     = 3
 const FRAME_SIZE = 64
 
 
-func _ready():
+func _ready() -> void:
+	_weapon_stats = {
+		SwordData.ID: {
+			"damage":    SwordData.DAMAGE,
+			"swing_fps": SwordData.SWING_FPS,
+			"knockback": SwordData.KNOCKBACK,
+			"hitbox":    SwordData.HITBOX,
+		},
+		AxeData.ID: {
+			"damage":    AxeData.DAMAGE,
+			"swing_fps": AxeData.SWING_FPS,
+			"knockback": AxeData.KNOCKBACK,
+			"hitbox":    AxeData.HITBOX,
+		},
+	}
 	add_to_group("player")
 	_build_sprite_frames()
 	_sprite.frame_changed.connect(_on_frame_changed)
@@ -72,7 +74,7 @@ func set_world_bounds(bounds: Rect2) -> void:
 # ── Sprite sheet setup ────────────────────────────────────────────────────────
 
 func _make_atlas(sheet: Texture2D, col: int, row: int) -> AtlasTexture:
-	var a = AtlasTexture.new()
+	var a := AtlasTexture.new()
 	a.atlas = sheet
 	a.region = Rect2(col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE)
 	return a
@@ -135,10 +137,10 @@ func _process(delta: float) -> void:
 		_cooldown_timer -= delta
 
 	var move_input := Vector2.ZERO
-	if Input.is_action_pressed("move_right"): move_input.x += 1
-	if Input.is_action_pressed("move_left"):  move_input.x -= 1
-	if Input.is_action_pressed("move_down"):  move_input.y += 1
-	if Input.is_action_pressed("move_up"):    move_input.y -= 1
+	if Input.is_action_pressed(PlayerInput.MOVE_RIGHT): move_input.x += 1
+	if Input.is_action_pressed(PlayerInput.MOVE_LEFT):  move_input.x -= 1
+	if Input.is_action_pressed(PlayerInput.MOVE_DOWN):  move_input.y += 1
+	if Input.is_action_pressed(PlayerInput.MOVE_UP):    move_input.y -= 1
 
 	if move_input.length() > 0:
 		facing = move_input.normalized()
@@ -146,21 +148,21 @@ func _process(delta: float) -> void:
 
 	var velocity: Vector2
 	if is_dodging:
-		velocity = -facing.normalized() * DODGE_SPEED
+		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
 	else:
 		velocity = facing * 0.0   # will be overwritten below
 		if move_input.length() > 0:
 			velocity = facing * speed
 
-	if Input.is_action_just_pressed("attack") and not is_attacking and not is_dodging:
+	if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking and not is_dodging:
 		_start_attack()
 
-	if Input.is_action_just_pressed("dodge") and not is_attacking \
+	if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
 			and not is_dying and _cooldown_timer <= 0.0 and not is_dodging:
 		_start_dodge()
-		velocity = -facing.normalized() * DODGE_SPEED
+		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
 
-	if Input.is_action_just_pressed("weapon_swap") and not is_attacking and not is_dodging:
+	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and not is_attacking and not is_dodging:
 		_cycle_weapon()
 
 	position += velocity * delta
@@ -198,9 +200,9 @@ func _update_animation(velocity: Vector2) -> void:
 
 func _start_dodge() -> void:
 	is_dodging      = true
-	_iframes        = IFRAME_TIME
-	_dodge_timer    = DODGE_DURATION
-	_cooldown_timer = DODGE_COOLDOWN
+	_iframes        = PlayerStats.IFRAME_TIME
+	_dodge_timer    = PlayerStats.DODGE_DURATION
+	_cooldown_timer = PlayerStats.DODGE_COOLDOWN
 	modulate        = Color(1.0, 1.0, 1.0, 0.5)
 
 
@@ -220,7 +222,7 @@ func _cycle_weapon() -> void:
 func _start_attack() -> void:
 	is_attacking = true
 
-	var stats: Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
+	var stats: Dictionary = _weapon_stats.get(active_weapon, _weapon_stats[SwordData.ID])
 
 	# Snap to 4 cardinal directions
 	var attack_dir: Vector2
@@ -236,7 +238,8 @@ func _start_attack() -> void:
 	var shape_node := _sword.get_node("CollisionShape2D") as CollisionShape2D
 	if shape_node and shape_node.shape is RectangleShape2D:
 		var base_size : Vector2 = stats["hitbox"]
-		var hitbox    : Vector2 = Vector2(base_size.y, base_size.x) if attack_dir.y != 0.0 else base_size
+		var swapped   : Vector2 = Vector2(base_size.y, base_size.x)
+		var hitbox    : Vector2 = swapped if attack_dir.y != 0.0 else base_size
 		(shape_node.shape as RectangleShape2D).size = hitbox
 
 	# Set swing speed
@@ -296,7 +299,7 @@ func take_damage(amount: int) -> void:
 		return
 	health -= amount
 	SceneManager.set_player_health(health)
-	_iframes     = IFRAME_TIME
+	_iframes     = PlayerStats.IFRAME_TIME
 	is_attacking = false
 	_sword.monitoring = false
 	if health <= 0:
@@ -323,9 +326,9 @@ func _on_sword_hit(body: Node2D) -> void:
 		return
 	if body.is_in_group("flying_mobs") or body.is_in_group("ground_mobs"):
 		if body.has_method("take_damage"):
-			var stats: Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
-			var knockback: Vector2    = (body.global_position - global_position).normalized() \
-							  * float(stats["knockback"])
+			var stats: Dictionary = _weapon_stats.get(active_weapon, _weapon_stats[SwordData.ID])
+			var knockback: Vector2 = (body.global_position - global_position).normalized() \
+							* float(stats["knockback"])
 			body.take_damage(stats["damage"], knockback)
 
 
@@ -350,7 +353,7 @@ func start(pos: Vector2) -> void:
 	_sprite.flip_h       = false
 	_iframes  = 0.0
 	_is_hurt  = false
-	health    = MAX_HEALTH
+	health    = PlayerStats.MAX_HEALTH
 	modulate  = Color.WHITE
 	SceneManager.set_player_health(health)
 	_sprite.play("idle")

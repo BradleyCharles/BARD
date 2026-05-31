@@ -1,0 +1,13 @@
+class_name PlayerInput
+
+const MOVE_UP    : String = "move_up"
+const MOVE_DOWN  : String = "move_down"
+const MOVE_LEFT  : String = "move_left"
+const MOVE_RIGHT : String = "move_right"
+const ATTACK     : String = "attack"
+const DODGE      : String = "dodge"
+const INTERACT   : String = "interact"
+const WEAPON_SWAP: String = "weapon_swap"
+const MENU_UP    : String = "menu_up"
+const MENU_DOWN  : String = "menu_down"
+const MENU_CANCEL: String = "menu_cancel"

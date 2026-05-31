@@ -206,11 +206,11 @@ func _confirm_selected() -> void:
 func _process(_delta: float) -> void:
 	if not _panel.visible or _is_typing:
 		return
-	if Input.is_action_just_pressed("menu_up"):
+	if Input.is_action_just_pressed(PlayerInput.MENU_UP):
 		_navigate(-1)
-	elif Input.is_action_just_pressed("menu_down"):
+	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
 		_navigate(1)
-	elif Input.is_action_just_pressed("interact"):
+	elif Input.is_action_just_pressed(PlayerInput.INTERACT):
 		_confirm_selected()
 
 
@@ -220,9 +220,9 @@ func _input(event: InputEvent) -> void:
 	var is_press: bool = \
 		(event is InputEventKey and event.pressed and not event.echo) or \
 		(event is InputEventJoypadButton and event.pressed) or \
-		event.is_action_pressed("menu_up") or \
-		event.is_action_pressed("menu_down") or \
-		event.is_action_pressed("interact")
+		event.is_action_pressed(PlayerInput.MENU_UP) or \
+		event.is_action_pressed(PlayerInput.MENU_DOWN) or \
+		event.is_action_pressed(PlayerInput.INTERACT)
 	if is_press:
 		get_viewport().set_input_as_handled()
 		_skip_typing()

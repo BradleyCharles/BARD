@@ -290,7 +290,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _dialogue_box != null and _dialogue_box.is_open():
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed(PlayerInput.INTERACT):
 		get_viewport().set_input_as_handled()
 		_open_dialogue()
 

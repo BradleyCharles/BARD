@@ -88,7 +88,12 @@ BARD/
 │       └── thornwall.txt         # Hardcoded setting description injected into prompts
 ├── Player/
 │   ├── player.gd                 # Movement, attack, animation, health, collision
-│   └── player.tscn
+│   ├── player_stats.gd           # Tuning constants: MAX_HEALTH, dodge timing, BASE_SPEED
+│   ├── player_input.gd           # Input action name constants (class_name PlayerInput)
+│   ├── player.tscn
+│   └── weapons/
+│       ├── sword_data.gd         # Sword: DAMAGE=1, SWING_FPS=40, KNOCKBACK=200, HITBOX
+│       └── axe_data.gd           # Axe: DAMAGE=2, SWING_FPS=24, KNOCKBACK=400, HITBOX
 ├── ui/                           # All HUD and overlay UI components
 │   ├── dialog_box.gd             # Typewriter effect, branching responses, dialogue actions
 │   ├── dialog_box.tscn
@@ -187,20 +192,63 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 - Attack: `A` key / gamepad West (X) button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
 - On hit: calls `body.take_damage(damage, knockback_vec)` on the mob directly.
 - Damage: `take_damage(amount)` called on mob collision; 1-second invincibility frames after hit.
-- Health: `MAX_HEALTH = 100`; syncs to `SceneManager.set_player_health()` on change.
+- Health: defined in `PlayerStats.MAX_HEALTH`; syncs to `SceneManager.set_player_health()` on change.
 - Death: plays hurt → death animation, then emits `hit` (or `fly_caught`) to scene.
 
-**Dodge:** Space / gamepad East (B) button. 0.3 s dash at 900 px/s. Full iframes during dash. 0.8 s cooldown. Player is semi-transparent while dodging.
+**Dodge:** Space / gamepad East (B) button. Duration/speed/cooldown defined in `PlayerStats`. Full iframes during dash. Player is semi-transparent while dodging.
 
 **Weapon system:**
-- `WEAPON_STATS`: sword (damage=1, 20 FPS swing, 200 knockback) and axe (damage=2, 12 FPS, 400 knockback).
-- `active_weapon`: default "sword". Q key / gamepad North (Y) button cycles owned weapons.
+- Weapon data lives in `Player/weapons/sword_data.gd` and `axe_data.gd`. `player.gd` builds `_weapon_stats` from these in `_ready()`.
+- `active_weapon`: default `SwordData.ID`. Q key / gamepad North (Y) button cycles owned weapons.
 - Attack animation speed and hitbox size are set from active weapon stats at attack start.
 - `weapon_changed(weapon_name)` signal emitted on swap.
+- To add a new weapon: create `Player/weapons/<name>_data.gd` and add an entry in `player.gd:_ready()`.
 
 **`set_gameplay_active(enabled: bool)`:** Freezes/unfreezes `_process` and `_input` together. Called by UI overlays (dialogue, bounty board, turn-in) to prevent movement while menus are open.
 
 **Key signals:** `hit`, `fly_caught`, `weapon_changed(weapon_name: String)`
+
+---
+
+### 2a. PlayerStats — `Player/player_stats.gd`
+
+All player balance constants in one file. Edit here for tuning.
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `MAX_HEALTH` | 100 | Starting and max HP |
+| `IFRAME_TIME` | 1.0 s | Invincibility duration after hit or dodge |
+| `BASE_SPEED` | 300.0 px/s | Default movement speed (also `@export` default in player.gd) |
+| `DODGE_SPEED` | 900.0 px/s | Velocity during a dodge |
+| `DODGE_DURATION` | 0.15 s | How long a single dodge lasts |
+| `DODGE_COOLDOWN` | 0.5 s | Minimum time between dodges |
+
+---
+
+### 2b. PlayerInput — `Player/player_input.gd`
+
+Centralizes all input action name strings. Use `PlayerInput.ATTACK` etc. everywhere — never bare string literals like `"attack"`. Changing an action name requires updating only this file.
+
+| Constant | Action |
+|----------|--------|
+| `MOVE_UP/DOWN/LEFT/RIGHT` | Arrow keys / left stick |
+| `ATTACK` | A / West button |
+| `DODGE` | Space / East button |
+| `INTERACT` | E / South button |
+| `WEAPON_SWAP` | Q / North button |
+| `MENU_UP/DOWN` | Arrow keys / D-pad |
+| `MENU_CANCEL` | Escape / East button |
+
+---
+
+### 2c. Weapon Data — `Player/weapons/`
+
+Each weapon is a GDScript file with `class_name` and typed constants. Use `sword_data.gd` as the template when adding a new weapon.
+
+| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX |
+|------|----|--------|-----------|-----------|--------|
+| `sword_data.gd` | `"sword"` | 1 | 40.0 | 200.0 | 40×20 px |
+| `axe_data.gd` | `"axe"` | 2 | 24.0 | 400.0 | 16×28 px |
 
 ---
 
