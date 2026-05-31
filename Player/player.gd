@@ -162,7 +162,8 @@ func _process(delta: float) -> void:
 		_start_dodge()
 		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
 
-	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and not is_attacking and not is_dodging:
+	var can_swap: bool = not is_attacking and not is_dodging
+	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and can_swap:
 		_cycle_weapon()
 
 	position += velocity * delta
