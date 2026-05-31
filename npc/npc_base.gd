@@ -176,7 +176,15 @@ var _player_in_range : bool       = false
 # Wander (background NPCs only)
 var _wander_dir   : Vector2 = Vector2.ZERO
 var _wander_timer : float   = 0.0
+var _world_bounds : Rect2   = Rect2(Vector2.ZERO, Vector2(99999.0, 99999.0))
 const WANDER_SPEED : float  = 38.0
+
+# Chat (wanderers only)
+var _chat_cooldown   : float = 0.0
+var _is_chatting     : bool  = false
+const CHAT_RADIUS    : float = 60.0
+const CHAT_COOLDOWN  : float = 30.0
+const CHAT_DURATION  : float = 4.0
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -191,7 +199,7 @@ func _ready() -> void:
 		(shape.shape as CircleShape2D).radius = detection_radius
 
 	_name_lbl.text    = npc_name
-	_name_lbl.visible = false
+	_name_lbl.visible = true
 
 	if not is_wanderer:
 		_prompt_lbl = Label.new()
@@ -207,6 +215,8 @@ func _ready() -> void:
 	_load_dialogue()
 
 	if is_wanderer:
+		add_to_group("wanderer")
+		_init_world_bounds()
 		_pick_wander_direction()
 	else:
 		_try_play("idle_down")
@@ -215,10 +225,24 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not is_wanderer:
 		return
+
+	if _chat_cooldown > 0.0:
+		_chat_cooldown -= delta
+
+	if _is_chatting:
+		return
+
 	_wander_timer -= delta
 	if _wander_timer <= 0.0:
 		_pick_wander_direction()
 	position += _wander_dir * WANDER_SPEED * delta
+	var clamped := position.clamp(_world_bounds.position, _world_bounds.end)
+	if clamped != position:
+		position = clamped
+		_pick_wander_direction()
+
+	if _chat_cooldown <= 0.0:
+		_check_nearby_chat()
 
 
 # ── Dialogue loading ──────────────────────────────────────────────────────────
@@ -298,8 +322,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_area_entered(area: Area2D) -> void:
 	if not _is_player_area(area):
 		return
-	_player_in_range  = true
-	_name_lbl.visible = true
+	_player_in_range = true
 	if _prompt_lbl:
 		_prompt_lbl.visible = true
 	if npc_id != "" and not SceneManager.get_flag("met_" + npc_id.to_lower()):
@@ -309,8 +332,7 @@ func _on_area_entered(area: Area2D) -> void:
 func _on_area_exited(area: Area2D) -> void:
 	if not _is_player_area(area):
 		return
-	_player_in_range  = false
-	_name_lbl.visible = false
+	_player_in_range = false
 	if _prompt_lbl:
 		_prompt_lbl.visible = false
 	_close_dialogue()
@@ -398,6 +420,84 @@ func _close_dialogue() -> void:
 
 # ── Wander ────────────────────────────────────────────────────────────────────
 
+func _check_nearby_chat() -> void:
+	for node in get_tree().get_nodes_in_group("wanderer"):
+		var other := node as Node2D
+		if other == null or other == self:
+			continue
+		var other_npc := node as Object
+		if other_npc.get("_is_chatting") == true or other_npc.get("_chat_cooldown") > 0.0:
+			continue
+		if global_position.distance_to(other.global_position) <= CHAT_RADIUS:
+			var exchange : Dictionary = _pick_exchange()
+			if not exchange.is_empty():
+				_start_chat(exchange.get("line_a", "…"), other, exchange.get("line_b", "…"))
+			return
+
+
+func _pick_exchange() -> Dictionary:
+	var day_path := "res://dialogue/villager_ambient_day%d.json" % SceneManager.day
+	if not FileAccess.file_exists(day_path):
+		return {}
+	var file := FileAccess.open(day_path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		file.close()
+		return {}
+	file.close()
+	var data    := parser.get_data() as Dictionary
+	var pool    : Array = data.get("exchanges", [])
+	if pool.is_empty():
+		return {}
+	return pool[randi() % pool.size()] as Dictionary
+
+
+func _start_chat(my_line: String, other: Node2D, their_line: String) -> void:
+	_is_chatting = true
+	var other_npc := other as Object
+	if other_npc != null:
+		other_npc.set("_is_chatting", true)
+
+	var bubble_script : GDScript = load("res://ui/speech_bubble.gd")
+
+	var my_bubble := Node2D.new()
+	my_bubble.set_script(bubble_script)
+	add_child(my_bubble)
+	(my_bubble as Object).call("show_text", my_line)
+
+	var their_bubble := Node2D.new()
+	their_bubble.set_script(bubble_script)
+	other.add_child(their_bubble)
+	(their_bubble as Object).call("show_text", their_line)
+
+	await get_tree().create_timer(CHAT_DURATION).timeout
+
+	_is_chatting     = false
+	_chat_cooldown   = CHAT_COOLDOWN
+	_pick_wander_direction()
+
+	if other_npc != null:
+		other_npc.set("_is_chatting",   false)
+		other_npc.set("_chat_cooldown", CHAT_COOLDOWN)
+		if other_npc.has_method("_pick_wander_direction"):
+			other_npc.call("_pick_wander_direction")
+
+
+func _init_world_bounds() -> void:
+	var left   := get_parent().get_node_or_null("BoundaryLeft")   as Control
+	var right  := get_parent().get_node_or_null("BoundaryRight")  as Control
+	var top    := get_parent().get_node_or_null("BoundaryTop")    as Control
+	var bottom := get_parent().get_node_or_null("BoundaryBottom") as Control
+	if left and right and top and bottom:
+		var x_min : float = left.position.x + left.size.x
+		var x_max : float = right.position.x
+		var y_min : float = top.position.y + top.size.y
+		var y_max : float = bottom.position.y
+		_world_bounds = Rect2(x_min, y_min, x_max - x_min, y_max - y_min)
+
+
 func _pick_wander_direction() -> void:
 	_wander_timer = randf_range(2.5, 6.0)
 	if randf() < 0.30:
@@ -407,7 +507,10 @@ func _pick_wander_direction() -> void:
 	var angle   := randf() * TAU
 	_wander_dir  = Vector2(cos(angle), sin(angle))
 	_sprite.flip_h = _wander_dir.x < 0.0
-	_try_play("idle_down" if abs(_wander_dir.y) > abs(_wander_dir.x) else "idle_right")
+	if abs(_wander_dir.y) > abs(_wander_dir.x):
+		_try_play("idle_up" if _wander_dir.y < 0.0 else "idle_down")
+	else:
+		_try_play("idle_right")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -422,6 +525,7 @@ func _try_play(anim: String) -> void:
 const FRAME_SIZE := 64
 const ROW_DOWN   := 0
 const ROW_RIGHT  := 2
+const ROW_UP     := 3
 
 func _build_sprite_frames() -> void:
 	var base     := "res://assets/Swordsman_lvl1/Without_shadow/"
@@ -432,6 +536,7 @@ func _build_sprite_frames() -> void:
 
 	_add_anim(sf, "idle_down",  idle_tex, ROW_DOWN,  12, 8.0, true)
 	_add_anim(sf, "idle_right", idle_tex, ROW_RIGHT, 12, 8.0, true)
+	_add_anim(sf, "idle_up",    idle_tex, ROW_UP,     4, 8.0, true)
 
 	_sprite.sprite_frames = sf
 

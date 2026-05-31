@@ -36,6 +36,7 @@ const _BOSS_THRESHOLD_MAX     : int   = 20
 
 var _bounty_timers    : Dictionary = {}
 var _zone_rects       : Dictionary = {}
+var _playable_rect    : Rect2      = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
 var _slimes_killed    : int  = 0
 var _boss_spawned     : bool = false
 var _boss_threshold   : int  = 0
@@ -43,10 +44,11 @@ var _boss_threshold   : int  = 0
 @onready var _player        = $Player
 @onready var _entrance      : Area2D    = $TownEntrance
 @onready var _mob_container : Node2D    = $MobContainer
-@onready var _day_label     : Label     = $DayLabel
 @onready var _terrain_nw    : ColorRect = $TerrainNW
 @onready var _terrain_ne    : ColorRect = $TerrainNE
 @onready var _terrain_se    : ColorRect = $TerrainSE
+
+var _pause_menu : CanvasLayer = null
 
 
 func _ready() -> void:
@@ -67,12 +69,38 @@ func _ready() -> void:
 		"zone_c": Rect2(_terrain_se.position, _terrain_se.size),
 	}
 
-	_day_label.text = "Day  %d" % SceneManager.day
-
+	_compute_playable_rect()
 	_boss_threshold = randi_range(_BOSS_THRESHOLD_MIN, _BOSS_THRESHOLD_MAX)
+
+	var pm_script : GDScript = load("res://ui/pause_menu.gd")
+	_pause_menu = CanvasLayer.new()
+	_pause_menu.set_script(pm_script)
+	add_child(_pause_menu)
 
 	_start_bounty_spawning()
 	SceneManager.bounties_updated.connect(_on_bounties_updated)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(PlayerInput.PAUSE):
+		if _pause_menu != null:
+			(_pause_menu as Object).call("open", SceneManager.FIELD_SCENE)
+		get_viewport().set_input_as_handled()
+
+
+# ── Playable rect ─────────────────────────────────────────────────────────────
+
+func _compute_playable_rect() -> void:
+	var left   := get_node_or_null("BoundaryLeft")   as Control
+	var right  := get_node_or_null("BoundaryRight")  as Control
+	var top    := get_node_or_null("BoundaryTop")    as Control
+	var bottom := get_node_or_null("BoundaryBottom") as Control
+	if left and right and top and bottom:
+		var x_min : float = left.position.x + left.size.x
+		var x_max : float = right.position.x
+		var y_min : float = top.position.y + top.size.y
+		var y_max : float = bottom.position.y
+		_playable_rect = Rect2(x_min, y_min, x_max - x_min, y_max - y_min)
 
 
 # ── Bounty Spawning ───────────────────────────────────────────────────────────
@@ -135,7 +163,9 @@ func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
 	var zone_rect : Rect2 = _zone_rects[zone]
 	var mob               = scene.instantiate()
 	mob.set_meta("bounty_zone", zone)
-	if mob.has_method("set_world_size"):
+	if mob.has_method("set_playable_rect"):
+		mob.set_playable_rect(_playable_rect)
+	elif mob.has_method("set_world_size"):
 		mob.set_world_size(world_size)
 	mob.position = Vector2(
 		randf_range(zone_rect.position.x + SPAWN_MARGIN, zone_rect.end.x - SPAWN_MARGIN),
@@ -176,7 +206,9 @@ func _spawn_boss() -> void:
 		return
 	var boss = boss_scene.instantiate()
 	boss.position = world_size * 0.5
-	if boss.has_method("set_world_size"):
+	if boss.has_method("set_playable_rect"):
+		boss.set_playable_rect(_playable_rect)
+	elif boss.has_method("set_world_size"):
 		boss.set_world_size(world_size)
 	_mob_container.add_child(boss)
 	if boss.has_signal("died"):

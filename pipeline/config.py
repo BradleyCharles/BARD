@@ -42,6 +42,7 @@ RETRY_DELAY = 2.0        # seconds between retries
 # ── World generation ──────────────────────────────────────────────────────────
 
 VARIANTS_PER_ARCHETYPE = 1   # one variant per role for the demo
+VILLAGER_NAME_COUNT    = 20  # pool of names randomly assigned to wandering villagers
 
 # ── Archetype roles present in the demo ──────────────────────────────────────
 

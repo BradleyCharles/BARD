@@ -112,7 +112,7 @@ func _build_sprite_frames() -> void:
 	sf.remove_animation("default")
 
 	_add_anim(sf, "idle",         idle_tex, ROW_RIGHT, 12, 8.0,  true)
-	_add_anim(sf, "idle_up",      idle_tex, ROW_UP,    12, 8.0,  true)
+	_add_anim(sf, "idle_up",      idle_tex, ROW_UP,     4, 8.0,  true)
 	_add_anim(sf, "idle_down",    idle_tex, ROW_DOWN,  12, 8.0,  true)
 
 	_add_anim(sf, "walk",         walk_tex, ROW_RIGHT,  6, 8.0,  true)

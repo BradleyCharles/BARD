@@ -30,6 +30,7 @@ import json
 import logging
 import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -69,19 +70,34 @@ logger = logging.getLogger(__name__)
 
 # ── Flag file paths ───────────────────────────────────────────────────────────
 
-FLAG_READY   = PROJECT_ROOT / "pipeline_ready.flag"
-FLAG_FAILED  = PROJECT_ROOT / "pipeline_failed.flag"
-FLAG_CRASHED = PROJECT_ROOT / "pipeline_crashed.flag"
+FLAG_READY    = PROJECT_ROOT / "pipeline_ready.flag"
+FLAG_FAILED   = PROJECT_ROOT / "pipeline_failed.flag"
+FLAG_CRASHED  = PROJECT_ROOT / "pipeline_crashed.flag"
+PROGRESS_FILE = PROJECT_ROOT / "pipeline_progress.json"
+
+AMBIENT_EXCHANGE_COUNT = 10
+NPC_TIMEOUT_SECONDS    = 90
 
 
 def clear_flags() -> None:
-    for f in (FLAG_READY, FLAG_FAILED, FLAG_CRASHED):
+    for f in (FLAG_READY, FLAG_FAILED, FLAG_CRASHED, PROGRESS_FILE):
         f.unlink(missing_ok=True)
 
 
 def write_flag(flag: Path, message: str = "") -> None:
     flag.write_text(message)
     logger.info("Flag written: %s", flag.name)
+
+
+def write_progress(completed: int, total: int, current_npc: str = "") -> None:
+    try:
+        PROGRESS_FILE.write_text(json.dumps({
+            "total":       total,
+            "completed":   completed,
+            "current_npc": current_npc,
+        }))
+    except Exception as exc:
+        logger.warning("Could not write progress file: %s", exc)
 
 
 # ── Data loading ──────────────────────────────────────────────────────────────
@@ -515,6 +531,72 @@ def update_npc_facts(
         logger.info("Recollection added for %s: %s", npc_id, new_fact["text"][:60])
 
 
+# ── Ambient villager exchanges ────────────────────────────────────────────────
+
+def generate_ambient_exchanges(game_state: dict, rumors: list[dict]) -> None:
+    """
+    Generate a pool of short two-line ambient exchanges for wandering villagers.
+    Writes dialogue/villager_ambient_day{N}.json.
+    Lines reference current rumors and field activity where natural.
+    """
+    day      = game_state.get("meta", {}).get("day", 1)
+    kills    = game_state.get("world_state", {}).get("monsters_killed_today", {})
+    slimes   = kills.get("slime1", 0)
+    out_path = DIALOGUE_DIR / f"villager_ambient_day{day}.json"
+
+    rumor_snippets = [r.get("text", "") for r in rumors[:5] if r.get("text")]
+    rumor_context  = (
+        "\n".join(f"  - {r}" for r in rumor_snippets)
+        if rumor_snippets else "  No notable rumors circulating."
+    )
+
+    slime_note = (
+        f"The hunter reportedly slew {slimes} slimes today in the field."
+        if slimes > 0 else "The field has been quiet today."
+    )
+
+    system = (
+        "You are generating ambient background dialogue for wandering townspeople "
+        "in a low-magic fantasy village. Each exchange is two short lines — one from "
+        "each villager. Lines should feel natural, grounded, and occasionally reference "
+        "local gossip or events. Respond ONLY with valid JSON. No preamble, no markdown."
+    )
+
+    prompt = (
+        f"Today is Day {day} in the town of Thornwall.\n"
+        f"{slime_note}\n\n"
+        f"[Circulating rumors]\n{rumor_context}\n\n"
+        f"Generate {AMBIENT_EXCHANGE_COUNT} short ambient exchanges between pairs of "
+        f"villagers. Each exchange has exactly two lines.\n\n"
+        f'Respond ONLY with: {{"exchanges": [{{"line_a": "...", "line_b": "..."}}]}}'
+    )
+
+    result = call_ollama_json(prompt=prompt, system=system)
+
+    if isinstance(result, dict) and "exchanges" in result:
+        exchanges = result["exchanges"]
+        if isinstance(exchanges, list) and len(exchanges) > 0:
+            DIALOGUE_DIR.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps({"day": day, "exchanges": exchanges}, indent=2))
+            logger.info("Written: %s (%d exchanges)", out_path.name, len(exchanges))
+            return
+
+    logger.warning("Ambient exchange generation failed — writing fallback.")
+    fallback = {
+        "day": day,
+        "exchanges": [
+            {"line_a": "Strange weather we've been having.",     "line_b": "Aye, the old ones say it means something."},
+            {"line_a": "Heard the hunter was out again today.",  "line_b": "That one never rests."},
+            {"line_a": "Market's been quiet this week.",         "line_b": "Coin's tight. What can you do."},
+            {"line_a": "My knee's been acting up again.",        "line_b": "Mine too. Must be the damp."},
+            {"line_a": "Did you hear about the east road?",      "line_b": "Nothing good, I'd wager."},
+        ],
+    }
+    DIALOGUE_DIR.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(fallback, indent=2))
+    logger.info("Written fallback ambient exchanges: %s", out_path.name)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -548,27 +630,49 @@ def main() -> None:
         write_flag(FLAG_CRASHED, f"No NPCs found in world_registry for town: {town_id}")
         return
 
-    # Process each named NPC
-    for role, npc_config in npcs.items():
-        npc_id = npc_config.get("npc_id")
-        if not npc_id:
-            logger.warning("NPC role %s has no npc_id. Skipping.", role)
-            had_failures = True
-            continue
+    npc_list  = [(role, cfg) for role, cfg in npcs.items() if cfg.get("npc_id")]
+    total_npcs = len(npc_list)
+    write_progress(0, total_npcs, "")
 
-        new_fact = process_npc(
-            npc_id    = npc_id,
-            npc_config= npc_config,
-            game_state= game_state,
-            world_lore= world_lore,
-            rumors    = rumors,
-            town_id   = town_id,
-        )
+    # Process each named NPC with a per-NPC timeout
+    for idx, (role, npc_config) in enumerate(npc_list):
+        npc_id   = npc_config.get("npc_id")
+        npc_name = npc_config.get("display_name", npc_id)
+        write_progress(idx, total_npcs, npc_name)
+        logger.info("[%d/%d] Processing %s...", idx + 1, total_npcs, npc_name)
+
+        new_fact = None
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    process_npc,
+                    npc_id     = npc_id,
+                    npc_config = npc_config,
+                    game_state = game_state,
+                    world_lore = world_lore,
+                    rumors     = rumors,
+                    town_id    = town_id,
+                )
+                new_fact = future.result(timeout=NPC_TIMEOUT_SECONDS)
+        except FuturesTimeoutError:
+            logger.error(
+                "NPC %s timed out after %ds. Using previous dialogue.",
+                npc_name, NPC_TIMEOUT_SECONDS,
+            )
+            had_failures = True
+            write_progress(idx + 1, total_npcs, npc_name)
+            continue
+        except Exception as exc:
+            logger.error("Unexpected error processing %s: %s", npc_name, exc)
+            had_failures = True
+            write_progress(idx + 1, total_npcs, npc_name)
+            continue
 
         if new_fact:
             update_npc_facts(game_state, npc_id, new_fact, day)
         else:
             had_failures = True
+        write_progress(idx + 1, total_npcs, npc_name)
 
     # Write updated npc_facts back to game_state.json
     # Only the npc_facts section is touched -- Godot owns everything else.
@@ -580,6 +684,9 @@ def main() -> None:
     except Exception as exc:
         logger.error("Failed to update game_state.json: %s", exc)
         had_failures = True
+
+    # Generate ambient villager conversation pool for the new day
+    generate_ambient_exchanges(game_state, rumors)
 
     if had_failures:
         write_flag(FLAG_FAILED, "Pipeline completed with some failures. Fallback dialogue used where needed.")

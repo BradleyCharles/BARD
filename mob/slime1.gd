@@ -56,6 +56,10 @@ func set_world_size(size: Vector2) -> void:
 	viewport_rect = Rect2(Vector2.ZERO, world_size)
 
 
+func set_playable_rect(rect: Rect2) -> void:
+	viewport_rect = rect
+
+
 # ── Sprite setup ──────────────────────────────────────────────────────────────
 
 func _build_sprite_frames() -> void:
@@ -157,22 +161,26 @@ func _on_wander_timeout() -> void:
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	var pos      := state.transform.origin
 	var hit_wall := false
+	var x_min    := viewport_rect.position.x + MOB_RADIUS
+	var x_max    := viewport_rect.end.x - MOB_RADIUS
+	var y_min    := viewport_rect.position.y + MOB_RADIUS
+	var y_max    := viewport_rect.end.y - MOB_RADIUS
 
-	if pos.x < MOB_RADIUS:
-		pos.x = MOB_RADIUS
+	if pos.x < x_min:
+		pos.x = x_min
 		state.linear_velocity.x = 0.0
 		hit_wall = true
-	elif pos.x > viewport_rect.size.x - MOB_RADIUS:
-		pos.x = viewport_rect.size.x - MOB_RADIUS
+	elif pos.x > x_max:
+		pos.x = x_max
 		state.linear_velocity.x = 0.0
 		hit_wall = true
 
-	if pos.y < MOB_RADIUS:
-		pos.y = MOB_RADIUS
+	if pos.y < y_min:
+		pos.y = y_min
 		state.linear_velocity.y = 0.0
 		hit_wall = true
-	elif pos.y > viewport_rect.size.y - MOB_RADIUS:
-		pos.y = viewport_rect.size.y - MOB_RADIUS
+	elif pos.y > y_max:
+		pos.y = y_max
 		state.linear_velocity.y = 0.0
 		hit_wall = true
 

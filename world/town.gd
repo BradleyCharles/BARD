@@ -4,7 +4,8 @@ extends Node
 
 @onready var _player     = $Player
 @onready var _field_exit : Area2D = $FieldExit
-@onready var _day_label  : Label  = $DayLabel
+
+var _pause_menu : CanvasLayer = null
 
 
 func _ready() -> void:
@@ -17,9 +18,20 @@ func _ready() -> void:
 
 	if not _field_exit.area_entered.is_connected(_on_field_exit_entered):
 		_field_exit.area_entered.connect(_on_field_exit_entered)
-	_day_label.text = "Day  %d" % SceneManager.day
+	var pm_script : GDScript = load("res://ui/pause_menu.gd")
+	_pause_menu = CanvasLayer.new()
+	_pause_menu.set_script(pm_script)
+	add_child(_pause_menu)
+
 	_apply_world_registry()
 	_reload_all_dialogue()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(PlayerInput.PAUSE):
+		if _pause_menu != null:
+			(_pause_menu as Object).call("open", SceneManager.TOWN_SCENE)
+		get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void:
@@ -75,6 +87,26 @@ func _apply_world_registry() -> void:
 
 		print("town.gd: configured %s -> %s (%s)" \
 			% [role, npc.npc_name, npc.npc_id])
+
+	# Assign generated names to wandering villagers
+	var villager_names: Array = registry\
+		.get("towns", {})\
+		.get("thornwall", {})\
+		.get("villager_names", [])
+
+	if not villager_names.is_empty():
+		var name_pool : Array = villager_names.duplicate()
+		name_pool.shuffle()
+		var name_index : int = 0
+		for wanderer in get_tree().get_nodes_in_group("wanderer"):
+			if name_index >= name_pool.size():
+				break
+			var wname : String = str(name_pool[name_index])
+			name_index += 1
+			if wanderer.has_method("get") and wanderer.get("npc_name") != null:
+				wanderer.npc_name = wname
+			if wanderer.has_node("NameLabel"):
+				wanderer.get_node("NameLabel").text = wname
 
 
 func _reload_all_dialogue() -> void:

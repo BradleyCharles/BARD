@@ -50,6 +50,7 @@ signal bounties_updated
 signal scripts_updated
 signal player_health_changed
 signal inventory_updated
+signal day_updated
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -93,6 +94,8 @@ const PIPELINE_OVERLAY_TEXT : Dictionary = {
 var _loading_packed  := preload("res://ui/loading_screen.tscn")
 var _transitioning   := false
 
+var _day_hud : CanvasLayer = null
+
 var _pipeline_mode    : String = ""
 var _pipeline_pid     : int    = -1
 var _poll_elapsed     : float  = 0.0
@@ -103,8 +106,14 @@ var _dot_timer   : float  = 0.0
 var _dot_count   : int    = 0
 var _base_text   : String = ""
 
-var _overlay       : CanvasLayer = null
-var _overlay_label : Label       = null
+var _overlay        : CanvasLayer = null
+var _overlay_label  : Label       = null
+var _progress_bar   : ColorRect   = null
+var _progress_label : Label       = null
+var _progress_total : int         = 0
+
+const BAR_WIDTH     : float = 400.0
+const BAR_HEIGHT    : float = 18.0
 
 var _project_path : String = ""
 
@@ -115,6 +124,14 @@ func _ready() -> void:
 	_project_path = ProjectSettings.globalize_path("res://")
 	set_process(false)
 	refresh_daily_bounties()
+	_spawn_day_hud()
+
+
+func _spawn_day_hud() -> void:
+	var script: GDScript = load("res://ui/day_hud.gd")
+	_day_hud = CanvasLayer.new()
+	_day_hud.set_script(script)
+	get_tree().root.call_deferred("add_child", _day_hud)
 
 
 func _process(delta: float) -> void:
@@ -141,6 +158,8 @@ func _process(delta: float) -> void:
 	if _poll_elapsed >= POLL_INTERVAL:
 		_poll_elapsed = 0.0
 		_check_flags()
+		if _pipeline_mode == "eod":
+			_poll_progress()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -281,6 +300,87 @@ func scripts_for_bounty(bounty: Dictionary) -> int:
 	return 10
 
 
+# ── Save / Load ───────────────────────────────────────────────────────────────
+
+func _save_path(slot: int) -> String:
+	return _project_path + "save_%d.json" % slot
+
+
+func has_save(slot: int) -> bool:
+	return FileAccess.file_exists(_save_path(slot))
+
+
+func save_game(slot: int, scene_path: String = "") -> void:
+	var state : Dictionary = {
+		"meta": {
+			"schema_version": "1.0",
+			"day":            day,
+			"scene_path":     scene_path,
+		},
+		"player_name":     player_name,
+		"scripts":         scripts,
+		"slime_goop":      slime_goop,
+		"owned_weapons":   owned_weapons,
+		"weapon_upgrades": weapon_upgrades,
+		"player_health":   player_health,
+		"world_state": {
+			"monsters_killed_today":   monsters_killed_today,
+			"monsters_killed_history": monsters_killed_history,
+		},
+		"available_bounties": available_bounties,
+		"active_bounties":    active_bounties,
+		"flags":              flags,
+	}
+	var out := FileAccess.open(_save_path(slot), FileAccess.WRITE)
+	if out:
+		out.store_string(JSON.stringify(state, "\t"))
+		out.close()
+		print("SceneManager: save written to slot %d" % slot)
+	else:
+		push_error("SceneManager: could not write save file for slot %d" % slot)
+
+
+func load_game(slot: int) -> bool:
+	var path := _save_path(slot)
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("SceneManager: save slot %d not found." % slot)
+		return false
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		file.close()
+		push_error("SceneManager: failed to parse save slot %d." % slot)
+		return false
+	file.close()
+	var s : Dictionary = parser.get_data()
+
+	day               = int(s.get("meta", {}).get("day", 1))
+	player_name       = str(s.get("player_name",  "Hunter"))
+	scripts           = int(s.get("scripts",       0))
+	slime_goop        = int(s.get("slime_goop",    0))
+	player_health     = int(s.get("player_health", 100))
+	owned_weapons     = s.get("owned_weapons",  ["sword"])
+	weapon_upgrades   = s.get("weapon_upgrades", {})
+	flags             = s.get("flags",           flags)
+	active_bounties   = s.get("active_bounties",  [])
+	available_bounties= s.get("available_bounties", [])
+	var ws            : Dictionary = s.get("world_state", {})
+	monsters_killed_today   = ws.get("monsters_killed_today",   {})
+	monsters_killed_history = ws.get("monsters_killed_history", [])
+
+	bounties_updated.emit()
+	scripts_updated.emit()
+	player_health_changed.emit()
+	inventory_updated.emit()
+	day_updated.emit()
+
+	var scene_path : String = str(s.get("meta", {}).get("scene_path", TOWN_SCENE))
+	if scene_path == "":
+		scene_path = TOWN_SCENE
+	_transition_to(scene_path)
+	return true
+
+
 # ── End Day ───────────────────────────────────────────────────────────────────
 
 func end_day() -> void:
@@ -292,6 +392,7 @@ func end_day() -> void:
 	monsters_killed_history.append(monsters_killed_today.duplicate())
 	monsters_killed_today.clear()
 	day += 1
+	day_updated.emit()
 	active_bounties = active_bounties.filter(func(b): return b.get("status") == "turned_in")
 	refresh_daily_bounties()
 	_write_game_state()
@@ -535,33 +636,113 @@ func _show_overlay(message: String) -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_overlay.add_child(bg)
 
+	var font_path := "res://fonts/almendra.regular.ttf"
+	var font      : Font = null
+	if ResourceLoader.exists(font_path):
+		font = load(font_path)
+
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_CENTER)
+	vbox.add_theme_constant_override("separation", 16)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	_overlay.add_child(vbox)
+
 	_overlay_label                      = Label.new()
-	_overlay_label.set_anchors_preset(Control.PRESET_CENTER)
 	_overlay_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_overlay_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_overlay_label.text                 = message
 	_overlay_label.add_theme_font_size_override("font_size", 48)
+	if font:
+		_overlay_label.add_theme_font_override("font", font)
+	vbox.add_child(_overlay_label)
 
-	var font_path := "res://fonts/almendra.regular.ttf"
-	if ResourceLoader.exists(font_path):
-		_overlay_label.add_theme_font_override("font", load(font_path))
+	if _pipeline_mode == "eod":
+		var bar_bg := ColorRect.new()
+		bar_bg.color = Color(0.15, 0.12, 0.08, 1.0)
+		bar_bg.custom_minimum_size = Vector2(BAR_WIDTH, BAR_HEIGHT)
+		vbox.add_child(bar_bg)
 
-	_overlay.add_child(_overlay_label)
+		_progress_bar       = ColorRect.new()
+		_progress_bar.color = Color(0.55, 0.45, 0.20, 1.0)
+		_progress_bar.size  = Vector2(0.0, BAR_HEIGHT)
+		bar_bg.add_child(_progress_bar)
+
+		_progress_label                      = Label.new()
+		_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_progress_label.add_theme_font_size_override("font_size", 22)
+		_progress_label.add_theme_color_override("font_color", Color(0.75, 0.68, 0.52))
+		if font:
+			_progress_label.add_theme_font_override("font", font)
+		vbox.add_child(_progress_label)
+		_progress_total = 0
 
 
 func _dismiss_overlay() -> void:
 	if _overlay:
 		_overlay.queue_free()
-		_overlay       = null
-		_overlay_label = null
+		_overlay        = null
+		_overlay_label  = null
+		_progress_bar   = null
+		_progress_label = null
+		_progress_total = 0
+
+
+func _poll_progress() -> void:
+	var path := _project_path + "pipeline_progress.json"
+	if not FileAccess.file_exists(path):
+		return
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		file.close()
+		return
+	file.close()
+	var data       : Dictionary = parser.get_data()
+	var completed  : int        = int(data.get("completed", 0))
+	var total      : int        = int(data.get("total",     0))
+	var npc_name   : String     = str(data.get("current_npc", ""))
+
+	if total <= 0:
+		return
+	_progress_total = total
+
+	if _progress_bar != null:
+		var target_w : float = BAR_WIDTH * float(completed) / float(total)
+		var tw := create_tween()
+		tw.tween_property(_progress_bar, "size:x", target_w, 0.35)
+
+	if _progress_label != null:
+		if npc_name != "":
+			_progress_label.text = "Generating %s… (%d / %d)" % [npc_name, completed, total]
+		else:
+			_progress_label.text = "%d / %d complete" % [completed, total]
 
 
 func _show_crash_message(_message: String) -> void:
+	var diagnostic : String = ""
+	var prog_path := _project_path + "pipeline_progress.json"
+	if FileAccess.file_exists(prog_path):
+		var f := FileAccess.open(prog_path, FileAccess.READ)
+		if f:
+			var p := JSON.new()
+			if p.parse(f.get_as_text()) == OK:
+				var d : Dictionary = p.get_data()
+				var npc : String = str(d.get("current_npc", ""))
+				var done: int    = int(d.get("completed",   0))
+				var tot : int    = int(d.get("total",       0))
+				if npc != "":
+					diagnostic = "\n(Timed out while generating: %s — %d/%d complete)" % [npc, done, tot]
+			f.close()
+
+	print("SceneManager: pipeline crash details — " + _message)
+
 	if _overlay_label:
 		_overlay_label.text = (
 			"Something went wrong preparing the next day.\n"
-			+ "The world continues as it was.\n\n"
-			+ "[Press any key to continue]"
+			+ "The world continues as it was."
+			+ diagnostic
+			+ "\n\n[Press any key to continue]"
 		)
 		_overlay_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 

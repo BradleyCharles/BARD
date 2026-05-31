@@ -39,6 +39,7 @@ from config import (
     ARCHETYPE_ROLES,
     TOWNS,
     VARIANTS_PER_ARCHETYPE,
+    VILLAGER_NAME_COUNT,
     PROJECT_ROOT,
     THORNWALL_LORE,
     NPC_RULES_FILE,
@@ -409,6 +410,53 @@ def write_world_registry(registry: dict) -> None:
     logger.info("Written: %s", WORLD_REG_FILE)
 
 
+# ── Villager names ────────────────────────────────────────────────────────────
+
+_VILLAGER_NAME_FALLBACKS = [
+    "Maren Holt", "Oswin Bracke", "Teva Croft", "Aldwyn Mure", "Sera Finch",
+    "Brom Ashby", "Liseth Cole", "Corvin Gale", "Wynna Foss", "Daven Lark",
+    "Ilda Wren", "Pell Marsh", "Clea Strand", "Rowan Wick", "Dessa Bourne",
+    "Harlan Dusk", "Neva Thorn", "Sion Bramble", "Frey Locke", "Calla Mist",
+]
+
+
+def generate_villager_names(lore_seed: str, count: int, used_names: set) -> list[str]:
+    """
+    Ask the LLM to produce a pool of unique fantasy names for anonymous villagers.
+    Returns a list of name strings. Falls back to the hardcoded list on failure.
+    """
+    logger.info("Generating %d villager names...", count)
+
+    excluded = sorted(used_names)
+    exclusion_note = (
+        f" The following names are already in use and must not appear: {', '.join(excluded)}."
+        if excluded else ""
+    )
+
+    lore_context = (
+        f"The town is Thornwall, described as follows:\n{lore_seed}\n\n"
+        if lore_seed else ""
+    )
+
+    prompt = (
+        f"{lore_context}"
+        f"Generate {count} unique full names (first + last) for ordinary townsfolk "
+        f"who live in a low-magic fantasy village.{exclusion_note} "
+        f"Names should feel grounded and varied — avoid clichés. "
+        f'Respond ONLY with: {{"names": ["Name One", "Name Two", ...]}}'
+    )
+
+    result = call_ollama_json(prompt=prompt)
+    if isinstance(result, dict):
+        names = result.get("names", [])
+        if isinstance(names, list) and len(names) >= count // 2:
+            logger.info("Generated %d villager names.", len(names))
+            return [str(n) for n in names[:count]]
+
+    logger.warning("Villager name generation failed. Using fallback list.")
+    return _VILLAGER_NAME_FALLBACKS[:count]
+
+
 # ── Initialise game_state.json ────────────────────────────────────────────────
 
 def initialise_game_state(player_name: str) -> None:
@@ -532,14 +580,20 @@ def main() -> None:
 
     # 6. World registry
     registry = build_world_registry(all_variants, lore)
+
+    # 7. Villager name pool (stored under thornwall in the registry)
+    villager_names = generate_villager_names(lore_seed, VILLAGER_NAME_COUNT, used_names)
+    registry["towns"]["thornwall"]["villager_names"] = villager_names
+    logger.info("Villager name pool: %s", villager_names)
+
     write_world_registry(registry)
 
-    # 7. Initialise game_state.json -- force reset for new world
+    # 8. Initialise game_state.json -- force reset for new world
     if GAME_STATE_FILE.exists():
         GAME_STATE_FILE.unlink()
     initialise_game_state(player_name)
 
-    # 8. Generate day 1 dialogue
+    # 9. Generate day 1 dialogue
     run_initial_dialogue_generation()
 
     # Summary
