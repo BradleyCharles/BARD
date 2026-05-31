@@ -28,9 +28,11 @@ var facing       : String = "down"
 
 
 func _ready() -> void:
-	max_health   = 1
+	max_health   = 3
 	personality  = Personality.WEAK_AGGRESSIVE
-	aggro_radius = 150.0
+	aggro_radius = 300.0
+	min_speed    = 40.0
+	max_speed    = 70.0
 
 	super._ready()
 

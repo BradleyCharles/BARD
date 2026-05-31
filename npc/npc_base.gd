@@ -29,7 +29,7 @@ extends Node2D
 @export var npc_id          : String = ""
 @export var npc_name        : String = "Villager"
 @export_file("*.json") var dialogue_file: String = ""
-@export var detection_radius: float  = 160.0
+@export var detection_radius: float  = 40.0
 ## True for anonymous background NPCs that wander but carry no dialogue.
 @export var is_wanderer     : bool   = false
 
@@ -407,7 +407,7 @@ func _pick_wander_direction() -> void:
 	var angle   := randf() * TAU
 	_wander_dir  = Vector2(cos(angle), sin(angle))
 	_sprite.flip_h = _wander_dir.x < 0.0
-	_try_play("walk_down" if abs(_wander_dir.y) > abs(_wander_dir.x) else "walk_right")
+	_try_play("idle_down" if abs(_wander_dir.y) > abs(_wander_dir.x) else "idle_right")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

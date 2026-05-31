@@ -28,6 +28,17 @@ var _dodge_timer    : float   = 0.0
 var _cooldown_timer : float   = 0.0
 var _last_move_dir  : Vector2 = Vector2.RIGHT
 
+# ── Roll ──────────────────────────────────────────────────────────────────────
+
+var is_rolling           : bool  = false
+var _roll_timer          : float = 0.0
+var _roll_cooldown_timer : float = 0.0
+
+# ── Knockback ─────────────────────────────────────────────────────────────────
+
+var _knockback_vel : Vector2 = Vector2.ZERO
+var _knockback_time: float   = 0.0
+
 # ── Weapon system ─────────────────────────────────────────────────────────────
 
 var _weapon_stats: Dictionary = {}
@@ -35,10 +46,9 @@ var active_weapon: String     = SwordData.ID
 
 # ── Sprite sheet rows ─────────────────────────────────────────────────────────
 
-const ROW_DOWN   = 0
-const ROW_LEFT   = 1
-const ROW_RIGHT  = 2
-const ROW_UP     = 3
+const ROW_DOWN  = 0
+const ROW_RIGHT = 2
+const ROW_UP    = 3
 const FRAME_SIZE = 64
 
 
@@ -136,6 +146,19 @@ func _process(delta: float) -> void:
 	if _cooldown_timer > 0.0:
 		_cooldown_timer -= delta
 
+	# Roll timers
+	if _roll_timer > 0.0:
+		_roll_timer -= delta
+		if _roll_timer <= 0.0:
+			is_rolling = false
+			modulate = Color.WHITE
+	if _roll_cooldown_timer > 0.0:
+		_roll_cooldown_timer -= delta
+
+	# Knockback timer
+	if _knockback_time > 0.0:
+		_knockback_time -= delta
+
 	var move_input := Vector2.ZERO
 	if Input.is_action_pressed(PlayerInput.MOVE_RIGHT): move_input.x += 1
 	if Input.is_action_pressed(PlayerInput.MOVE_LEFT):  move_input.x -= 1
@@ -147,29 +170,43 @@ func _process(delta: float) -> void:
 		_last_move_dir = facing
 
 	var velocity: Vector2
-	if is_dodging:
+
+	if is_attacking:
+		velocity = Vector2.ZERO
+	elif is_dodging:
 		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
+	elif is_rolling:
+		velocity = facing.normalized() * PlayerStats.ROLL_SPEED
+	elif _knockback_time > 0.0:
+		velocity = _knockback_vel
 	else:
-		velocity = facing * 0.0   # will be overwritten below
 		if move_input.length() > 0:
 			velocity = facing * speed
+		else:
+			velocity = Vector2.ZERO
 
-	if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking and not is_dodging:
+	if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
+			and not is_dodging and not is_rolling:
 		_start_attack()
 
 	if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
-			and not is_dying and _cooldown_timer <= 0.0 and not is_dodging:
+			and not is_dying and _cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
 		_start_dodge()
 		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
 
-	var can_swap: bool = not is_attacking and not is_dodging
+	if Input.is_action_just_pressed(PlayerInput.ROLL) and not is_attacking \
+			and not is_dying and _roll_cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
+		_start_roll()
+		velocity = facing.normalized() * PlayerStats.ROLL_SPEED
+
+	var can_swap: bool = not is_attacking and not is_dodging and not is_rolling
 	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and can_swap:
 		_cycle_weapon()
 
 	position += velocity * delta
 	position = position.clamp(_world_bounds.position, _world_bounds.end)
 
-	if not is_attacking and not _is_hurt and not is_dodging:
+	if not is_attacking and not _is_hurt and not is_dodging and not is_rolling:
 		_update_animation(velocity if not is_dodging else Vector2.ZERO)
 
 
@@ -207,6 +244,15 @@ func _start_dodge() -> void:
 	modulate        = Color(1.0, 1.0, 1.0, 0.5)
 
 
+# ── Roll ──────────────────────────────────────────────────────────────────────
+
+func _start_roll() -> void:
+	is_rolling           = true
+	_roll_timer          = PlayerStats.ROLL_DURATION
+	_roll_cooldown_timer = PlayerStats.ROLL_COOLDOWN
+	modulate             = Color(1.0, 1.0, 1.0, 0.6)
+
+
 # ── Weapon system ─────────────────────────────────────────────────────────────
 
 func _cycle_weapon() -> void:
@@ -232,7 +278,7 @@ func _start_attack() -> void:
 	else:
 		attack_dir = Vector2(-1.0 if facing.x < 0.0 else 1.0, 0.0)
 
-	_sword.position = attack_dir * 25.0
+	_sword.position = attack_dir * 10.0
 	_sword.scale.x  = -1.0 if _sprite.flip_h else 1.0
 
 	# Resize hitbox — swap x/y when facing up or down so the box stays weapon-relative
@@ -292,10 +338,17 @@ func _on_body_entered(body: Node2D) -> void:
 	if is_dying:
 		return
 	if body.is_in_group("flying_mobs") or body.is_in_group("ground_mobs"):
-		call_deferred("take_damage", 1)
+		var mob_damage: int = 1
+		var mob_kb_force: float = 150.0
+		if "damage" in body:
+			mob_damage = body.damage
+		if "knockback_force" in body:
+			mob_kb_force = body.knockback_force
+		var kb_dir: Vector2 = (global_position - body.global_position).normalized()
+		call_deferred("take_damage", mob_damage, kb_dir * mob_kb_force)
 
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if is_dying or _iframes > 0.0:
 		return
 	health -= amount
@@ -303,6 +356,9 @@ func take_damage(amount: int) -> void:
 	_iframes     = PlayerStats.IFRAME_TIME
 	is_attacking = false
 	_sword.monitoring = false
+	if knockback.length_squared() > 0.0:
+		_knockback_vel  = knockback
+		_knockback_time = PlayerStats.KNOCKBACK_DURATION
 	if health <= 0:
 		_start_dying("hit")
 	else:
@@ -344,9 +400,14 @@ func start(pos: Vector2) -> void:
 	is_dying     = false
 	is_attacking = false
 	is_dodging   = false
-	_death_signal   = ""
-	_dodge_timer    = 0.0
-	_cooldown_timer = 0.0
+	is_rolling   = false
+	_death_signal        = ""
+	_dodge_timer         = 0.0
+	_cooldown_timer      = 0.0
+	_roll_timer          = 0.0
+	_roll_cooldown_timer = 0.0
+	_knockback_vel       = Vector2.ZERO
+	_knockback_time      = 0.0
 	facing          = Vector2.RIGHT
 	_last_move_dir  = Vector2.RIGHT
 	_body_shape.disabled = false

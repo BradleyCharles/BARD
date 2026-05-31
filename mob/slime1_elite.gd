@@ -1,8 +1,9 @@
 extends "res://mob/slime1.gd"
 
 func _ready() -> void:
-	max_health   = 5
-	aggro_radius = 200.0
+	max_health      = 6
+	aggro_radius    = 200.0
+	knockback_force = 350.0
 	super._ready()
 	set_meta("monster_type", "slime1_elite")
 	modulate = Color(0.7, 0.5, 1.0, 1.0)

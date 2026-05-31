@@ -48,7 +48,7 @@ func _insert_score(initials: String, score: int):
 
 # ── Score entry UI ──────────────────────────────────────────────────────────
 
-func _make_label(text: String, size: int, bold: bool = false) -> Label:
+func _make_label(text: String, size: int) -> Label:
 	var lbl = Label.new()
 	lbl.text = text
 	lbl.add_theme_font_override("font", _font)

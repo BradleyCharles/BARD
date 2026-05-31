@@ -13,6 +13,8 @@ enum AIState     { WANDER_STATE = 0, CHASE_STATE = 1, FLEE_STATE = 2 }
 @export var aggro_radius  : float = 150.0
 @export var pack_radius   : float = 200.0
 @export var pack_threshold: int   = 3
+@export var damage        : int   = 1
+@export var knockback_force: float = 150.0
 
 var health     : int    = 1
 var ai_state   : int    = AIState.WANDER_STATE

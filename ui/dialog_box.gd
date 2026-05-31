@@ -17,17 +17,11 @@ const _C_HINT   := Color(0.42, 0.38, 0.30, 1.0)
 @onready var _name_label : Label          = $Panel/MarginContainer/VBox/NameLabel
 @onready var _text_label : RichTextLabel  = $Panel/MarginContainer/VBox/TextLabel
 @onready var _responses  : VBoxContainer  = $Panel/MarginContainer/VBox/Responses
-@onready var _timer      : Timer          = $TypingTimer
 
-const TYPING_SPEED := 0.028
-
-var _font       : Font
-var _nodes      : Dictionary = {}
-var _current    : Dictionary = {}
-var _full_text  : String     = ""
-var _char_index : int        = 0
-var _is_typing  : bool       = false
-var _npc_name   : String     = ""
+var _font    : Font
+var _nodes   : Dictionary = {}
+var _current : Dictionary = {}
+var _npc_name: String     = ""
 
 var _selected_idx       : int   = 0
 var _response_labels    : Array = []
@@ -82,8 +76,6 @@ func open(nodes: Dictionary, start_node_id: String, npc_name: String = "") -> vo
 
 
 func close() -> void:
-	_timer.stop()
-	_is_typing = false
 	_clear_responses()
 	_panel.hide()
 	_lock_player(false)
@@ -103,34 +95,7 @@ func _go_to(node_id: String) -> void:
 	_current          = _nodes[node_id]
 	_name_label.text  = _npc_name
 	_clear_responses()
-	_start_typeout(_current.get("text", "..."))
-
-
-# ── Typeout ───────────────────────────────────────────────────────────────────
-
-func _start_typeout(text: String) -> void:
-	_full_text       = text
-	_char_index      = _full_text.length()
-	_is_typing       = false
-	_text_label.text = _full_text
-	_show_responses()
-
-
-func _on_typing_timer_timeout() -> void:
-	if _char_index >= _full_text.length():
-		_is_typing = false
-		_show_responses()
-		return
-	_text_label.text = _full_text.substr(0, _char_index + 1)
-	_char_index += 1
-	_timer.start()
-
-
-func _skip_typing() -> void:
-	_timer.stop()
-	_char_index      = _full_text.length()
-	_text_label.text = _full_text
-	_is_typing       = false
+	_text_label.text = _current.get("text", "...")
 	_show_responses()
 
 
@@ -203,28 +168,20 @@ func _confirm_selected() -> void:
 # ── Input ─────────────────────────────────────────────────────────────────────
 
 func _process(_delta: float) -> void:
-	if not _panel.visible or _is_typing:
+	if not _panel.visible:
 		return
 	if Input.is_action_just_pressed(PlayerInput.MENU_UP):
 		_navigate(-1)
 	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
 		_navigate(1)
-	elif Input.is_action_just_pressed(PlayerInput.INTERACT):
-		_confirm_selected()
 
 
-func _input(event: InputEvent) -> void:
-	if not _panel.visible or not _is_typing:
+func _unhandled_input(event: InputEvent) -> void:
+	if not _panel.visible:
 		return
-	var is_press: bool = \
-		(event is InputEventKey and event.pressed and not event.echo) or \
-		(event is InputEventJoypadButton and event.pressed) or \
-		event.is_action_pressed(PlayerInput.MENU_UP) or \
-		event.is_action_pressed(PlayerInput.MENU_DOWN) or \
-		event.is_action_pressed(PlayerInput.INTERACT)
-	if is_press:
+	if event.is_action_pressed(PlayerInput.INTERACT):
 		get_viewport().set_input_as_handled()
-		_skip_typing()
+		_confirm_selected()
 
 
 func _handle_response(r: Dictionary) -> void:

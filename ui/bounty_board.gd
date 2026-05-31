@@ -217,15 +217,10 @@ func _active_row(bounty: Dictionary) -> HBoxContainer:
 	row.layout_mode = 2
 	row.add_theme_constant_override("separation", 14)
 
-	var zone_labels : Dictionary = {"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"}
-	var zone        : String     = zone_labels.get(bounty.get("zone", ""), bounty.get("zone", ""))
-	var quantity    : int        = bounty.get("quantity", 0)
-	var killed      : int        = bounty.get("killed", 0)
-	var short_text  : String     = "%s — Slay %d slimes  (%d / %d)" % [zone, quantity, killed, quantity]
-
-	var lbl := _label(short_text, 15, _C_TEXT)
-	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(lbl)
+	var flavor := _label(bounty.get("flavor", ""), 15, _C_TEXT)
+	flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(flavor)
 
 	var status      : String = bounty.get("status", "active")
 	var badge_text  : String

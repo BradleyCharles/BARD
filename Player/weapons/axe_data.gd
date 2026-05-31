@@ -5,4 +5,4 @@ const DAMAGE    : int    = 2
 const SWING_FPS : float  = 24.0
 const KNOCKBACK : float  = 400.0
 # Vector2 cannot be a GDScript const — static var is required for object types
-static var hitbox: Vector2 = Vector2(16.0, 28.0)
+static var hitbox: Vector2 = Vector2(42.0, 38.0)

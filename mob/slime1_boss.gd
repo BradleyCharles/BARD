@@ -3,8 +3,8 @@ extends "res://mob/mob_base.gd"
 const ASSET_BASE  := "res://assets/Slime1/Without_shadow/"
 const IDLE_FRAMES := 6
 const IDLE_FPS    := 8.0
-const BOSS_SPEED  : float = 150.0
-const MOB_RADIUS  : float = 50.0
+const BOSS_SPEED  : float = 40.0
+const MOB_RADIUS  : float = 400.0
 
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
@@ -14,15 +14,17 @@ var viewport_rect: Rect2
 
 
 func _ready() -> void:
-	max_health  = 10
-	personality = Personality.BOSS
+	max_health      = 10
+	personality     = Personality.BOSS
+	damage          = 5
+	knockback_force = 600.0
 
 	super._ready()
 
 	set_meta("monster_type", "slime1_boss")
 	viewport_rect = Rect2(Vector2.ZERO, world_size)
 	modulate      = Color(1.0, 0.2, 0.2, 1.0)
-	scale         = Vector2(5, 5)
+	scale         = Vector2(10, 10)
 
 	_build_sprite_frames()
 

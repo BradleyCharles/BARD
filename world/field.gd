@@ -108,7 +108,21 @@ func _start_bounty_zone(bounty: Dictionary) -> void:
 	)
 
 
+const MAX_MOBS_PER_ZONE: int = 10
+
+
+func _count_zone_mobs(zone: String) -> int:
+	var count: int = 0
+	for mob in _mob_container.get_children():
+		if mob.get_meta("bounty_zone", "") == zone:
+			count += 1
+	return count
+
+
 func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
+	if _count_zone_mobs(zone) >= MAX_MOBS_PER_ZONE:
+		return
+
 	var scene: PackedScene
 	# 10% chance to spawn elite when type is slime1
 	if monster_type == "slime1" and randf() < 0.1 and slime1_elite_scene != null:
