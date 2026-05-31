@@ -17,9 +17,10 @@ var is_attacking : bool    = false
 var is_dying     : bool    = false
 var _death_signal: String  = ""
 
-var health  : int   = PlayerStats.MAX_HEALTH
-var _iframes: float = 0.0
-var _is_hurt: bool  = false
+var health          : int   = PlayerStats.MAX_HEALTH
+var _iframes        : float = 0.0
+var _is_hurt        : bool  = false
+var combat_enabled  : bool  = false
 
 # ── Dodge ────────────────────────────────────────────────────────────────────
 
@@ -185,19 +186,20 @@ func _process(delta: float) -> void:
 		else:
 			velocity = Vector2.ZERO
 
-	if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
-			and not is_dodging and not is_rolling:
-		_start_attack()
+	if combat_enabled:
+		if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
+				and not is_dodging and not is_rolling:
+			_start_attack()
 
-	if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
-			and not is_dying and _cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
-		_start_dodge()
-		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
+		if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
+				and not is_dying and _cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
+			_start_dodge()
+			velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
 
-	if Input.is_action_just_pressed(PlayerInput.ROLL) and not is_attacking \
-			and not is_dying and _roll_cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
-		_start_roll()
-		velocity = facing.normalized() * PlayerStats.ROLL_SPEED
+		if Input.is_action_just_pressed(PlayerInput.ROLL) and not is_attacking \
+				and not is_dying and _roll_cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
+			_start_roll()
+			velocity = facing.normalized() * PlayerStats.ROLL_SPEED
 
 	var can_swap: bool = not is_attacking and not is_dodging and not is_rolling
 	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and can_swap:
@@ -396,11 +398,12 @@ func set_gameplay_active(enabled: bool) -> void:
 	set_process_input(enabled)
 
 
-func start(pos: Vector2) -> void:
+func start(pos: Vector2, combat: bool = false) -> void:
 	is_dying     = false
 	is_attacking = false
 	is_dodging   = false
 	is_rolling   = false
+	combat_enabled = combat
 	_death_signal        = ""
 	_dodge_timer         = 0.0
 	_cooldown_timer      = 0.0

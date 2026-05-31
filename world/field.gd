@@ -54,7 +54,7 @@ func _ready() -> void:
 	# camera (which follows the player freely) never shows void beyond the world edge.
 	var hv := Vector2(1920.0 / 1.5, 1080.0 / 1.5) * 0.5
 	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
-	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.35))
+	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.35), true)
 
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.zoom = Vector2(1.5, 1.5)
