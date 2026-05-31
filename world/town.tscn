@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://mj3jtusi28r6" path="res://world/bounty_board_object.tscn" id="7_kmbyx"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mfqvo"]
-size = Vector2(60, 200)
+size = Vector2(60, 1980)
 
 [node name="Town" type="Node" unique_id=1126621347]
 script = ExtResource("1_icu5e")
@@ -76,7 +76,7 @@ position = Vector2(2200, 900)
 is_wanderer = true
 
 [node name="FieldExit" type="Area2D" parent="." unique_id=1423619546]
-position = Vector2(4579, 1350)
+position = Vector2(4100, 1350)
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FieldExit" unique_id=593957650]
@@ -84,16 +84,16 @@ shape = SubResource("RectangleShape2D_mfqvo")
 
 [node name="ExitMarker" type="ColorRect" parent="FieldExit" unique_id=1759549220]
 offset_left = -30.0
-offset_top = -100.0
+offset_top = -990.0
 offset_right = 30.0
-offset_bottom = 100.0
+offset_bottom = 990.0
 color = Color(1, 0.9309246, 0.3491902, 0.85)
 
 [node name="ExitLabel" type="Label" parent="FieldExit" unique_id=808325399]
 offset_left = 17.0
-offset_top = -37.0
+offset_top = -16.0
 offset_right = 97.0
-offset_bottom = -5.0
+offset_bottom = 16.0
 rotation = 1.5707964
 theme_override_colors/font_color = Color(0.2509804, 0.16862746, 0, 1)
 theme_override_fonts/font = ExtResource("3_4u7cj")

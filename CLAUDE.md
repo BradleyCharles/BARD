@@ -38,6 +38,20 @@ Godot 4.6 RPG demo with a local LLM (Ollama/Gemma 4 E4B) pipeline that regenerat
 - All scene transitions go through `SceneManager.go_to_field()` / `go_to_town()`.
 - UI reacts to signals (`bounties_updated`, `scripts_updated`, `player_health_changed`) — never poll state directly.
 
+## GDScript Type Safety (required)
+
+All GDScript variables must have explicit types. Never rely on `:=` inference when the right-hand side returns a `Variant` — the engine treats this as a warning-as-error. Affected patterns:
+
+| Pattern | Problem | Fix |
+|---------|---------|-----|
+| `var x := dict.get(key, default)` | `.get()` returns `Variant` | `var x: Type = dict.get(key, default)` |
+| `var x := array.get(key, default)` | same | explicit type |
+| `var x := a in b` | `in` on Array/Dictionary returns `Variant` | `var x: bool = a in b` |
+| `var x := node as SomeClass` | cast can return null (Variant) | `var x: SomeClass = node as SomeClass` |
+| Signal parameters with no type hint | emitted value is untyped | annotate all signal params |
+
+**Rule:** if `:=` would infer `Variant`, write the type explicitly instead.
+
 ## Repo Layout (Short Form)
 
 ```

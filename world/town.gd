@@ -8,18 +8,12 @@ extends Node
 
 
 func _ready() -> void:
-	_player.set_world_bounds(Rect2(Vector2.ZERO, world_size))
+	var hv := Vector2(1920.0 / 1.5, 1080.0 / 1.5) * 0.5
+	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
 	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.80))
 
-	# Camera: 1.5× zoom with world-edge limits
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.zoom = Vector2(1.5, 1.5)
-	cam.limit_enabled = true
-	var hv := Vector2(1920.0 / 1.5, 1080.0 / 1.5) * 0.5   # Vector2(640, 360)
-	cam.limit_left   = int(hv.x)
-	cam.limit_top    = int(hv.y)
-	cam.limit_right  = int(world_size.x - hv.x)
-	cam.limit_bottom = int(world_size.y - hv.y)
 
 	if not _field_exit.area_entered.is_connected(_on_field_exit_entered):
 		_field_exit.area_entered.connect(_on_field_exit_entered)

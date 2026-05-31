@@ -100,8 +100,8 @@ func _rebuild() -> void:
 		if lbl == null or panel == null:
 			continue
 
-		var is_owned  := weapon_id in owned
-		var is_active := is_owned and (weapon_id == active)
+		var is_owned  : bool = weapon_id in owned
+		var is_active : bool = is_owned and (weapon_id == active)
 
 		if is_active:
 			panel.add_theme_stylebox_override("panel", _make_style(_C_ACTIVE_BORDER, 3))
