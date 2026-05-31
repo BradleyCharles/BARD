@@ -110,48 +110,21 @@ func _rebuild() -> void:
 
 
 func _make_entry(bounty: Dictionary) -> Control:
-	var container := VBoxContainer.new()
-	container.layout_mode = 2
-	container.add_theme_constant_override("separation", 2)
+	var zone_labels : Dictionary = {"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"}
+	var zone        : String     = zone_labels.get(bounty.get("zone", ""), bounty.get("zone", ""))
+	var quantity    : int        = bounty.get("quantity", 0)
+	var killed      : int        = bounty.get("killed", 0)
+	var status      : String     = bounty.get("status", "active")
+	var short_text  : String     = "%s — %d / %d slimes" % [zone, killed, quantity]
 
-	var flavor : String = bounty.get("flavor", "")
-	var status : String = bounty.get("status", "active")
-
-	var flavor_lbl := RichTextLabel.new()
-	flavor_lbl.layout_mode   = 2
-	flavor_lbl.bbcode_enabled = true
-	flavor_lbl.fit_content    = true
-	flavor_lbl.scroll_active  = false
-	flavor_lbl.custom_minimum_size = Vector2(244.0, 0.0)
+	var lbl := Label.new()
+	lbl.layout_mode = 2
+	lbl.text = short_text
 	if _font:
-		flavor_lbl.add_theme_font_override("normal_font", _font)
-	flavor_lbl.add_theme_font_size_override("normal_font_size", 21)
-
-	if status == "complete":
-		flavor_lbl.text = "[s]" + flavor + "[/s]"
-		flavor_lbl.add_theme_color_override("default_color", _C_COMPLETE)
-	else:
-		flavor_lbl.text = flavor
-		flavor_lbl.add_theme_color_override("default_color", _C_ACTIVE)
-
-	container.add_child(flavor_lbl)
-
-	if status == "active":
-		var killed   : int = bounty.get("killed",   0)
-		var quantity : int = bounty.get("quantity",  0)
-		var remaining : int = max(0, quantity - killed)
-
-		var counter_lbl := Label.new()
-		counter_lbl.layout_mode = 2
-		counter_lbl.text = "%d / %d killed" % [killed, quantity]
-		if _font:
-			counter_lbl.add_theme_font_override("font", _font)
-		counter_lbl.add_theme_font_size_override("font_size", 18)
-		counter_lbl.add_theme_color_override("font_color",
-			_C_COMPLETE if remaining == 0 else Color(0.60, 0.55, 0.42, 1.0))
-		container.add_child(counter_lbl)
-
-	return container
+		lbl.add_theme_font_override("font", _font)
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", _C_COMPLETE if status == "complete" else _C_ACTIVE)
+	return lbl
 
 
 # ── Style ─────────────────────────────────────────────────────────────────────
