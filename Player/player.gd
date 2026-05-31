@@ -48,13 +48,13 @@ func _ready() -> void:
 			"damage":    SwordData.DAMAGE,
 			"swing_fps": SwordData.SWING_FPS,
 			"knockback": SwordData.KNOCKBACK,
-			"hitbox":    SwordData.HITBOX,
+			"hitbox":    SwordData.hitbox,
 		},
 		AxeData.ID: {
 			"damage":    AxeData.DAMAGE,
 			"swing_fps": AxeData.SWING_FPS,
 			"knockback": AxeData.KNOCKBACK,
-			"hitbox":    AxeData.HITBOX,
+			"hitbox":    AxeData.hitbox,
 		},
 	}
 	add_to_group("player")
