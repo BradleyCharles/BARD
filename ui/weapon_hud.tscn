@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://weapon_hud_scene"]
+
+[ext_resource type="Script" path="res://ui/weapon_hud.gd" id="1_weaponhud"]
+
+[node name="WeaponHud" type="CanvasLayer"]
+script = ExtResource("1_weaponhud")

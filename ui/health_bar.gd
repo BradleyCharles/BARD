@@ -60,7 +60,7 @@ func _build_ui() -> void:
 
 	_label = Label.new()
 	_label.add_theme_color_override("font_color", _C_TEXT)
-	_label.add_theme_font_size_override("font_size", 18)
+	_label.add_theme_font_size_override("font_size", 23)
 	if _font:
 		_label.add_theme_font_override("font", _font)
 	vbox.add_child(_label)

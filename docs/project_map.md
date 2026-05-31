@@ -37,8 +37,8 @@ BARD/
 │       └── innkeeper_A.json
 ├── assets/                       # Sprite sheets
 │   ├── Swordsman_lvl1/Without_shadow/   # Player: idle, walk, attack, hurt, death
-│   ├── Slime1/Without_shadow/           # Enemy 1 (in use)
-│   ├── Slime2/                          # Enemy 2 (not yet integrated)
+│   ├── Slime1/Without_shadow/           # Enemy 1: individual PNGs per frame (idle_down0–5, etc.)
+│   ├── Slime2/                          # Enemy 2: spritesheet — Idle 384×256, Walk 512×256, 64px, 4 rows
 │   └── Slime3/                          # Enemy 3 (not yet integrated)
 ├── autoload/
 │   └── scene_manager.gd          # Global singleton: all game state + pipeline orchestration
@@ -59,8 +59,15 @@ BARD/
 │   ├── main.gd
 │   └── main.tscn
 ├── mob/                          # Enemy definitions
-│   ├── slime1.gd                 # Slime1 enemy AI and animation
+│   ├── mob_base.gd               # Shared base (extends RigidBody2D): health, take_damage, died signal, AI state machine
+│   ├── slime1.gd                 # Slime1: WEAK_AGGRESSIVE AI (chases when player < 150px), HP=1
 │   ├── slime1.tscn
+│   ├── slime1_elite.gd           # Elite slime: HP=5, aggro=200px, purple tint, 10% Slime Goop drop
+│   ├── slime1_elite.tscn
+│   ├── slime1_boss.gd            # Boss slime: HP=10, always chases, red 5× scale, 100% drop (5 goop)
+│   ├── slime1_boss.tscn
+│   ├── slime2.gd                 # Slime2: PACK_MENTALITY (flees alone; attacks in groups of 3+)
+│   ├── slime2.tscn
 │   └── mob.tscn                  # Unused legacy mob scene
 ├── npc/                          # NPC base system
 │   ├── npc_base.gd               # Proximity detection, dialogue loading/merging, wandering
@@ -93,8 +100,12 @@ BARD/
 │   ├── bounty_turnin.tscn
 │   ├── health_bar.gd             # Top-left HP bar HUD (reacts to player_health_changed)
 │   ├── health_bar.tscn
-│   ├── scripts_hud.gd            # Top-right Scripts currency counter
+│   ├── scripts_hud.gd            # Top-right Scripts + Slime Goop counter
 │   ├── scripts_hud.tscn
+│   ├── weapon_hud.gd             # Bottom-center weapon slots (active/locked states)
+│   ├── weapon_hud.tscn
+│   ├── boss_health_bar.gd        # Top-center boss HP bar (shown when boss is alive)
+│   ├── boss_health_bar.tscn
 │   ├── loading_screen.gd         # Overlay shown while pipeline runs
 │   └── loading_screen.tscn
 ├── world/                        # World/scene scripts
@@ -131,15 +142,19 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `active_bounties` | Array | Accepted/in-progress bounties |
 | `available_bounties` | Array | Bounties available on the board |
 | `flags` | Dictionary | Named story/interaction flags |
-| `scripts` | int | Player currency |
+| `scripts` | int | Player currency (primary) |
+| `slime_goop` | int | Rare drop currency (from elite/boss slimes) |
+| `owned_weapons` | Array | Weapon IDs owned by the player (default: `["sword"]`) |
+| `weapon_upgrades` | Dictionary | Upgrade tier per weapon ID |
 | `player_health` | int | Current HP (range 0–100) |
 
 **Signals:**
 | Signal | When emitted |
 |--------|-------------|
 | `bounties_updated` | Any bounty list change |
-| `scripts_updated` | `scripts` value changed |
+| `scripts_updated` | `scripts` or `slime_goop` value changed |
 | `player_health_changed` | `player_health` changed |
+| `inventory_updated` | `owned_weapons`, `weapon_upgrades`, or `slime_goop` changed |
 
 **Public API:**
 | Method | Purpose |
@@ -153,6 +168,9 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `turn_in_bounty(bounty_id)` | Mark turned_in, award Scripts |
 | `refresh_daily_bounties()` | Repopulate available list from bounty_pool.json |
 | `earn_scripts(amount)` | Add to `scripts`, emit `scripts_updated` |
+| `earn_slime_goop(amount)` | Add to `slime_goop`, emit `inventory_updated` |
+| `buy_weapon(id, cost)` | Deduct Scripts, append to `owned_weapons`; no-op if already owned |
+| `upgrade_weapon(id, cost_scripts, cost_goop)` | Deduct Scripts + Goop, increment `weapon_upgrades[id]` |
 | `set_player_health(hp)` | Clamp and set HP, emit `player_health_changed` |
 
 **Pipeline handshake:** Godot launches Python via `OS.create_process()`, then polls every 3 s for `pipeline_ready.flag`, `pipeline_failed.flag`, or `pipeline_crashed.flag`. On crash a full-screen error overlay is shown.
@@ -161,17 +179,26 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 
 ### 2. Player — `Player/player.gd`
 
-8-directional movement (WASD/arrows) clamped to world bounds set by the scene.
+8-directional movement (arrow keys / WASD, left stick) clamped to world bounds set by the scene.
 
 **Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, attack / attack_up / attack_down, hurt, death — all built from sprite-sheet atlas at runtime.
 
 **Combat:**
-- Attack: sword hitbox (`$SwordHitbox`) active on frames 2–6; emits `mob_killed(body)` signal on hit.
+- Attack: `A` key / gamepad West button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
+- On hit: calls `body.take_damage(damage, knockback_vec)` on the mob directly.
 - Damage: `take_damage(amount)` called on mob collision; 1-second invincibility frames after hit.
 - Health: `MAX_HEALTH = 100`; syncs to `SceneManager.set_player_health()` on change.
 - Death: plays hurt → death animation, then emits `hit` (or `fly_caught`) to scene.
 
-**Key signals:** `hit`, `mob_killed(mob_body)`, `fly_caught`
+**Dodge:** Space / gamepad South button. 0.3 s dash at 900 px/s. Full iframes during dash. 0.8 s cooldown. Player is semi-transparent while dodging.
+
+**Weapon system:**
+- `WEAPON_STATS`: sword (damage=1, 20 FPS swing, 200 knockback) and axe (damage=2, 12 FPS, 400 knockback).
+- `active_weapon`: default "sword". Q key / `weapon_swap` action cycles owned weapons.
+- Attack animation speed and hitbox size are set from active weapon stats at attack start.
+- `weapon_changed(weapon_name)` signal emitted on swap.
+
+**Key signals:** `hit`, `fly_caught`, `weapon_changed(weapon_name: String)`
 
 ---
 
@@ -183,8 +210,10 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 
 **Dialogue loading:** Reads `dialogue/{npc_id}_day{N}.json` and merges with hardcoded role menus:
 - `innkeeper`: sleep, browse shop, talk, goodbye
-- `blacksmith`: browse shop, talk, goodbye
+- `blacksmith`: browse wares, upgrade weapons (dynamic shop), talk, goodbye
 - `guild_commander`: bounty board / turn in (dynamic based on `active_bounties`), talk, goodbye
+
+**Blacksmith upgrade menu** (`_patch_blacksmith_root()`): Dynamically adjusts the `upgrade_menu` node based on `SceneManager.owned_weapons`. Shows "Buy Axe" only if not yet owned; shows "Upgrade Sword/Axe" only for owned weapons. Dialogue actions: `buy_axe`, `upgrade_sword`, `upgrade_axe`.
 
 **Dialogue merging:** LLM-generated nodes are appended; hardcoded role nodes always take precedence on key collision. If no generated file exists, the "Talk" → greeting option is hidden.
 
@@ -206,6 +235,8 @@ Bottom-of-screen overlay (layer 10). Added to group `dialogue_box` so NPCs can f
   - `end_day` → close box, call `SceneManager.end_day()`
   - `go_to_field` / `go_to_town` → scene transitions
   - `open_turn_in` → instantiate `bounty_turnin.tscn`
+  - `buy_axe` → 50 Scripts; `upgrade_sword` → 100 Scripts + 5 Goop; `upgrade_axe` → 150 Scripts + 10 Goop
+  - Insufficient funds shows a transient `_insufficient_funds` node injected at `open()` time
 
 ---
 
@@ -241,7 +272,7 @@ Top-left CanvasLayer HUD. Displays `HP N / 100`. Bar fills red, turns orange bel
 
 ### 9. Scripts HUD — `ui/scripts_hud.gd`
 
-Top-right CanvasLayer HUD. Displays `Scripts: N`. Updates on `SceneManager.scripts_updated` signal. Scripts are the primary player currency earned by completing bounties.
+Top-right CanvasLayer HUD. Displays `Scripts: N` (27 pt). When `SceneManager.slime_goop > 0`, also shows a purple `Goop: N` label (20 pt) below. Updates on both `scripts_updated` and `inventory_updated` signals.
 
 ---
 
@@ -249,11 +280,21 @@ Top-right CanvasLayer HUD. Displays `Scripts: N`. Updates on `SceneManager.scrip
 
 3840×2160 px playable area ("The Ashfield").
 
+**Camera:** Zoomed 1.5× in `_ready()`. Limits clamped to world edges so the player cannot push the camera into void (half-viewport = 640×360 px at 1.5× zoom).
+
 **Bounty-zone mob spawning:**
 - Three zones mapped to `ColorRect` terrain nodes: `zone_a` (NW), `zone_b` (NE), `zone_c` (SE).
 - On load, spawns mob count = `quantity - killed` for each active/available bounty.
 - Respawn: one mob every 8 s until zone quota is filled.
-- On kill: `SceneManager.record_kill()` and `SceneManager.record_bounty_kill()` called; mob freed.
+- 10% of `slime1` spawns are replaced with `slime1_elite` (if `slime1_elite_scene` export is assigned).
+- Each spawned mob's `died` signal is connected to `_on_mob_died()`.
+- On kill: `SceneManager.record_kill()` and `SceneManager.record_bounty_kill()` called; mob frees itself.
+
+**Boss trigger:**
+- `_boss_threshold` = `randi_range(19, 20)` set in `_ready()`.
+- After `_slimes_killed` reaches the threshold, `_spawn_boss()` fires once.
+- Boss spawns at world center; `boss_health_bar.tscn` is instantiated and `init(boss)` called.
+- `@export var slime1_elite_scene: PackedScene` and `@export var slime2_scene: PackedScene` must be assigned in the Godot editor inspector after the .tscn files exist.
 
 **TownEntrance** (Area2D at south edge): triggers `SceneManager.go_to_town()` when player enters.
 
@@ -263,19 +304,88 @@ Top-right CanvasLayer HUD. Displays `Scripts: N`. Updates on `SceneManager.scrip
 
 4800×2700 px playable area ("Thornwall").
 
+**Camera:** Zoomed 1.5× in `_ready()`, limits clamped to world edges (half-viewport = 640×360 px).
+
 - On load: reads `world_registry.json`, assigns `npc_id` / `npc_name` to each NPC node by role, then calls `reload_all_dialogue()`.
 - `FieldExit` Area2D triggers `SceneManager.go_to_field()`.
 - `Ctrl+R`: triggers `SceneManager.trigger_chronicle()`.
 
 ---
 
-### 12. Slime1 — `mob/slime1.gd`
+### 12. Mob Base — `mob/mob_base.gd`
 
-`RigidBody2D`. Tags itself `"ground_mobs"` and `monster_type = "slime1"`.
+Base class (extends `RigidBody2D`) for all enemy types.
+
+**Enums:**
+- `Personality`: `WANDER`, `WEAK_AGGRESSIVE`, `PACK_MENTALITY`, `BOSS`
+- `AIState`: `WANDER_STATE`, `CHASE_STATE`, `FLEE_STATE`
+
+**Exports:** `max_health`, `personality`, `aggro_radius`, `pack_radius`, `pack_threshold`
+
+**Key methods:**
+- `take_damage(amount, knockback_vec)`: decrement health, apply impulse, flash red for 0.15 s, call `_on_died()` if health ≤ 0
+- `_on_died()`: emit `died(self)`, call `queue_free()`
+- `_direction_to_player_with_noise(speed)`: normalized direction to player with ±15° sine noise × speed
+- `_distance_to_player()`: returns INF if no player ref found
+
+**Signal:** `died(mob: Node)` — connected by `field.gd` at spawn time.
+
+`_ready()` adds mob to group `"ground_mobs"` and finds the player reference.
+
+---
+
+### 13. Slime1 — `mob/slime1.gd`
+
+Extends `mob_base`. `max_health=1`, `personality=WEAK_AGGRESSIVE`, `aggro_radius=150`.
 
 - Wander: random direction every 1–3 s, 30% idle chance, speed 60–120 px/s.
+- AI: chases player when within `aggro_radius`; wander resumes on exit.
 - Bounty zone meta: `set_meta("bounty_zone", zone)` so kills register to the correct bounty.
 - Boundary clamping in `_integrate_forces()`.
+
+---
+
+### 14. Slime1 Elite — `mob/slime1_elite.gd`
+
+Extends `slime1`. `max_health=5`, `aggro_radius=200`. Purple tint (`Color(0.7, 0.5, 1.0)`). 10% chance to drop 1 Slime Goop on death. Spawns at ~10% of normal slime1 spawn sites.
+
+---
+
+### 15. Slime1 Boss — `mob/slime1_boss.gd`
+
+Extends `mob_base`. `max_health=10`, `personality=BOSS`, always chases. Red tint, 5× scale, 150 px/s. Drops 5 Slime Goop guaranteed on death. Spawns at world center after 19–20 slime kills. Has `_integrate_forces` boundary clamping (MOB_RADIUS=50).
+
+---
+
+### 16. Slime2 — `mob/slime2.gd`
+
+Extends `mob_base`. `max_health=2`, `personality=PACK_MENTALITY`. Uses AtlasTexture spritesheet (`Slime2_Idle_without_shadow.png` 384×256, `Slime2_Walk_without_shadow.png` 512×256, 64 px frames, 4 rows: 0=Down, 1=Left, 2=Right, 3=Up).
+
+- Alone (pack < 3): flees from player when within aggro range.
+- In pack (≥ 3 slime2 within 200 px): chases player.
+- `_count_nearby_pack()` counts `"slime2"`-tagged mobs in `"ground_mobs"` group within `pack_radius`.
+
+---
+
+### 17. Weapon HUD — `ui/weapon_hud.gd`
+
+Bottom-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
+
+- **Active**: gold border (3 px) + gold label text.
+- **Owned inactive**: normal border + gold text.
+- **Locked** (not owned): dim border + grey text + ` [lock]` suffix.
+- Connects to `SceneManager.inventory_updated` and player's `weapon_changed` signal (deferred lookup via group `"player"`).
+
+---
+
+### 18. Boss Health Bar — `ui/boss_health_bar.gd`
+
+Top-center CanvasLayer (layer 20). Shown only while boss is alive.
+
+- `init(boss: Node)`: stores ref, connects `boss.died → _on_boss_died`, shows bar.
+- Updates every frame: 600 px wide fill rect scales by `health / max_health`; label shows `BOSS N / 10`.
+- On boss death: hides and `queue_free()`s itself.
+- Colors: dark bg, red fill, gold label text.
 
 ---
 

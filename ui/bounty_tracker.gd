@@ -70,7 +70,7 @@ func _build_ui() -> void:
 	header.text = "BOUNTIES"
 	if _font:
 		header.add_theme_font_override("font", _font)
-	header.add_theme_font_size_override("font_size", 13)
+	header.add_theme_font_size_override("font_size", 18)
 	header.add_theme_color_override("font_color", _C_HEADER)
 	vbox.add_child(header)
 
@@ -125,7 +125,7 @@ func _make_entry(bounty: Dictionary) -> Control:
 	flavor_lbl.custom_minimum_size = Vector2(244.0, 0.0)
 	if _font:
 		flavor_lbl.add_theme_font_override("normal_font", _font)
-	flavor_lbl.add_theme_font_size_override("normal_font_size", 16)
+	flavor_lbl.add_theme_font_size_override("normal_font_size", 21)
 
 	if status == "complete":
 		flavor_lbl.text = "[s]" + flavor + "[/s]"
@@ -146,7 +146,7 @@ func _make_entry(bounty: Dictionary) -> Control:
 		counter_lbl.text = "%d / %d killed" % [killed, quantity]
 		if _font:
 			counter_lbl.add_theme_font_override("font", _font)
-		counter_lbl.add_theme_font_size_override("font_size", 13)
+		counter_lbl.add_theme_font_size_override("font_size", 18)
 		counter_lbl.add_theme_color_override("font_color",
 			_C_COMPLETE if remaining == 0 else Color(0.60, 0.55, 0.42, 1.0))
 		container.add_child(counter_lbl)

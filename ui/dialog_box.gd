@@ -46,6 +46,8 @@ var _npc_name   : String     = ""
 
 func _ready() -> void:
 	_panel.hide()
+	_name_label.add_theme_font_size_override("font_size", 33)
+	_text_label.add_theme_font_size_override("normal_font_size", 22)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -53,8 +55,13 @@ func _ready() -> void:
 ## Opens the dialogue box and begins at start_node_id.
 ## nodes should be the "nodes" dictionary from the NPC's JSON file.
 func open(nodes: Dictionary, start_node_id: String, npc_name: String = "") -> void:
-	_nodes    = nodes
+	_nodes    = nodes.duplicate(true)
 	_npc_name = npc_name
+	# Inject a transient feedback node for failed purchases
+	_nodes["_insufficient_funds"] = {
+		"text": "You don't have enough Scripts or Slime Goop for that.",
+		"responses": [{"key": 1, "text": "Understood.", "next": "root"}]
+	}
 	_panel.show()
 	_go_to(start_node_id)
 
@@ -179,6 +186,28 @@ func _handle_response(r: Dictionary) -> void:
 		"open_turn_in":
 			close()
 			call_deferred(&"_open_turnin_panel")
+			return
+		"buy_axe":
+			if SceneManager.scripts >= 50:
+				SceneManager.buy_weapon("axe", 50)
+				close()
+			else:
+				_go_to("_insufficient_funds")
+			return
+		"upgrade_sword":
+			if SceneManager.scripts >= 100 and SceneManager.slime_goop >= 5:
+				SceneManager.upgrade_weapon("sword", 100, 5)
+				close()
+			else:
+				_go_to("_insufficient_funds")
+			return
+		"upgrade_axe":
+			if "axe" in SceneManager.owned_weapons \
+					and SceneManager.scripts >= 150 and SceneManager.slime_goop >= 10:
+				SceneManager.upgrade_weapon("axe", 150, 10)
+				close()
+			else:
+				_go_to("_insufficient_funds")
 			return
 
 	if next == null:

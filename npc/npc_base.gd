@@ -75,15 +75,46 @@ const ROLE_ROOT_NODES : Dictionary = {
 		"root": {
 			"text": "Need something?",
 			"responses": [
-				{"key": 1, "text": "Can I browse your wares?", "next": "out_of_stock"},
-				{"key": 2, "text": "I wanted to talk.",        "next": "greeting"},
-				{"key": 3, "text": "Nothing, goodbye.",        "next": "root_farewell"},
+				{"key": 1, "text": "Can I browse your wares?",  "next": "out_of_stock"},
+				{"key": 2, "text": "Upgrade my weapons.",       "next": "upgrade_menu"},
+				{"key": 3, "text": "I wanted to talk.",         "next": "greeting"},
+				{"key": 4, "text": "Nothing, goodbye.",         "next": "root_farewell"},
 			]
 		},
 		"out_of_stock": {
 			"text": "Nothing available right now, I'm afraid.",
 			"responses": [
 				{"key": 1, "text": "Understood.", "next": "root"}
+			]
+		},
+		"upgrade_menu": {
+			"text": "What would you like?",
+			"responses": [
+				{"key": 1, "text": "Buy Axe (50 Scripts)",                 "next": "buy_axe_confirm"},
+				{"key": 2, "text": "Upgrade Sword (100 Scripts + 5 Goop)", "next": "upgrade_sword_confirm"},
+				{"key": 3, "text": "Upgrade Axe (150 Scripts + 10 Goop)", "next": "upgrade_axe_confirm"},
+				{"key": 4, "text": "Never mind.",                          "next": "root"},
+			]
+		},
+		"buy_axe_confirm": {
+			"text": "An axe — solid choice. That'll be 50 Scripts.",
+			"responses": [
+				{"key": 1, "text": "Yes, I'll take it.", "next": null, "action": "buy_axe"},
+				{"key": 2, "text": "Not yet.",           "next": "upgrade_menu"},
+			]
+		},
+		"upgrade_sword_confirm": {
+			"text": "A sharper edge. 100 Scripts and 5 Slime Goop.",
+			"responses": [
+				{"key": 1, "text": "Do it.",   "next": null, "action": "upgrade_sword"},
+				{"key": 2, "text": "Not yet.", "next": "upgrade_menu"},
+			]
+		},
+		"upgrade_axe_confirm": {
+			"text": "Heavier head, longer haft. 150 Scripts and 10 Slime Goop.",
+			"responses": [
+				{"key": 1, "text": "Do it.",   "next": null, "action": "upgrade_axe"},
+				{"key": 2, "text": "Not yet.", "next": "upgrade_menu"},
 			]
 		},
 		"root_farewell": {
@@ -271,6 +302,8 @@ func _open_dialogue() -> void:
 		return
 	if npc_role == "guild_commander":
 		_patch_guild_commander_root()
+	elif npc_role == "blacksmith":
+		_patch_blacksmith_root()
 	# Named NPCs with a role always start at the hardcoded root menu.
 	# Wanderers and roleless NPCs start at "greeting" as before.
 	var start_node := "root" if ROLE_ROOT_NODES.has(npc_role) else "greeting"
@@ -289,6 +322,22 @@ func _patch_guild_commander_root() -> void:
 			else:
 				responses[i] = {"key": 1, "text": "I want to check the bounty board.", "next": "bounty_stub"}
 			break
+
+
+func _patch_blacksmith_root() -> void:
+	if not _dialogue_nodes.has("upgrade_menu"):
+		return
+	var owned   := SceneManager.owned_weapons
+	var responses: Array = []
+	if "axe" not in owned:
+		responses.append({"text": "Buy Axe (50 Scripts)", "next": "buy_axe_confirm"})
+	else:
+		responses.append({"text": "Upgrade Sword (100 Scripts + 5 Goop)", "next": "upgrade_sword_confirm"})
+		responses.append({"text": "Upgrade Axe (150 Scripts + 10 Goop)",  "next": "upgrade_axe_confirm"})
+	responses.append({"text": "Never mind.", "next": "root"})
+	for i in responses.size():
+		responses[i]["key"] = i + 1
+	_dialogue_nodes["upgrade_menu"]["responses"] = responses
 
 
 func _close_dialogue() -> void:

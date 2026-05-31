@@ -3,10 +3,13 @@
 [ext_resource type="Script" uid="uid://c2jki2638x1h4" path="res://world/field.gd" id="1_d8wuf"]
 [ext_resource type="PackedScene" uid="uid://bslime1scene1" path="res://mob/slime1.tscn" id="2_r2512"]
 [ext_resource type="FontFile" uid="uid://ddwgglepq5c3y" path="res://fonts/almendra.regular.ttf" id="3_1x2kq"]
+[ext_resource type="PackedScene" path="res://mob/slime1_elite.tscn" id="3_rs3rf"]
+[ext_resource type="PackedScene" path="res://mob/slime2.tscn" id="4_55kw1"]
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player.tscn" id="4_mdjat"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="5_mdjat"]
 [ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="6_sh"]
 [ext_resource type="PackedScene" path="res://ui/health_bar.tscn" id="7_hb"]
+[ext_resource type="PackedScene" path="res://ui/weapon_hud.tscn" id="8_wh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_enpdi"]
 size = Vector2(60, 200)
@@ -14,6 +17,8 @@ size = Vector2(60, 200)
 [node name="Field" type="Node" unique_id=1749953835]
 script = ExtResource("1_d8wuf")
 slime1_scene = ExtResource("2_r2512")
+slime1_elite_scene = ExtResource("3_rs3rf")
+slime2_scene = ExtResource("4_55kw1")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1468043752]
 anchors_preset = 15
@@ -97,3 +102,5 @@ theme_override_font_sizes/font_size = 32
 [node name="ScriptsHud" parent="." unique_id=1863720017 instance=ExtResource("6_sh")]
 
 [node name="HealthBar" parent="." unique_id=603998431 instance=ExtResource("7_hb")]
+
+[node name="WeaponHud" parent="." unique_id=730197528 instance=ExtResource("8_wh")]

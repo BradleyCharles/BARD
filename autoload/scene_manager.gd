@@ -33,9 +33,12 @@ var flags : Dictionary = {
 	"aldric_warned_about_east": false,
 }
 
-var scripts                  : int   = 0
-var _scripts_earned_today    : int   = 0
-var _bounties_turned_in_today: Array = []
+var scripts                  : int        = 0
+var slime_goop               : int        = 0
+var owned_weapons            : Array      = ["sword"]
+var weapon_upgrades          : Dictionary = {}
+var _scripts_earned_today    : int        = 0
+var _bounties_turned_in_today: Array      = []
 
 var player_health     : int = 100
 var player_max_health : int = 100
@@ -46,6 +49,7 @@ var player_max_health : int = 100
 signal bounties_updated
 signal scripts_updated
 signal player_health_changed
+signal inventory_updated
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -232,6 +236,30 @@ func earn_scripts(amount: int) -> void:
 	scripts_updated.emit()
 
 
+func earn_slime_goop(amount: int) -> void:
+	slime_goop += amount
+	inventory_updated.emit()
+
+
+func buy_weapon(id: String, cost: int) -> void:
+	if scripts < cost or id in owned_weapons:
+		return
+	scripts -= cost
+	owned_weapons.append(id)
+	scripts_updated.emit()
+	inventory_updated.emit()
+
+
+func upgrade_weapon(id: String, cost_scripts: int, cost_goop: int) -> void:
+	if scripts < cost_scripts or slime_goop < cost_goop:
+		return
+	scripts -= cost_scripts
+	slime_goop -= cost_goop
+	weapon_upgrades[id] = weapon_upgrades.get(id, 0) + 1
+	scripts_updated.emit()
+	inventory_updated.emit()
+
+
 func turn_in_bounty(bounty_id: String) -> void:
 	for bounty in active_bounties:
 		if bounty.get("id") == bounty_id:
@@ -302,8 +330,11 @@ func _write_game_state() -> void:
 			"schema_version": "1.0",
 			"day":            day,
 		},
-		"player_name":  player_name,
-		"scripts":      scripts,
+		"player_name":     player_name,
+		"scripts":         scripts,
+		"slime_goop":      slime_goop,
+		"owned_weapons":   owned_weapons,
+		"weapon_upgrades": weapon_upgrades,
 		"world_state":  {
 			"monsters_killed_today":   monsters_killed_today,
 			"monsters_killed_history": monsters_killed_history,

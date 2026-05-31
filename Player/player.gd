@@ -1,31 +1,52 @@
 extends Area2D
 
 signal hit
-signal mob_killed(mob_body: Node)
 signal fly_caught
+signal weapon_changed(weapon_name: String)
 
 @export var speed: float = 500.0
 
-@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var _body_shape: CollisionShape2D = $CollisionShape2D
-@onready var _sword: Area2D = $SwordHitbox
+@onready var _sprite     : AnimatedSprite2D  = $AnimatedSprite2D
+@onready var _body_shape : CollisionShape2D  = $CollisionShape2D
+@onready var _sword      : Area2D            = $SwordHitbox
 
-# World bounds — replaced old screen_size clamp.
-# Call set_world_bounds() from the scene script after instantiating.
 var _world_bounds: Rect2 = Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0))
 
-var facing: Vector2 = Vector2.RIGHT
-var is_attacking: bool = false
-var is_dying: bool = false
-var _death_signal: String = ""
+var facing       : Vector2 = Vector2.RIGHT
+var is_attacking : bool    = false
+var is_dying     : bool    = false
+var _death_signal: String  = ""
 
-const MAX_HEALTH   : int   = 100
-const IFRAME_TIME  : float = 1.0   # seconds of invincibility after a hit
-var health         : int   = MAX_HEALTH
-var _iframes       : float = 0.0
-var _is_hurt       : bool  = false
+const MAX_HEALTH  : int   = 100
+const IFRAME_TIME : float = 1.0
+var health        : int   = MAX_HEALTH
+var _iframes      : float = 0.0
+var _is_hurt      : bool  = false
 
-# Sprite sheet rows: Down=0, Left=1, Right=2, Up=3
+# ── Dodge ────────────────────────────────────────────────────────────────────
+
+const DODGE_SPEED    : float = 900.0
+const DODGE_DURATION : float = 0.3
+const DODGE_COOLDOWN : float = 0.8
+
+var is_dodging      : bool    = false
+var _dodge_timer    : float   = 0.0
+var _cooldown_timer : float   = 0.0
+var _last_move_dir  : Vector2 = Vector2.RIGHT
+
+# ── Weapon system ─────────────────────────────────────────────────────────────
+
+const WEAPON_STATS : Dictionary = {
+	"sword": {"damage": 1, "swing_fps": 20.0, "knockback": 200.0,
+			  "hitbox": Vector2(10.5, 20.0)},
+	"axe":   {"damage": 2, "swing_fps": 12.0, "knockback": 400.0,
+			  "hitbox": Vector2(16.0, 28.0)},
+}
+
+var active_weapon: String = "sword"
+
+# ── Sprite sheet rows ─────────────────────────────────────────────────────────
+
 const ROW_DOWN  = 0
 const ROW_LEFT  = 1
 const ROW_RIGHT = 2
@@ -42,14 +63,13 @@ func _ready():
 	hide()
 
 
-# ── World bounds ─────────────────────────────────────────────────────────────
+# ── World bounds ──────────────────────────────────────────────────────────────
 
-## Called by the scene script (field.gd / town.gd) to set the playable area.
 func set_world_bounds(bounds: Rect2) -> void:
 	_world_bounds = bounds
 
 
-# ── Sprite sheet setup ──────────────────────────────────────────────────────
+# ── Sprite sheet setup ────────────────────────────────────────────────────────
 
 func _make_atlas(sheet: Texture2D, col: int, row: int) -> AtlasTexture:
 	var a = AtlasTexture.new()
@@ -78,32 +98,26 @@ func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 
-	# Idle — 12 frames, looping
-	_add_anim(sf, "idle",       idle_tex, ROW_RIGHT, 12, 8.0,  true)
-	_add_anim(sf, "idle_up",    idle_tex, ROW_UP,    12, 8.0,  true)
-	_add_anim(sf, "idle_down",  idle_tex, ROW_DOWN,  12, 8.0,  true)
+	_add_anim(sf, "idle",         idle_tex, ROW_RIGHT, 12, 8.0,  true)
+	_add_anim(sf, "idle_up",      idle_tex, ROW_UP,    12, 8.0,  true)
+	_add_anim(sf, "idle_down",    idle_tex, ROW_DOWN,  12, 8.0,  true)
 
-	# Walk — 6 frames, looping
-	_add_anim(sf, "walk",       walk_tex, ROW_RIGHT,  6, 8.0,  true)
-	_add_anim(sf, "walk_up",    walk_tex, ROW_UP,     6, 8.0,  true)
-	_add_anim(sf, "walk_down",  walk_tex, ROW_DOWN,   6, 8.0,  true)
+	_add_anim(sf, "walk",         walk_tex, ROW_RIGHT,  6, 8.0,  true)
+	_add_anim(sf, "walk_up",      walk_tex, ROW_UP,     6, 8.0,  true)
+	_add_anim(sf, "walk_down",    walk_tex, ROW_DOWN,   6, 8.0,  true)
 
-	# Attack — 8 frames, one-shot
 	_add_anim(sf, "attack",       atk_tex, ROW_RIGHT, 8, 20.0, false)
 	_add_anim(sf, "attack_up",    atk_tex, ROW_UP,    8, 20.0, false)
 	_add_anim(sf, "attack_down",  atk_tex, ROW_DOWN,  8, 20.0, false)
 
-	# Hurt — 5 frames, one-shot
 	_add_anim(sf, "hurt",  hurt_tex,  ROW_RIGHT, 5, 12.0, false)
-
-	# Death — 7 frames, one-shot
 	_add_anim(sf, "death", death_tex, ROW_RIGHT, 7, 10.0, false)
 
 	_sprite.sprite_frames = sf
 	_sprite.play("idle")
 
 
-# ── Game loop ───────────────────────────────────────────────────────────────
+# ── Game loop ─────────────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
 	if is_dying:
@@ -111,25 +125,49 @@ func _process(delta: float) -> void:
 	if _iframes > 0.0:
 		_iframes -= delta
 
-	var velocity := Vector2.ZERO
-	if Input.is_action_pressed("move_right"):  velocity.x += 1
-	if Input.is_action_pressed("move_left"):   velocity.x -= 1
-	if Input.is_action_pressed("move_down"):   velocity.y += 1
-	if Input.is_action_pressed("move_up"):     velocity.y -= 1
+	# Dodge timers
+	if _dodge_timer > 0.0:
+		_dodge_timer -= delta
+		if _dodge_timer <= 0.0:
+			is_dodging = false
+			modulate = Color.WHITE
+	if _cooldown_timer > 0.0:
+		_cooldown_timer -= delta
 
-	if velocity.length() > 0:
-		velocity = velocity.normalized() * speed
-		facing = velocity.normalized()
+	var move_input := Vector2.ZERO
+	if Input.is_action_pressed("move_right"): move_input.x += 1
+	if Input.is_action_pressed("move_left"):  move_input.x -= 1
+	if Input.is_action_pressed("move_down"):  move_input.y += 1
+	if Input.is_action_pressed("move_up"):    move_input.y -= 1
 
-	if Input.is_action_just_pressed("attack") and not is_attacking:
+	if move_input.length() > 0:
+		facing = move_input.normalized()
+		_last_move_dir = facing
+
+	var velocity: Vector2
+	if is_dodging:
+		velocity = _last_move_dir * DODGE_SPEED
+	else:
+		velocity = facing * 0.0   # will be overwritten below
+		if move_input.length() > 0:
+			velocity = facing * speed
+
+	if Input.is_action_just_pressed("attack") and not is_attacking and not is_dodging:
 		_start_attack()
 
+	if Input.is_action_just_pressed("dodge") and not is_attacking \
+			and not is_dying and _cooldown_timer <= 0.0 and not is_dodging:
+		_start_dodge()
+		velocity = _last_move_dir * DODGE_SPEED
+
+	if Input.is_action_just_pressed("weapon_swap") and not is_attacking and not is_dodging:
+		_cycle_weapon()
+
 	position += velocity * delta
-	# Clamp to world bounds rather than screen size
 	position = position.clamp(_world_bounds.position, _world_bounds.end)
 
-	if not is_attacking and not _is_hurt:
-		_update_animation(velocity)
+	if not is_attacking and not _is_hurt and not is_dodging:
+		_update_animation(velocity if not is_dodging else Vector2.ZERO)
 
 
 func _update_animation(velocity: Vector2) -> void:
@@ -156,12 +194,45 @@ func _update_animation(velocity: Vector2) -> void:
 		_sprite.play()
 
 
-# ── Attack ──────────────────────────────────────────────────────────────────
+# ── Dodge ─────────────────────────────────────────────────────────────────────
+
+func _start_dodge() -> void:
+	is_dodging      = true
+	_iframes        = IFRAME_TIME
+	_dodge_timer    = DODGE_DURATION
+	_cooldown_timer = DODGE_COOLDOWN
+	modulate        = Color(1.0, 1.0, 1.0, 0.5)
+
+
+# ── Weapon system ─────────────────────────────────────────────────────────────
+
+func _cycle_weapon() -> void:
+	var owned := SceneManager.owned_weapons
+	if owned.size() <= 1:
+		return
+	var idx      := owned.find(active_weapon)
+	active_weapon = owned[(idx + 1) % owned.size()]
+	weapon_changed.emit(active_weapon)
+
+
+# ── Attack ────────────────────────────────────────────────────────────────────
 
 func _start_attack() -> void:
 	is_attacking = true
+
+	var stats: Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
+
 	_sword.position = facing.normalized() * 25.0
-	_sword.scale.x = -1.0 if _sprite.flip_h else 1.0
+	_sword.scale.x  = -1.0 if _sprite.flip_h else 1.0
+
+	# Resize hitbox for this weapon
+	var shape_node := _sword.get_node("CollisionShape2D") as CollisionShape2D
+	if shape_node and shape_node.shape is RectangleShape2D:
+		(shape_node.shape as RectangleShape2D).size = stats["hitbox"]
+
+	# Set swing speed
+	for anim_name in ["attack", "attack_up", "attack_down"]:
+		_sprite.sprite_frames.set_animation_speed(anim_name, stats["swing_fps"])
 
 	var anim: String
 	if abs(facing.y) > abs(facing.x):
@@ -184,7 +255,7 @@ func _on_frame_changed() -> void:
 func _on_animation_finished() -> void:
 	var anim := _sprite.animation
 	if anim in ["attack", "attack_up", "attack_down"]:
-		is_attacking = false
+		is_attacking      = false
 		_sword.monitoring = false
 		_update_animation(Vector2.ZERO)
 	elif anim == "hurt":
@@ -202,7 +273,7 @@ func _on_animation_finished() -> void:
 		_death_signal = ""
 
 
-# ── Collision ───────────────────────────────────────────────────────────────
+# ── Collision ──────────────────────────────────────────────────────────────────
 
 func _on_body_entered(body: Node2D) -> void:
 	if is_dying:
@@ -216,7 +287,7 @@ func take_damage(amount: int) -> void:
 		return
 	health -= amount
 	SceneManager.set_player_health(health)
-	_iframes = IFRAME_TIME
+	_iframes     = IFRAME_TIME
 	is_attacking = false
 	_sword.monitoring = false
 	if health <= 0:
@@ -229,9 +300,9 @@ func take_damage(amount: int) -> void:
 func _start_dying(signal_name: String) -> void:
 	if is_dying:
 		return
-	is_dying = true
+	is_dying      = true
 	_death_signal = signal_name
-	is_attacking = false
+	is_attacking  = false
 	_sword.monitoring = false
 	_body_shape.set_deferred("disabled", true)
 	_sprite.flip_h = false
@@ -242,22 +313,31 @@ func _on_sword_hit(body: Node2D) -> void:
 	if is_dying:
 		return
 	if body.is_in_group("flying_mobs") or body.is_in_group("ground_mobs"):
-		mob_killed.emit(body)
+		if body.has_method("take_damage"):
+			var stats    : Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
+			var knockback: Vector2    = (body.global_position - global_position).normalized() \
+							  * float(stats["knockback"])
+			body.take_damage(stats["damage"], knockback)
 
 
-# ── Public API ──────────────────────────────────────────────────────────────
+# ── Public API ────────────────────────────────────────────────────────────────
 
 func start(pos: Vector2) -> void:
-	is_dying = false
+	is_dying     = false
 	is_attacking = false
-	_death_signal = ""
-	facing = Vector2.RIGHT
+	is_dodging   = false
+	_death_signal   = ""
+	_dodge_timer    = 0.0
+	_cooldown_timer = 0.0
+	facing          = Vector2.RIGHT
+	_last_move_dir  = Vector2.RIGHT
 	_body_shape.disabled = false
-	_sword.monitoring = false
-	_sprite.flip_h = false
+	_sword.monitoring    = false
+	_sprite.flip_h       = false
 	_iframes  = 0.0
 	_is_hurt  = false
 	health    = MAX_HEALTH
+	modulate  = Color.WHITE
 	SceneManager.set_player_health(health)
 	_sprite.play("idle")
 	position = pos
