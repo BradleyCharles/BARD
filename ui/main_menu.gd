@@ -83,14 +83,14 @@ func _build_ui() -> void:
 	sep.add_theme_color_override("color", Color(0.50, 0.40, 0.20, 0.50))
 	center.add_child(sep)
 
-	var has_save := SceneManager.has_save(0)
-	var options  := ["New Game", "Continue", "Load"]
+	var has_save : bool = SceneManager.has_save(0)
+	var options  : Array[String] = ["New Game", "Continue", "Load"]
 	for i in options.size():
 		var lbl := Label.new()
 		lbl.text = options[i]
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.add_theme_font_size_override("font_size", 32)
-		var disabled := (options[i] == "Continue" and not has_save)
+		var disabled : bool = (options[i] == "Continue" and not has_save)
 		lbl.add_theme_color_override("font_color", _C_DISABLED if disabled else _C_DIM)
 		if _font:
 			lbl.add_theme_font_override("font", _font)
@@ -101,9 +101,9 @@ func _build_ui() -> void:
 
 
 func _highlight(idx: int) -> void:
-	var has_save := SceneManager.has_save(0)
+	var has_save : bool = SceneManager.has_save(0)
 	for i in _buttons.size():
-		var disabled := (i == 1 and not has_save)
+		var disabled : bool = (i == 1 and not has_save)
 		if disabled:
 			_buttons[i].add_theme_color_override("font_color", _C_DISABLED)
 		else:
