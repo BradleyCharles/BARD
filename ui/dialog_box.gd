@@ -109,12 +109,11 @@ func _go_to(node_id: String) -> void:
 # ── Typeout ───────────────────────────────────────────────────────────────────
 
 func _start_typeout(text: String) -> void:
-	_full_text  = text
-	_char_index = 0
-	_is_typing  = true
-	_text_label.text = ""
-	_timer.wait_time = TYPING_SPEED
-	_timer.start()
+	_full_text       = text
+	_char_index      = _full_text.length()
+	_is_typing       = false
+	_text_label.text = _full_text
+	_show_responses()
 
 
 func _on_typing_timer_timeout() -> void:
