@@ -4,7 +4,7 @@ signal hit
 signal fly_caught
 signal weapon_changed(weapon_name: String)
 
-@export var speed: float = 500.0
+@export var speed: float = 300.0
 
 @onready var _sprite     : AnimatedSprite2D  = $AnimatedSprite2D
 @onready var _body_shape : CollisionShape2D  = $CollisionShape2D
@@ -26,8 +26,8 @@ var _is_hurt      : bool  = false
 # ── Dodge ────────────────────────────────────────────────────────────────────
 
 const DODGE_SPEED    : float = 900.0
-const DODGE_DURATION : float = 0.3
-const DODGE_COOLDOWN : float = 0.8
+const DODGE_DURATION : float = 0.15
+const DODGE_COOLDOWN : float = 0.5
 
 var is_dodging      : bool    = false
 var _dodge_timer    : float   = 0.0
@@ -37,9 +37,9 @@ var _last_move_dir  : Vector2 = Vector2.RIGHT
 # ── Weapon system ─────────────────────────────────────────────────────────────
 
 const WEAPON_STATS : Dictionary = {
-	"sword": {"damage": 1, "swing_fps": 20.0, "knockback": 200.0,
-			  "hitbox": Vector2(10.5, 20.0)},
-	"axe":   {"damage": 2, "swing_fps": 12.0, "knockback": 400.0,
+	"sword": {"damage": 1, "swing_fps": 40.0, "knockback": 200.0,
+			  "hitbox": Vector2(40, 20.0)},
+	"axe":   {"damage": 2, "swing_fps": 24.0, "knockback": 400.0,
 			  "hitbox": Vector2(16.0, 28.0)},
 }
 
@@ -146,7 +146,7 @@ func _process(delta: float) -> void:
 
 	var velocity: Vector2
 	if is_dodging:
-		velocity = _last_move_dir * DODGE_SPEED
+		velocity = -facing.normalized() * DODGE_SPEED
 	else:
 		velocity = facing * 0.0   # will be overwritten below
 		if move_input.length() > 0:
@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("dodge") and not is_attacking \
 			and not is_dying and _cooldown_timer <= 0.0 and not is_dodging:
 		_start_dodge()
-		velocity = _last_move_dir * DODGE_SPEED
+		velocity = -facing.normalized() * DODGE_SPEED
 
 	if Input.is_action_just_pressed("weapon_swap") and not is_attacking and not is_dodging:
 		_cycle_weapon()
@@ -222,25 +222,34 @@ func _start_attack() -> void:
 
 	var stats: Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
 
-	_sword.position = facing.normalized() * 25.0
+	# Snap to 4 cardinal directions
+	var attack_dir: Vector2
+	if abs(facing.y) > abs(facing.x):
+		attack_dir = Vector2(0.0, -1.0 if facing.y < 0.0 else 1.0)
+	else:
+		attack_dir = Vector2(-1.0 if facing.x < 0.0 else 1.0, 0.0)
+
+	_sword.position = attack_dir * 25.0
 	_sword.scale.x  = -1.0 if _sprite.flip_h else 1.0
 
-	# Resize hitbox for this weapon
+	# Resize hitbox — swap x/y when facing up or down so the box stays weapon-relative
 	var shape_node := _sword.get_node("CollisionShape2D") as CollisionShape2D
 	if shape_node and shape_node.shape is RectangleShape2D:
-		(shape_node.shape as RectangleShape2D).size = stats["hitbox"]
+		var base_size : Vector2 = stats["hitbox"]
+		var hitbox    : Vector2 = Vector2(base_size.y, base_size.x) if attack_dir.y != 0.0 else base_size
+		(shape_node.shape as RectangleShape2D).size = hitbox
 
 	# Set swing speed
 	for anim_name in ["attack", "attack_up", "attack_down"]:
 		_sprite.sprite_frames.set_animation_speed(anim_name, stats["swing_fps"])
 
 	var anim: String
-	if abs(facing.y) > abs(facing.x):
-		anim = "attack_up" if facing.y < 0 else "attack_down"
+	if attack_dir.y != 0.0:
+		anim = "attack_up" if attack_dir.y < 0.0 else "attack_down"
 		_sprite.flip_h = false
 	else:
 		anim = "attack"
-		_sprite.flip_h = facing.x < 0
+		_sprite.flip_h = attack_dir.x < 0.0
 
 	_sprite.play(anim)
 

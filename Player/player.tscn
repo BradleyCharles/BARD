@@ -5,7 +5,7 @@
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_00tjw"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_l8h54"]
-size = Vector2(10.5, 20)
+size = Vector2(30, 20)
 
 [node name="Player" type="Area2D" unique_id=1012316895 groups=["Player"]]
 scale = Vector2(2, 2)

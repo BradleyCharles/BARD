@@ -6,12 +6,12 @@
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player.tscn" id="4_js14o"]
 [ext_resource type="PackedScene" uid="uid://b6kyjdax715ba" path="res://ui/dialog_box.tscn" id="5_kmbyx"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="6_js14o"]
+[ext_resource type="PackedScene" uid="uid://mj3jtusi28r6" path="res://world/bounty_board_object.tscn" id="7_kmbyx"]
 [ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="8_sh"]
 [ext_resource type="PackedScene" path="res://ui/health_bar.tscn" id="9_hb"]
-[ext_resource type="PackedScene" uid="uid://mj3jtusi28r6" path="res://world/bounty_board_object.tscn" id="7_kmbyx"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mfqvo"]
-size = Vector2(60, 1980)
+size = Vector2(60, 202)
 
 [node name="Town" type="Node" unique_id=1126621347]
 script = ExtResource("1_icu5e")
@@ -23,56 +23,56 @@ color = Color(0.7014107, 0.64995646, 0.5657284, 1)
 
 [node name="InnBuilding" type="ColorRect" parent="Background" unique_id=1438118174]
 layout_mode = 0
-offset_left = 2260.0
-offset_top = 440.0
-offset_right = 2540.0
-offset_bottom = 640.0
+offset_left = 1729.0
+offset_top = 791.0
+offset_right = 2009.0
+offset_bottom = 991.0
 color = Color(0.5370987, 0.6262097, 0.76737565, 1)
 
 [node name="GuildBuilding" type="ColorRect" parent="Background" unique_id=428169173]
 layout_mode = 0
-offset_left = 690.0
-offset_top = 1240.0
-offset_right = 1380.0
-offset_bottom = 1440.0
+offset_left = 3311.0
+offset_top = 623.0
+offset_right = 4001.0
+offset_bottom = 823.0
 color = Color(0.7014107, 0.46135613, 0.46135613, 1)
 
 [node name="SmithBuilding" type="ColorRect" parent="Background" unique_id=639699953]
 layout_mode = 0
-offset_left = 2290.0
-offset_top = 1230.0
-offset_right = 2550.0
-offset_bottom = 1430.0
+offset_left = 2635.0
+offset_top = 1541.0
+offset_right = 2895.0
+offset_bottom = 1741.0
 color = Color(0.5657284, 0.5657284, 0.5657284, 1)
 
 [node name="InnKeeper" parent="." unique_id=885997462 instance=ExtResource("2_7cdph")]
-position = Vector2(2399, 700)
+position = Vector2(1868, 1051)
 npc_role = "innkeeper"
 npc_name = "Mira"
 dialogue_file = "res://dialogue/innkeeper_day1.json"
 
 [node name="BountyGiver" parent="." unique_id=287870813 instance=ExtResource("2_7cdph")]
-position = Vector2(820, 1400)
+position = Vector2(3441, 783)
 npc_role = "guild_commander"
 npc_name = "Commander Aldric"
 dialogue_file = "res://dialogue/bounty_giver_day1.json"
 
 [node name="Blacksmith" parent="." unique_id=2069544344 instance=ExtResource("2_7cdph")]
-position = Vector2(2400, 1460)
+position = Vector2(2745, 1771)
 npc_role = "blacksmith"
 npc_name = "Gareth"
 dialogue_file = "res://dialogue/gareth_day1.json"
 
 [node name="Wanderer1" parent="." unique_id=1732173090 instance=ExtResource("2_7cdph")]
-position = Vector2(1800, 1200)
+position = Vector2(2145, 1511)
 is_wanderer = true
 
 [node name="Wanderer2" parent="." unique_id=718400555 instance=ExtResource("2_7cdph")]
-position = Vector2(2900, 1500)
+position = Vector2(3245, 1811)
 is_wanderer = true
 
 [node name="Wanderer3" parent="." unique_id=419390655 instance=ExtResource("2_7cdph")]
-position = Vector2(2200, 900)
+position = Vector2(2545, 1211)
 is_wanderer = true
 
 [node name="FieldExit" type="Area2D" parent="." unique_id=1423619546]
@@ -80,13 +80,14 @@ position = Vector2(4100, 1350)
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FieldExit" unique_id=593957650]
+position = Vector2(0, 13)
 shape = SubResource("RectangleShape2D_mfqvo")
 
 [node name="ExitMarker" type="ColorRect" parent="FieldExit" unique_id=1759549220]
 offset_left = -30.0
-offset_top = -990.0
+offset_top = -88.0
 offset_right = 30.0
-offset_bottom = 990.0
+offset_bottom = 115.0
 color = Color(1, 0.9309246, 0.3491902, 0.85)
 
 [node name="ExitLabel" type="Label" parent="FieldExit" unique_id=808325399]
@@ -123,11 +124,35 @@ theme_override_font_sizes/font_size = 32
 
 [node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("6_js14o")]
 
-[node name="ScriptsHud" parent="." instance=ExtResource("8_sh")]
+[node name="ScriptsHud" parent="." unique_id=786172596 instance=ExtResource("8_sh")]
 
-[node name="HealthBar" parent="." instance=ExtResource("9_hb")]
+[node name="HealthBar" parent="." unique_id=1410853798 instance=ExtResource("9_hb")]
 
 [node name="BountyBoardObject" parent="." unique_id=937433113 instance=ExtResource("7_kmbyx")]
-position = Vector2(1050, 1340)
+position = Vector2(3671, 723)
+
+[node name="BoundaryLeft" type="ColorRect" parent="." unique_id=700878618]
+offset_right = 640.0
+offset_bottom = 2700.0
+color = Color(0, 0, 0, 0.05)
+
+[node name="BoundaryRight" type="ColorRect" parent="." unique_id=700878619]
+offset_left = 4160.0
+offset_right = 4800.0
+offset_bottom = 2700.0
+color = Color(0, 0, 0, 0.05)
+
+[node name="BoundaryTop" type="ColorRect" parent="." unique_id=700878620]
+offset_left = 640.0
+offset_right = 4160.0
+offset_bottom = 360.0
+color = Color(0, 0, 0, 0.05)
+
+[node name="BoundaryBottom" type="ColorRect" parent="." unique_id=700878621]
+offset_left = 640.0
+offset_top = 2340.0
+offset_right = 4160.0
+offset_bottom = 2700.0
+color = Color(0, 0, 0, 0.05)
 
 [connection signal="area_entered" from="FieldExit" to="." method="_on_field_exit_entered"]

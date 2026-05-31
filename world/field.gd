@@ -88,36 +88,24 @@ func _start_bounty_spawning() -> void:
 func _start_bounty_zone(bounty: Dictionary) -> void:
 	var zone         : String = bounty.get("zone", "")
 	var monster_type : String = bounty.get("monster_type", "")
-	var quantity     : int    = bounty.get("quantity", 0)
-	var killed       : int    = bounty.get("killed", 0)
-	var to_spawn     : int    = max(0, quantity - killed)
 
-	if zone in _bounty_timers or to_spawn <= 0 or zone not in _zone_rects:
+	if zone in _bounty_timers or zone not in _zone_rects:
 		return
 	if _get_mob_scene(monster_type) == null:
 		return
 
-	var spawned := [0]
-	var timer   := Timer.new()
-	timer.wait_time = 8.0
+	var timer := Timer.new()
+	timer.wait_time = 3.0
 	timer.one_shot  = false
 	add_child(timer)
 	_bounty_timers[zone] = timer
 
-	timer.timeout.connect(func() -> void:
-		if spawned[0] >= to_spawn:
-			timer.stop()
-			timer.queue_free()
-			_bounty_timers.erase(zone)
-			return
-		_spawn_bounty_mob(monster_type, zone)
-		spawned[0] += 1
-	)
-
 	_spawn_bounty_mob(monster_type, zone)
-	spawned[0] = 1
-	if to_spawn > 1:
-		timer.start()
+	timer.start()
+
+	timer.timeout.connect(func() -> void:
+		_spawn_bounty_mob(monster_type, zone)
+	)
 
 
 func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
@@ -195,12 +183,13 @@ func _on_mob_died(mob_body: Node) -> void:
 
 	if mob_body.has_meta("bounty_zone"):
 		var zone: String = mob_body.get_meta("bounty_zone")
-		SceneManager.record_bounty_kill(monster_type, zone)
+		# Elites count as their base type for bounty purposes
+		var bounty_type: String = "slime1" if monster_type == "slime1_elite" else monster_type
+		SceneManager.record_bounty_kill(bounty_type, zone)
 
-	# Count kills for boss trigger (all slime variants count)
-	if monster_type in ["slime1", "slime1_elite"]:
-		_slimes_killed += 1
-		_check_boss_trigger()
+	# All mob kills count toward the boss trigger
+	_slimes_killed += 1
+	_check_boss_trigger()
 
 
 func _on_entrance_entered(area: Area2D) -> void:

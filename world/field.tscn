@@ -12,7 +12,7 @@
 [ext_resource type="PackedScene" path="res://ui/weapon_hud.tscn" id="8_wh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_enpdi"]
-size = Vector2(60, 1440)
+size = Vector2(60, 136)
 
 [node name="Field" type="Node" unique_id=1749953835]
 script = ExtResource("1_d8wuf")
@@ -31,27 +31,29 @@ grow_vertical = 2
 color = Color(0.46135613, 0.60124344, 0.38109186, 1)
 
 [node name="TerrainNW" type="ColorRect" parent="." unique_id=2059210385]
-offset_left = -1.0
-offset_right = 899.0
-offset_bottom = 700.0
+offset_left = 651.0
+offset_top = 374.0
+offset_right = 1905.0
+offset_bottom = 808.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
 [node name="TerrainNE" type="ColorRect" parent="." unique_id=1117204345]
-offset_left = 2939.0
-offset_right = 3839.0
-offset_bottom = 550.0
+offset_left = 2293.0
+offset_top = 366.0
+offset_right = 3193.0
+offset_bottom = 916.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
 [node name="TerrainSE" type="ColorRect" parent="." unique_id=1000965301]
 custom_minimum_size = Vector2(900, 400)
-offset_left = 2939.0
-offset_top = 1760.0
-offset_right = 3839.0
-offset_bottom = 2160.0
+offset_left = 2298.0
+offset_top = 1400.0
+offset_right = 3198.0
+offset_bottom = 1800.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
 [node name="TownEntrance" type="Area2D" parent="." unique_id=664357635]
-position = Vector2(700, 1080)
+position = Vector2(681, 1448)
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TownEntrance" unique_id=1910040562]
@@ -59,26 +61,29 @@ shape = SubResource("RectangleShape2D_enpdi")
 
 [node name="EntryMarker" type="ColorRect" parent="TownEntrance" unique_id=1213970629]
 offset_left = -30.0
-offset_top = -720.0
+offset_top = -68.0
 offset_right = 30.0
-offset_bottom = 720.0
+offset_bottom = 68.0
 color = Color(1, 0.9309246, 0.3491902, 0.85)
+metadata/_edit_use_anchors_ = true
 
 [node name="EntryLabel" type="Label" parent="TownEntrance/EntryMarker" unique_id=1478950866]
 layout_mode = 0
 offset_left = 14.0
-offset_top = -16.0
+offset_top = 119.0
 offset_right = 115.0
-offset_bottom = 16.0
+offset_bottom = 151.0
 rotation = -1.5707964
 theme_override_colors/font_color = Color(0.2511899, 0.16945744, 0, 1)
 theme_override_fonts/font = ExtResource("3_1x2kq")
 theme_override_font_sizes/font_size = 24
 text = "Thornwall"
+metadata/_edit_use_anchors_ = true
 
 [node name="MobContainer" type="Node2D" parent="." unique_id=1395761389]
 
 [node name="Player" parent="." unique_id=1012316895 instance=ExtResource("4_mdjat")]
+visible = false
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=483751371]
 limit_enabled = false
@@ -104,3 +109,27 @@ theme_override_font_sizes/font_size = 32
 [node name="HealthBar" parent="." unique_id=603998431 instance=ExtResource("7_hb")]
 
 [node name="WeaponHud" parent="." unique_id=730197528 instance=ExtResource("8_wh")]
+
+[node name="BoundaryLeft" type="ColorRect" parent="." unique_id=800878618]
+offset_right = 640.0
+offset_bottom = 2160.0
+color = Color(0, 0, 0, 0.05)
+
+[node name="BoundaryRight" type="ColorRect" parent="." unique_id=800878619]
+offset_left = 3200.0
+offset_right = 3840.0
+offset_bottom = 2160.0
+color = Color(0, 0, 0, 0.05)
+
+[node name="BoundaryTop" type="ColorRect" parent="." unique_id=800878620]
+offset_left = 640.0
+offset_right = 3200.0
+offset_bottom = 360.0
+color = Color(0, 0, 0, 0.05)
+
+[node name="BoundaryBottom" type="ColorRect" parent="." unique_id=800878621]
+offset_left = 640.0
+offset_top = 1800.0
+offset_right = 3200.0
+offset_bottom = 2160.0
+color = Color(0, 0, 0, 0.05)
