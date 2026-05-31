@@ -184,19 +184,21 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 **Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, attack / attack_up / attack_down, hurt, death — all built from sprite-sheet atlas at runtime.
 
 **Combat:**
-- Attack: `A` key / gamepad West button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
+- Attack: `A` key / gamepad West (X) button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
 - On hit: calls `body.take_damage(damage, knockback_vec)` on the mob directly.
 - Damage: `take_damage(amount)` called on mob collision; 1-second invincibility frames after hit.
 - Health: `MAX_HEALTH = 100`; syncs to `SceneManager.set_player_health()` on change.
 - Death: plays hurt → death animation, then emits `hit` (or `fly_caught`) to scene.
 
-**Dodge:** Space / gamepad South button. 0.3 s dash at 900 px/s. Full iframes during dash. 0.8 s cooldown. Player is semi-transparent while dodging.
+**Dodge:** Space / gamepad East (B) button. 0.3 s dash at 900 px/s. Full iframes during dash. 0.8 s cooldown. Player is semi-transparent while dodging.
 
 **Weapon system:**
 - `WEAPON_STATS`: sword (damage=1, 20 FPS swing, 200 knockback) and axe (damage=2, 12 FPS, 400 knockback).
-- `active_weapon`: default "sword". Q key / `weapon_swap` action cycles owned weapons.
+- `active_weapon`: default "sword". Q key / gamepad North (Y) button cycles owned weapons.
 - Attack animation speed and hitbox size are set from active weapon stats at attack start.
 - `weapon_changed(weapon_name)` signal emitted on swap.
+
+**`set_gameplay_active(enabled: bool)`:** Freezes/unfreezes `_process` and `_input` together. Called by UI overlays (dialogue, bounty board, turn-in) to prevent movement while menus are open.
 
 **Key signals:** `hit`, `fly_caught`, `weapon_changed(weapon_name: String)`
 
@@ -208,6 +210,8 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 
 **Exports:** `npc_role`, `npc_id`, `npc_name`, `dialogue_file`, `detection_radius`, `is_wanderer`
 
+**Interaction model (press-to-talk):** `DetectionArea` proximity shows the NPC name label and a `[A] Talk` prompt. Dialogue does NOT auto-open on approach. The player presses `interact` (A / E) to open dialogue. Walking away while dialogue is open closes it automatically. Prompt re-appears when dialogue closes if player is still in range.
+
 **Dialogue loading:** Reads `dialogue/{npc_id}_day{N}.json` and merges with hardcoded role menus:
 - `innkeeper`: sleep, browse shop, talk, goodbye
 - `blacksmith`: browse wares, upgrade weapons (dynamic shop), talk, goodbye
@@ -217,8 +221,6 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 
 **Dialogue merging:** LLM-generated nodes are appended; hardcoded role nodes always take precedence on key collision. If no generated file exists, the "Talk" → greeting option is hidden.
 
-**Proximity:** `DetectionArea` (Area2D) triggers dialogue open/close. `NameLabel` shown on entry.
-
 **`reload_dialogue()`:** Reloads from `dialogue/{npc_id}_day{N}.json` without re-instantiating. Called by `SceneManager._reload_all_dialogue()` after each pipeline run.
 
 **Wanderers:** Background NPCs with `is_wanderer = true` wander at `WANDER_SPEED = 38 px/s`, picking new direction every 2.5–6 s (30% idle chance), carrying no dialogue.
@@ -227,10 +229,13 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 
 ### 4. Dialogue Box — `ui/dialog_box.gd`
 
-Bottom-of-screen overlay (layer 10). Added to group `dialogue_box` so NPCs can find it.
+Fixed-size (1000×292 px) bottom-center overlay (layer 10). Added to group `dialogue_box` so NPCs can find it. Dark parchment palette matching all other UI overlays.
 
 - Typewriter effect: 0.028 s/character via `TypingTimer`.
-- Any key press skips to full text; number keys 1–4 select responses.
+- Any key / button press skips to full text.
+- D-pad ↑↓ / arrow keys navigate responses; selected response shown in gold with a 2 px underline; others dimmed.
+- `interact` (A / E) confirms selected response.
+- Locks player `_process` and `_input` on `open()`, restores on `close()`.
 - **Built-in actions** embedded in dialogue JSON:
   - `end_day` → close box, call `SceneManager.end_day()`
   - `go_to_field` / `go_to_town` → scene transitions
@@ -242,12 +247,12 @@ Bottom-of-screen overlay (layer 10). Added to group `dialogue_box` so NPCs can f
 
 ### 5. Bounty Board — `ui/bounty_board.gd` + `world/bounty_board_object.gd`
 
-**BountyBoardObject** (`world/bounty_board_object.gd`): World-placed Node2D. Proximity detection (radius 140 px); shows "Press E" prompt; pressing E instantiates and opens `bounty_board.tscn`.
+**BountyBoardObject** (`world/bounty_board_object.gd`): World-placed Node2D. Proximity detection (radius 140 px); shows `[A] Bounty Board` prompt; `interact` (A / E) instantiates and opens `bounty_board.tscn`.
 
-**BountyBoard** (`ui/bounty_board.gd`): Full-screen CanvasLayer overlay listing:
-- **AVAILABLE** section: bounties from `SceneManager.available_bounties` with "Accept" button.
-- **ACTIVE** section: bounties from `SceneManager.active_bounties` with In Progress / Complete badge.
-- Close: `[E]` or `[Esc]`. Disables player input while open.
+**BountyBoard** (`ui/bounty_board.gd`): Full-screen CanvasLayer overlay (dark parchment palette) listing:
+- **AVAILABLE** section: D-pad ↑↓ navigates; selected row highlighted in gold with 2 px underline; `interact` (A / E) accepts. No buttons.
+- **ACTIVE** section: display-only with In Progress / Complete badge.
+- Close: `menu_cancel` (B / Esc). Freezes player while open via `set_gameplay_active(false)`.
 - Rebuilds on `SceneManager.bounties_updated` signal.
 
 ---
@@ -260,7 +265,7 @@ Passive bottom-right HUD overlay (layer 15). Shows active/complete bounties with
 
 ### 7. Bounty Turn-In — `ui/bounty_turnin.gd`
 
-Opened from dialogue box (`action: "open_turn_in"` on guild commander). Lists completed contracts; click/key selects one, calls `SceneManager.turn_in_bounty()`, awards Scripts. Auto-closes when all completed bounties are turned in.
+Opened from dialogue box (`action: "open_turn_in"` on guild commander). Lists completed contracts; D-pad ↑↓ navigates, selected row in gold with 2 px underline, `interact` (A / E) turns in and awards Scripts. `menu_cancel` (B / Esc) closes. Auto-closes when all completed bounties are turned in.
 
 ---
 
@@ -543,6 +548,24 @@ game_state.json written → pipeline reads it → NPC dialogue references bounti
   ]
 }
 ```
+
+---
+
+## Input Map
+
+| Action | Keyboard | Controller |
+|--------|----------|------------|
+| `move_up/down/left/right` | Arrow keys | Left stick |
+| `attack` | A | West button (X) |
+| `dodge` | Space | East button (B) |
+| `weapon_swap` | Q | North button (Y) |
+| `interact` | E | South button (A) |
+| `menu_up` | Up arrow | D-pad up |
+| `menu_down` | Down arrow | D-pad down |
+| `menu_cancel` | Escape | East button (B) |
+
+`interact` is the universal "do thing" action: open NPC dialogue, open bounty board, confirm menu selections.
+`menu_cancel` shares the East button with `dodge`; player process is frozen while any menu is open so there is no conflict.
 
 ---
 

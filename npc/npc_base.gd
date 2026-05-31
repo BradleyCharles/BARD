@@ -90,9 +90,12 @@ const ROLE_ROOT_NODES : Dictionary = {
 		"upgrade_menu": {
 			"text": "What would you like?",
 			"responses": [
-				{"key": 1, "text": "Buy Axe (50 Scripts)",                 "next": "buy_axe_confirm"},
-				{"key": 2, "text": "Upgrade Sword (100 Scripts + 5 Goop)", "next": "upgrade_sword_confirm"},
-				{"key": 3, "text": "Upgrade Axe (150 Scripts + 10 Goop)", "next": "upgrade_axe_confirm"},
+				{"key": 1, "text": "Buy Axe (50 Scripts)",
+					"next": "buy_axe_confirm"},
+				{"key": 2, "text": "Upgrade Sword (100 Scripts + 5 Goop)",
+					"next": "upgrade_sword_confirm"},
+				{"key": 3, "text": "Upgrade Axe (150 Scripts + 10 Goop)",
+					"next": "upgrade_axe_confirm"},
 				{"key": 4, "text": "Never mind.",                          "next": "root"},
 			]
 		},
@@ -161,6 +164,8 @@ const ROLE_ROOT_NODES : Dictionary = {
 @onready var _detection : Area2D           = $DetectionArea
 @onready var _name_lbl  : Label            = $NameLabel
 
+var _prompt_lbl : Label
+
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
@@ -187,6 +192,17 @@ func _ready() -> void:
 
 	_name_lbl.text    = npc_name
 	_name_lbl.visible = false
+
+	if not is_wanderer:
+		_prompt_lbl = Label.new()
+		_prompt_lbl.text = "[A] Talk"
+		_prompt_lbl.position = _name_lbl.position + Vector2(0.0, 20.0)
+		_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_prompt_lbl.add_theme_font_size_override("font_size", 13)
+		_prompt_lbl.add_theme_color_override(
+			"font_color", Color(0.88, 0.73, 0.38, 1.0))
+		_prompt_lbl.visible = false
+		add_child(_prompt_lbl)
 
 	_load_dialogue()
 
@@ -269,14 +285,25 @@ func reload_dialogue() -> void:
 
 # ── Proximity detection ───────────────────────────────────────────────────────
 
+func _unhandled_input(event: InputEvent) -> void:
+	if is_wanderer or not _player_in_range:
+		return
+	if _dialogue_box != null and _dialogue_box.is_open():
+		return
+	if event.is_action_pressed("interact"):
+		get_viewport().set_input_as_handled()
+		_open_dialogue()
+
+
 func _on_area_entered(area: Area2D) -> void:
 	if not _is_player_area(area):
 		return
 	_player_in_range  = true
 	_name_lbl.visible = true
+	if _prompt_lbl:
+		_prompt_lbl.visible = true
 	if npc_id != "" and not SceneManager.get_flag("met_" + npc_id.to_lower()):
 		SceneManager.set_flag("met_" + npc_id.to_lower(), true)
-	_open_dialogue()
 
 
 func _on_area_exited(area: Area2D) -> void:
@@ -284,6 +311,8 @@ func _on_area_exited(area: Area2D) -> void:
 		return
 	_player_in_range  = false
 	_name_lbl.visible = false
+	if _prompt_lbl:
+		_prompt_lbl.visible = false
 	_close_dialogue()
 
 
@@ -298,14 +327,17 @@ func _open_dialogue() -> void:
 		return
 	_dialogue_box = get_tree().get_first_node_in_group("dialogue_box")
 	if _dialogue_box == null:
-		push_warning("NPC '%s': no node in group 'dialogue_box' found in scene." % npc_name)
+		push_warning(
+			"NPC '%s': no node in group 'dialogue_box' found." % npc_name)
 		return
 	if npc_role == "guild_commander":
 		_patch_guild_commander_root()
 	elif npc_role == "blacksmith":
 		_patch_blacksmith_root()
-	# Named NPCs with a role always start at the hardcoded root menu.
-	# Wanderers and roleless NPCs start at "greeting" as before.
+	if _prompt_lbl:
+		_prompt_lbl.visible = false
+	if not _dialogue_box.closed.is_connected(_on_dialogue_closed):
+		_dialogue_box.closed.connect(_on_dialogue_closed)
 	var start_node := "root" if ROLE_ROOT_NODES.has(npc_role) else "greeting"
 	_dialogue_box.open(_dialogue_nodes, start_node, npc_name)
 
@@ -318,9 +350,15 @@ func _patch_guild_commander_root() -> void:
 	for i in responses.size():
 		if responses[i].get("key") == 1:
 			if has_complete:
-				responses[i] = {"key": 1, "text": "I have completed a bounty.", "next": "turnin_confirm"}
+				responses[i] = {
+					"key": 1, "text": "I have completed a bounty.",
+					"next": "turnin_confirm"
+				}
 			else:
-				responses[i] = {"key": 1, "text": "I want to check the bounty board.", "next": "bounty_stub"}
+				responses[i] = {
+					"key": 1, "text": "I want to check the bounty board.",
+					"next": "bounty_stub"
+				}
 			break
 
 
@@ -332,12 +370,24 @@ func _patch_blacksmith_root() -> void:
 	if "axe" not in owned:
 		responses.append({"text": "Buy Axe (50 Scripts)", "next": "buy_axe_confirm"})
 	else:
-		responses.append({"text": "Upgrade Sword (100 Scripts + 5 Goop)", "next": "upgrade_sword_confirm"})
-		responses.append({"text": "Upgrade Axe (150 Scripts + 10 Goop)",  "next": "upgrade_axe_confirm"})
+		responses.append({
+			"text": "Upgrade Sword (100 Scripts + 5 Goop)",
+			"next": "upgrade_sword_confirm"
+		})
+		responses.append({
+			"text": "Upgrade Axe (150 Scripts + 10 Goop)",
+			"next": "upgrade_axe_confirm"
+		})
 	responses.append({"text": "Never mind.", "next": "root"})
 	for i in responses.size():
 		responses[i]["key"] = i + 1
 	_dialogue_nodes["upgrade_menu"]["responses"] = responses
+
+
+func _on_dialogue_closed() -> void:
+	if _prompt_lbl and _player_in_range:
+		_prompt_lbl.visible = true
+	_dialogue_box = null
 
 
 func _close_dialogue() -> void:

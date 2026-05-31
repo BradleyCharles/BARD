@@ -5,27 +5,26 @@ signal board_closed
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-# Dark parchment palette
 const _C_BG          := Color(0.09, 0.07, 0.05, 0.96)
 const _C_BORDER      := Color(0.52, 0.40, 0.20, 1.0)
-const _C_TITLE       := Color(0.88, 0.73, 0.38, 1.0)
+const _C_GOLD        := Color(0.88, 0.73, 0.38, 1.0)
 const _C_SECTION     := Color(0.68, 0.55, 0.28, 1.0)
-const _C_FLAVOR      := Color(0.82, 0.76, 0.64, 1.0)
+const _C_TEXT        := Color(0.82, 0.76, 0.64, 1.0)
+const _C_DIMMED      := Color(0.48, 0.42, 0.32, 0.55)
 const _C_EMPTY       := Color(0.50, 0.46, 0.38, 1.0)
 const _C_HINT        := Color(0.42, 0.38, 0.30, 1.0)
 const _C_PROGRESS    := Color(0.78, 0.70, 0.38, 1.0)
 const _C_COMPLETE    := Color(0.48, 0.74, 0.42, 1.0)
-const _C_BTN_BG      := Color(0.20, 0.14, 0.07, 1.0)
-const _C_BTN_BORDER  := Color(0.52, 0.40, 0.20, 1.0)
-const _C_BTN_TEXT    := Color(0.88, 0.73, 0.38, 1.0)
-const _C_BTN_HOVER   := Color(0.30, 0.22, 0.10, 1.0)
-const _C_BTN_PRESSED := Color(0.14, 0.10, 0.05, 1.0)
 
 var _font        : Font
-var _root        : Control       # hidden/shown to toggle the whole overlay
+var _root        : Control
 var _avail_list  : VBoxContainer
 var _active_list : VBoxContainer
 var _is_open     : bool = false
+
+var _selected_avail    : int   = 0
+var _avail_labels      : Array = []
+var _avail_underlines  : Array = []
 
 
 func _ready() -> void:
@@ -42,17 +41,18 @@ func _ready() -> void:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func open() -> void:
+	_selected_avail = 0
 	_refresh()
 	_root.show()
 	_is_open = true
-	_set_player_input(false)
+	_set_player_active(false)
 	board_opened.emit()
 
 
 func close() -> void:
 	_root.hide()
 	_is_open = false
-	_set_player_input(true)
+	_set_player_active(true)
 	board_closed.emit()
 
 
@@ -62,14 +62,32 @@ func is_board_open() -> bool:
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 
-func _input(event: InputEvent) -> void:
+func _process(_delta: float) -> void:
 	if not _is_open:
 		return
-	if not (event is InputEventKey and event.pressed and not event.echo):
-		return
-	if event.keycode == KEY_ESCAPE or event.keycode == KEY_E:
-		get_viewport().set_input_as_handled()
+	if Input.is_action_just_pressed("menu_cancel"):
 		close()
+	elif Input.is_action_just_pressed("menu_up"):
+		_navigate(-1)
+	elif Input.is_action_just_pressed("menu_down"):
+		_navigate(1)
+	elif Input.is_action_just_pressed("interact"):
+		_accept_selected()
+
+
+func _navigate(dir: int) -> void:
+	var count := _avail_labels.size()
+	if count == 0:
+		return
+	_selected_avail = (_selected_avail + dir + count) % count
+	_update_avail_cursor()
+
+
+func _accept_selected() -> void:
+	var available: Array = SceneManager.available_bounties
+	if _selected_avail < available.size():
+		var bid: String = available[_selected_avail].get("id", "")
+		SceneManager.accept_bounty(bid)
 
 
 # ── UI Construction ───────────────────────────────────────────────────────────
@@ -107,7 +125,7 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 10)
 	margin.add_child(vbox)
 
-	var title := _label("The Bounty Board", 30, _C_TITLE)
+	var title := _label("The Bounty Board", 30, _C_GOLD)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 	vbox.add_child(_sep())
@@ -115,18 +133,18 @@ func _build_ui() -> void:
 	vbox.add_child(_label("AVAILABLE", 17, _C_SECTION))
 	_avail_list = VBoxContainer.new()
 	_avail_list.layout_mode = 2
-	_avail_list.add_theme_constant_override("separation", 8)
+	_avail_list.add_theme_constant_override("separation", 6)
 	vbox.add_child(_avail_list)
 	vbox.add_child(_sep())
 
 	vbox.add_child(_label("ACTIVE", 17, _C_SECTION))
 	_active_list = VBoxContainer.new()
 	_active_list.layout_mode = 2
-	_active_list.add_theme_constant_override("separation", 8)
+	_active_list.add_theme_constant_override("separation", 6)
 	vbox.add_child(_active_list)
 
 	vbox.add_child(_sep())
-	var hint := _label("[E]  ·  [Esc]  to close", 13, _C_HINT)
+	var hint := _label("↑↓  Navigate     [A]  Accept     [B]  Close", 13, _C_HINT)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(hint)
 
@@ -136,6 +154,8 @@ func _build_ui() -> void:
 func _refresh() -> void:
 	_clear(_avail_list)
 	_clear(_active_list)
+	_avail_labels.clear()
+	_avail_underlines.clear()
 
 	var available : Array = SceneManager.available_bounties
 	var active    : Array = SceneManager.active_bounties
@@ -143,31 +163,47 @@ func _refresh() -> void:
 	if available.is_empty():
 		_avail_list.add_child(_label("No bounties posted today.", 15, _C_EMPTY))
 	else:
-		for bounty in available:
-			_avail_list.add_child(_avail_row(bounty))
+		for i in available.size():
+			_avail_list.add_child(_avail_row(available[i], i))
+		_selected_avail = clampi(_selected_avail, 0, available.size() - 1)
+		_update_avail_cursor()
 
 	if active.is_empty():
-		_active_list.add_child(_label("You have no active bounties.", 15, _C_EMPTY))
+		_active_list.add_child(
+			_label("You have no active bounties.", 15, _C_EMPTY))
 	else:
 		for bounty in active:
 			_active_list.add_child(_active_row(bounty))
 
 
-func _avail_row(bounty: Dictionary) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.layout_mode = 2
-	row.add_theme_constant_override("separation", 14)
+func _avail_row(bounty: Dictionary, idx: int) -> VBoxContainer:
+	var col := VBoxContainer.new()
+	col.layout_mode = 2
+	col.add_theme_constant_override("separation", 0)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var flavor := _label(bounty.get("flavor", ""), 15, _C_FLAVOR)
-	flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(flavor)
+	var lbl := _label(bounty.get("flavor", ""), 15, _C_TEXT)
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(lbl)
 
-	var btn := _button("Accept")
-	var bid : String = bounty.get("id", "")
-	btn.pressed.connect(func() -> void: SceneManager.accept_bounty(bid))
-	row.add_child(btn)
-	return row
+	var underline := ColorRect.new()
+	underline.custom_minimum_size = Vector2(0.0, 2.0)
+	underline.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	underline.color = _C_GOLD if idx == _selected_avail else Color.TRANSPARENT
+	col.add_child(underline)
+
+	_avail_labels.append(lbl)
+	_avail_underlines.append(underline)
+	return col
+
+
+func _update_avail_cursor() -> void:
+	for i in _avail_labels.size():
+		var sel := (i == _selected_avail)
+		_avail_labels[i].add_theme_color_override(
+			"font_color", _C_GOLD if sel else _C_TEXT)
+		_avail_underlines[i].color = _C_GOLD if sel else Color.TRANSPARENT
 
 
 func _active_row(bounty: Dictionary) -> HBoxContainer:
@@ -175,7 +211,7 @@ func _active_row(bounty: Dictionary) -> HBoxContainer:
 	row.layout_mode = 2
 	row.add_theme_constant_override("separation", 14)
 
-	var flavor := _label(bounty.get("flavor", ""), 15, _C_FLAVOR)
+	var flavor := _label(bounty.get("flavor", ""), 15, _C_TEXT)
 	flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(flavor)
@@ -216,48 +252,11 @@ func _sep() -> HSeparator:
 	var s := HSeparator.new()
 	s.layout_mode = 2
 	var style := StyleBoxFlat.new()
-	style.bg_color           = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.55)
+	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.55)
 	style.content_margin_top    = 1.0
 	style.content_margin_bottom = 1.0
 	s.add_theme_stylebox_override("separator", style)
 	return s
-
-
-func _button(text: String) -> Button:
-	var btn := Button.new()
-	btn.layout_mode = 2
-	btn.text = text
-	if _font:
-		btn.add_theme_font_override("font", _font)
-	btn.add_theme_font_size_override("font_size", 15)
-	btn.add_theme_color_override("font_color",         _C_BTN_TEXT)
-	btn.add_theme_color_override("font_hover_color",   _C_BTN_TEXT)
-	btn.add_theme_color_override("font_focus_color",   _C_BTN_TEXT)
-	btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.9, 0.5, 1.0))
-	btn.add_theme_stylebox_override("normal",  _btn_style(_C_BTN_BG))
-	btn.add_theme_stylebox_override("hover",   _btn_style(_C_BTN_HOVER))
-	btn.add_theme_stylebox_override("pressed", _btn_style(_C_BTN_PRESSED))
-	btn.add_theme_stylebox_override("focus",   _btn_style(_C_BTN_BG))
-	return btn
-
-
-func _btn_style(bg: Color) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color            = bg
-	sb.border_width_left   = 1
-	sb.border_width_right  = 1
-	sb.border_width_top    = 1
-	sb.border_width_bottom = 1
-	sb.border_color               = _C_BTN_BORDER
-	sb.corner_radius_top_left     = 3
-	sb.corner_radius_top_right    = 3
-	sb.corner_radius_bottom_left  = 3
-	sb.corner_radius_bottom_right = 3
-	sb.content_margin_left   = 12.0
-	sb.content_margin_right  = 12.0
-	sb.content_margin_top    = 6.0
-	sb.content_margin_bottom = 6.0
-	return sb
 
 
 func _panel_style() -> StyleBoxFlat:
@@ -275,19 +274,12 @@ func _panel_style() -> StyleBoxFlat:
 	return sb
 
 
-# ── Player Input ──────────────────────────────────────────────────────────────
+# ── Player Control ────────────────────────────────────────────────────────────
 
-func _set_player_input(enabled: bool) -> void:
-	var player := _find_player()
-	if player:
-		player.set_process_input(enabled)
-
-
-func _find_player() -> Node:
+func _set_player_active(enabled: bool) -> void:
 	for node in get_tree().get_nodes_in_group("player"):
-		if not node is Area2D:
-			return node
-	return null
+		if node.has_method("set_gameplay_active"):
+			node.set_gameplay_active(enabled)
 
 
 # ── Internals ─────────────────────────────────────────────────────────────────

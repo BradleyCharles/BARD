@@ -2,24 +2,24 @@ extends CanvasLayer
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG          := Color(0.09, 0.07, 0.05, 0.96)
-const _C_BORDER      := Color(0.52, 0.40, 0.20, 1.0)
-const _C_TITLE       := Color(0.88, 0.73, 0.38, 1.0)
-const _C_SECTION     := Color(0.68, 0.55, 0.28, 1.0)
-const _C_FLAVOR      := Color(0.82, 0.76, 0.64, 1.0)
-const _C_HINT        := Color(0.42, 0.38, 0.30, 1.0)
-const _C_COMPLETE    := Color(0.48, 0.74, 0.42, 1.0)
-const _C_REWARD      := Color(0.55, 0.85, 0.45, 1.0)
-const _C_BTN_BG      := Color(0.20, 0.14, 0.07, 1.0)
-const _C_BTN_BORDER  := Color(0.52, 0.40, 0.20, 1.0)
-const _C_BTN_TEXT    := Color(0.88, 0.73, 0.38, 1.0)
-const _C_BTN_HOVER   := Color(0.30, 0.22, 0.10, 1.0)
-const _C_BTN_PRESSED := Color(0.14, 0.10, 0.05, 1.0)
+const _C_BG       := Color(0.09, 0.07, 0.05, 0.96)
+const _C_BORDER   := Color(0.52, 0.40, 0.20, 1.0)
+const _C_GOLD     := Color(0.88, 0.73, 0.38, 1.0)
+const _C_TEXT     := Color(0.82, 0.76, 0.64, 1.0)
+const _C_DIMMED   := Color(0.48, 0.42, 0.32, 0.55)
+const _C_HINT     := Color(0.42, 0.38, 0.30, 1.0)
+const _C_COMPLETE := Color(0.48, 0.74, 0.42, 1.0)
+const _C_REWARD   := Color(0.55, 0.85, 0.45, 1.0)
 
-var _font       : Font
-var _root       : Control
-var _list       : VBoxContainer
-var _is_open    : bool = false
+var _font      : Font
+var _root      : Control
+var _list      : VBoxContainer
+var _is_open   : bool = false
+
+var _selected_idx    : int   = 0
+var _row_labels      : Array = []
+var _row_underlines  : Array = []
+var _row_rewards     : Array = []
 
 
 func _ready() -> void:
@@ -37,41 +37,49 @@ func _ready() -> void:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func open() -> void:
+	_selected_idx = 0
 	_refresh()
 	_root.show()
 	_is_open = true
-	_set_player_input(false)
+	_set_player_active(false)
 
 
 func close() -> void:
 	_root.hide()
 	_is_open = false
-	_set_player_input(true)
+	_set_player_active(true)
 	queue_free()
 
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 
-func _input(event: InputEvent) -> void:
+func _process(_delta: float) -> void:
 	if not _is_open:
 		return
-	if not (event is InputEventKey and event.pressed and not event.echo):
-		return
-	get_viewport().set_input_as_handled()
-
-	if event.keycode == KEY_ESCAPE:
+	if Input.is_action_just_pressed("menu_cancel"):
 		close()
-		return
+	elif Input.is_action_just_pressed("menu_up"):
+		_navigate(-1)
+	elif Input.is_action_just_pressed("menu_down"):
+		_navigate(1)
+	elif Input.is_action_just_pressed("interact"):
+		_turn_in_selected()
 
-	const KEY_MAP := {KEY_1: 0, KEY_2: 1, KEY_3: 2, KEY_4: 3}
-	var idx : int = KEY_MAP.get(event.keycode, -1)
-	if idx == -1:
+
+func _navigate(dir: int) -> void:
+	var count := _row_labels.size()
+	if count == 0:
 		return
-	var complete : Array = SceneManager.active_bounties.filter(
+	_selected_idx = (_selected_idx + dir + count) % count
+	_update_cursor()
+
+
+func _turn_in_selected() -> void:
+	var complete: Array = SceneManager.active_bounties.filter(
 		func(b: Dictionary) -> bool: return b.get("status") == "complete"
 	)
-	if idx < complete.size():
-		SceneManager.turn_in_bounty(complete[idx].get("id", ""))
+	if _selected_idx < complete.size():
+		SceneManager.turn_in_bounty(complete[_selected_idx].get("id", ""))
 
 
 # ── UI Construction ───────────────────────────────────────────────────────────
@@ -109,11 +117,11 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 10)
 	margin.add_child(vbox)
 
-	var title := _label("Completed Contracts", 28, _C_TITLE)
+	var title := _label("Completed Contracts", 28, _C_GOLD)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
-	var sub := _label("Click a contract to turn it in and collect your Scripts.", 14, _C_HINT)
+	var sub := _label("Select a contract to turn it in and collect your Scripts.", 14, _C_HINT)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(sub)
 
@@ -121,12 +129,12 @@ func _build_ui() -> void:
 
 	_list = VBoxContainer.new()
 	_list.layout_mode = 2
-	_list.add_theme_constant_override("separation", 8)
+	_list.add_theme_constant_override("separation", 6)
 	vbox.add_child(_list)
 
 	vbox.add_child(_sep())
 
-	var hint := _label("[Esc]  to close", 13, _C_HINT)
+	var hint := _label("↑↓  Navigate     [A]  Turn In     [B]  Close", 13, _C_HINT)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(hint)
 
@@ -135,32 +143,66 @@ func _build_ui() -> void:
 
 func _refresh() -> void:
 	_clear(_list)
-	var complete : Array = SceneManager.active_bounties.filter(
+	_row_labels.clear()
+	_row_underlines.clear()
+	_row_rewards.clear()
+
+	var complete: Array = SceneManager.active_bounties.filter(
 		func(b: Dictionary) -> bool: return b.get("status") == "complete"
 	)
 	if complete.is_empty():
 		close()
 		return
-	for bounty in complete:
-		_list.add_child(_bounty_row(bounty))
+
+	for i in complete.size():
+		_list.add_child(_bounty_row(complete[i], i))
+
+	_selected_idx = clampi(_selected_idx, 0, complete.size() - 1)
+	_update_cursor()
 
 
-func _bounty_row(bounty: Dictionary) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.layout_mode = 2
-	row.add_theme_constant_override("separation", 14)
+func _bounty_row(bounty: Dictionary, idx: int) -> VBoxContainer:
+	var col := VBoxContainer.new()
+	col.layout_mode = 2
+	col.add_theme_constant_override("separation", 0)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var flavor := _label(bounty.get("flavor", ""), 15, _C_FLAVOR)
+	var hbox := HBoxContainer.new()
+	hbox.layout_mode = 2
+	hbox.add_theme_constant_override("separation", 14)
+	col.add_child(hbox)
+
+	var flavor := _label(bounty.get("flavor", ""), 15, _C_TEXT)
 	flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(flavor)
+	hbox.add_child(flavor)
 
-	var reward := SceneManager.scripts_for_bounty(bounty)
-	var btn    := _button("+%d Scripts" % reward)
-	var bid    : String = bounty.get("id", "")
-	btn.pressed.connect(func() -> void: SceneManager.turn_in_bounty(bid))
-	row.add_child(btn)
-	return row
+	var reward    := SceneManager.scripts_for_bounty(bounty)
+	var reward_lbl := _label("+%d Scripts" % reward, 15, _C_REWARD)
+	reward_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	reward_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hbox.add_child(reward_lbl)
+
+	var underline := ColorRect.new()
+	underline.custom_minimum_size   = Vector2(0.0, 2.0)
+	underline.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	underline.color = _C_GOLD if idx == _selected_idx else Color.TRANSPARENT
+	col.add_child(underline)
+
+	_row_labels.append(flavor)
+	_row_rewards.append(reward_lbl)
+	_row_underlines.append(underline)
+	return col
+
+
+func _update_cursor() -> void:
+	for i in _row_labels.size():
+		var sel := (i == _selected_idx)
+		_row_labels[i].add_theme_color_override(
+			"font_color", _C_GOLD if sel else _C_TEXT)
+		_row_rewards[i].add_theme_color_override(
+			"font_color", _C_GOLD if sel else _C_REWARD)
+		_row_underlines[i].color = _C_GOLD if sel else Color.TRANSPARENT
 
 
 # ── Style Helpers ─────────────────────────────────────────────────────────────
@@ -187,43 +229,6 @@ func _sep() -> HSeparator:
 	return s
 
 
-func _button(text: String) -> Button:
-	var btn := Button.new()
-	btn.layout_mode = 2
-	btn.text = text
-	if _font:
-		btn.add_theme_font_override("font", _font)
-	btn.add_theme_font_size_override("font_size", 15)
-	btn.add_theme_color_override("font_color",         _C_REWARD)
-	btn.add_theme_color_override("font_hover_color",   _C_REWARD)
-	btn.add_theme_color_override("font_focus_color",   _C_REWARD)
-	btn.add_theme_color_override("font_pressed_color", Color(0.8, 1.0, 0.6, 1.0))
-	btn.add_theme_stylebox_override("normal",  _btn_style(_C_BTN_BG))
-	btn.add_theme_stylebox_override("hover",   _btn_style(_C_BTN_HOVER))
-	btn.add_theme_stylebox_override("pressed", _btn_style(_C_BTN_PRESSED))
-	btn.add_theme_stylebox_override("focus",   _btn_style(_C_BTN_BG))
-	return btn
-
-
-func _btn_style(bg: Color) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color            = bg
-	sb.border_width_left   = 1
-	sb.border_width_right  = 1
-	sb.border_width_top    = 1
-	sb.border_width_bottom = 1
-	sb.border_color               = _C_BTN_BORDER
-	sb.corner_radius_top_left     = 3
-	sb.corner_radius_top_right    = 3
-	sb.corner_radius_bottom_left  = 3
-	sb.corner_radius_bottom_right = 3
-	sb.content_margin_left   = 12.0
-	sb.content_margin_right  = 12.0
-	sb.content_margin_top    = 6.0
-	sb.content_margin_bottom = 6.0
-	return sb
-
-
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color            = _C_BG
@@ -239,13 +244,12 @@ func _panel_style() -> StyleBoxFlat:
 	return sb
 
 
-# ── Player Input ──────────────────────────────────────────────────────────────
+# ── Player Control ────────────────────────────────────────────────────────────
 
-func _set_player_input(enabled: bool) -> void:
+func _set_player_active(enabled: bool) -> void:
 	for node in get_tree().get_nodes_in_group("player"):
-		if not node is Area2D:
-			node.set_process_input(enabled)
-			break
+		if node.has_method("set_gameplay_active"):
+			node.set_gameplay_active(enabled)
 
 
 # ── Internals ─────────────────────────────────────────────────────────────────

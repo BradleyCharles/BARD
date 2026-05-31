@@ -323,13 +323,18 @@ func _on_sword_hit(body: Node2D) -> void:
 		return
 	if body.is_in_group("flying_mobs") or body.is_in_group("ground_mobs"):
 		if body.has_method("take_damage"):
-			var stats    : Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
+			var stats: Dictionary = WEAPON_STATS.get(active_weapon, WEAPON_STATS["sword"])
 			var knockback: Vector2    = (body.global_position - global_position).normalized() \
 							  * float(stats["knockback"])
 			body.take_damage(stats["damage"], knockback)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
+func set_gameplay_active(enabled: bool) -> void:
+	set_process(enabled)
+	set_process_input(enabled)
+
 
 func start(pos: Vector2) -> void:
 	is_dying     = false
