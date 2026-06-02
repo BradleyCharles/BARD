@@ -54,6 +54,8 @@ func _build_ui() -> void:
 
 	var center := VBoxContainer.new()
 	center.set_anchors_preset(Control.PRESET_CENTER)
+	center.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	center.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	center.add_theme_constant_override("separation", 22)
 	center.alignment = BoxContainer.ALIGNMENT_CENTER
 	root.add_child(center)
