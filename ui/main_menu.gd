@@ -316,6 +316,8 @@ func _show_gen_overlay(text: String) -> void:
 
 	_overlay_label = Label.new()
 	_overlay_label.set_anchors_preset(Control.PRESET_CENTER)
+	_overlay_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_overlay_label.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	_overlay_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_overlay_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_overlay_label.text = text
