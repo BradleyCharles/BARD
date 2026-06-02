@@ -115,7 +115,13 @@ func _highlight(idx: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _busy or _load_picker != null:
+	if _busy:
+		return
+	if _load_picker != null:
+		if event.is_action_pressed(PlayerInput.MENU_CANCEL):
+			_load_picker.queue_free()
+			_load_picker = null
+			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(PlayerInput.MENU_UP):
 		_selection = (_selection - 1 + _buttons.size()) % _buttons.size()
@@ -161,6 +167,8 @@ func _build_slot_picker(title_text: String, on_select: Callable) -> Control:
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	var style := StyleBoxFlat.new()
 	style.bg_color     = _C_PANEL
 	style.border_color = _C_BORDER
