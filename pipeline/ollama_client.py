@@ -18,10 +18,12 @@ Gemma 4 note:
 
 import re
 import json
+import subprocess
 import time
 import logging
 import requests
 from urllib.parse import urlparse
+from typing import Callable
 
 from config import OLLAMA_URL, OLLAMA_MODEL, MAX_RETRIES, RETRY_DELAY
 
@@ -72,6 +74,43 @@ def verify_connection() -> tuple[bool, str]:
         )
 
     return True, f"Ollama OK — model '{OLLAMA_MODEL}' is ready."
+
+
+# ── Auto-start ────────────────────────────────────────────────────────────────
+
+def try_start_ollama(
+    timeout: int = 30,
+    on_tick: Callable[[int], None] | None = None,
+) -> bool:
+    """
+    Launch `ollama serve` as a background process and wait up to `timeout`
+    seconds for it to become reachable. Returns True if Ollama is ready.
+
+    on_tick(elapsed_seconds) is called once per second while waiting,
+    so callers can update a progress display.
+    """
+    try:
+        subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        logger.error("'ollama' not found in PATH — cannot start Ollama automatically.")
+        return False
+
+    logger.info("Waiting for Ollama to become ready (up to %ds)...", timeout)
+    for elapsed in range(1, timeout + 1):
+        time.sleep(1)
+        if on_tick:
+            on_tick(elapsed)
+        ok, _ = verify_connection()
+        if ok:
+            logger.info("Ollama ready after %ds.", elapsed)
+            return True
+
+    logger.error("Ollama did not become ready within %ds.", timeout)
+    return False
 
 
 # ── Thinking strip ────────────────────────────────────────────────────────────

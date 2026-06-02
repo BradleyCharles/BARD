@@ -45,7 +45,7 @@ from config import (
     NPC_RULES_FILE,
     NAME_USAGE_FILE,
 )
-from ollama_client import call_ollama_json, verify_connection
+from ollama_client import call_ollama_json, verify_connection, try_start_ollama
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,6 +68,8 @@ def _write_progress(step: int, total: int, message: str) -> None:
         }))
     except OSError:
         pass
+
+
 
 
 # ── Player name ───────────────────────────────────────────────────────────────
@@ -556,25 +558,39 @@ def main() -> None:
         _step += 1
         _write_progress(_step, _total, msg)
 
+    interactive = sys.stdin.isatty()
+
     # LLM connectivity check
     _advance("Connecting to LLM")
     llm_ok, llm_msg = verify_connection()
-    if llm_ok:
-        print(f"  LLM: {llm_msg}")
-    else:
-        print(f"\n  WARNING — LLM not available:\n  {llm_msg}")
-        print("  World generation will use fallback content for all NPC and lore generation.")
-        choice = input("  Continue anyway? [y/N]: ").strip().lower()
-        if choice != "y":
-            print("Aborting.")
+    if not llm_ok:
+        logger.warning("Ollama not reachable: %s", llm_msg)
+        _write_progress(_step, _total, "Starting Ollama")
+        llm_ok = try_start_ollama(
+            on_tick=lambda e: _write_progress(_step, _total, f"Starting Ollama ({e}s)")
+        )
+        if not llm_ok:
+            crash_msg = (
+                "Could not connect to Ollama and automatic start failed.\n"
+                "Make sure Ollama is installed and run: ollama serve"
+            )
+            if not interactive:
+                (PROJECT_ROOT / "pipeline_crashed.flag").write_text(crash_msg)
+                logger.error(crash_msg)
+                sys.exit(1)
+            print(f"\n  ERROR: {crash_msg}")
             return
+    print("  LLM: ready.")
 
     if WORLD_REG_FILE.exists() and WORLD_LORE_FILE.exists():
-        print("WARNING: world_registry.json and world_lore.json already exist.")
-        choice = input("Overwrite and generate a new world? [y/N]: ").strip().lower()
-        if choice != "y":
-            print("Aborting. No files were changed.")
-            return
+        if not interactive:
+            logger.warning("world_registry.json already exists — overwriting for new game.")
+        else:
+            print("WARNING: world_registry.json and world_lore.json already exist.")
+            choice = input("Overwrite and generate a new world? [y/N]: ").strip().lower()
+            if choice != "y":
+                print("Aborting. No files were changed.")
+                return
 
     # 1. Player name
     player_name = get_player_name()
