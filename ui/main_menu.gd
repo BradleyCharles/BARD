@@ -26,8 +26,13 @@ var _buttons   : Array[Label] = []
 var _selection : int = 0
 var _busy      : bool = false
 
-var _overlay_label : Label = null
-var _load_picker   : Control = null
+var _overlay_label  : Label     = null
+var _gen_step_label : Label     = null
+var _gen_bar        : ColorRect = null
+var _load_picker    : Control   = null
+
+const _BAR_WIDTH  : float = 400.0
+const _BAR_HEIGHT : float = 14.0
 
 var _picker_rows    : Array[Label]    = []
 var _picker_actions : Array[Callable] = []
@@ -287,6 +292,9 @@ func _start_new_game() -> void:
 	await get_tree().process_frame
 
 	var project_path : String = ProjectSettings.globalize_path("res://")
+	var progress_path := project_path + "worldgen_progress.json"
+	if FileAccess.file_exists(progress_path):
+		DirAccess.remove_absolute(progress_path)
 	var script       : String = project_path + "pipeline/world_gen.py"
 	var pid          : int    = OS.create_process(PYTHON_EXE, [script])
 
@@ -314,28 +322,80 @@ func _show_gen_overlay(text: String) -> void:
 	bg.name = "GenOverlay"
 	_canvas.add_child(bg)
 
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_CENTER)
+	vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	vbox.grow_vertical   = Control.GROW_DIRECTION_BOTH
+	vbox.add_theme_constant_override("separation", 20)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	bg.add_child(vbox)
+
 	_overlay_label = Label.new()
-	_overlay_label.set_anchors_preset(Control.PRESET_CENTER)
-	_overlay_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_overlay_label.grow_vertical   = Control.GROW_DIRECTION_BOTH
-	_overlay_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_overlay_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_overlay_label.text = text
+	_overlay_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_overlay_label.add_theme_font_size_override("font_size", 44)
 	_overlay_label.add_theme_color_override("font_color", _C_GOLD)
 	if _font:
 		_overlay_label.add_theme_font_override("font", _font)
-	bg.add_child(_overlay_label)
+	vbox.add_child(_overlay_label)
+
+	_gen_step_label = Label.new()
+	_gen_step_label.text = "This may take a minute or two."
+	_gen_step_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gen_step_label.add_theme_font_size_override("font_size", 24)
+	_gen_step_label.add_theme_color_override("font_color", _C_DIM)
+	if _font:
+		_gen_step_label.add_theme_font_override("font", _font)
+	vbox.add_child(_gen_step_label)
+
+	var bar_bg := ColorRect.new()
+	bar_bg.color = Color(0.12, 0.10, 0.07, 1.0)
+	bar_bg.custom_minimum_size = Vector2(_BAR_WIDTH, _BAR_HEIGHT)
+	vbox.add_child(bar_bg)
+
+	_gen_bar = ColorRect.new()
+	_gen_bar.color = Color(0.55, 0.45, 0.20, 1.0)
+	_gen_bar.size  = Vector2(0.0, _BAR_HEIGHT)
+	bar_bg.add_child(_gen_bar)
 
 
 func _update_gen_overlay(elapsed: float) -> void:
 	if _overlay_label:
 		var dots : String = ".".repeat(int(elapsed / 1.5) % 4)
-		_overlay_label.text = "Generating world" + dots + "\n\nThis may take a minute or two."
+		_overlay_label.text = "Generating world" + dots
+
+	var project_path : String = ProjectSettings.globalize_path("res://")
+	var path := project_path + "worldgen_progress.json"
+	if not FileAccess.file_exists(path):
+		return
+
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		file.close()
+		return
+	file.close()
+
+	var data    : Dictionary = parser.get_data()
+	var step    : int        = int(data.get("step",    0))
+	var total   : int        = int(data.get("total",   0))
+	var message : String     = str(data.get("message", ""))
+
+	if _gen_step_label and message != "":
+		_gen_step_label.text = message
+
+	if _gen_bar and total > 0:
+		var target_w : float = _BAR_WIDTH * float(step) / float(total)
+		var tw := create_tween()
+		tw.tween_property(_gen_bar, "size:x", target_w, 0.4)
 
 
 func _hide_gen_overlay() -> void:
 	var bg := _canvas.get_node_or_null("GenOverlay")
 	if bg:
 		bg.queue_free()
-	_overlay_label = null
+	_overlay_label  = null
+	_gen_step_label = null
+	_gen_bar        = null

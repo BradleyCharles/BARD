@@ -56,6 +56,19 @@ logger = logging.getLogger(__name__)
 
 VARIANT_LABELS = list(string.ascii_uppercase)
 
+_PROGRESS_FILE = PROJECT_ROOT / "worldgen_progress.json"
+
+
+def _write_progress(step: int, total: int, message: str) -> None:
+    try:
+        _PROGRESS_FILE.write_text(json.dumps({
+            "step": step,
+            "total": total,
+            "message": message,
+        }))
+    except OSError:
+        pass
+
 
 # ── Player name ───────────────────────────────────────────────────────────────
 
@@ -535,7 +548,16 @@ def main() -> None:
     print("║         World Generation Pipeline        ║")
     print("╚══════════════════════════════════════════╝\n")
 
+    _total = 2 + len(ARCHETYPE_ROLES) * VARIANTS_PER_ARCHETYPE + 2
+    _step  = 0
+
+    def _advance(msg: str) -> None:
+        nonlocal _step
+        _step += 1
+        _write_progress(_step, _total, msg)
+
     # LLM connectivity check
+    _advance("Connecting to LLM")
     llm_ok, llm_msg = verify_connection()
     if llm_ok:
         print(f"  LLM: {llm_msg}")
@@ -562,6 +584,7 @@ def main() -> None:
     lore_seed = load_thornwall_lore()
 
     # 3. World lore
+    _advance("Weaving world lore")
     lore = generate_world_lore(lore_seed)
     write_world_lore(lore)
 
@@ -570,13 +593,10 @@ def main() -> None:
     name_usage = load_name_usage()
 
     # 5. NPC variants per archetype role
-    # used_names is shared across all roles so the same first name
-    # cannot appear in two different NPCs in the same world.
     all_variants: dict[str, list[dict]] = {}
     used_names: set[str] = set()
     for role in ARCHETYPE_ROLES:
-        # Rebuild shared rules prompt each iteration so the naming
-        # exclusion list reflects names generated so far this run.
+        _advance(f"Creating {role.replace('_', ' ')}")
         shared_rules = build_shared_rules_prompt(npc_rules, name_usage, used_names)
         variants = generate_variants_for_role(role, lore_seed, used_names, shared_rules)
         for v in variants:
@@ -586,14 +606,14 @@ def main() -> None:
         write_variants(role, variants)
         all_variants[role] = variants
 
-    # Save updated name usage counts after all variants are generated
     save_name_usage(name_usage)
     logger.info("Name usage saved.")
 
     # 6. World registry
     registry = build_world_registry(all_variants, lore)
 
-    # 7. Villager name pool (stored under thornwall in the registry)
+    # 7. Villager name pool
+    _advance("Naming the townsfolk")
     villager_names = generate_villager_names(lore_seed, VILLAGER_NAME_COUNT, used_names)
     registry["towns"]["thornwall"]["villager_names"] = villager_names
     logger.info("Villager name pool: %s", villager_names)
@@ -606,6 +626,7 @@ def main() -> None:
     initialise_game_state(player_name)
 
     # 9. Generate day 1 dialogue
+    _advance("Writing day 1 dialogue")
     run_initial_dialogue_generation()
 
     # Summary
