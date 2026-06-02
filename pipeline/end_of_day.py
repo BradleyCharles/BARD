@@ -45,7 +45,7 @@ from config import (
     RUMORS_FILE,
     THORNWALL_LORE,
 )
-from ollama_client import call_ollama_json, call_ollama
+from ollama_client import call_ollama_json, call_ollama, verify_connection
 from nl_descriptors import (
     describe_slime_kills,
     describe_field_activity,
@@ -603,7 +603,17 @@ def main() -> None:
     logger.info("End-of-day pipeline starting.")
     clear_flags()
 
-    had_failures = False
+    # LLM connectivity check — log clearly so issues are visible in pipeline output.
+    # On failure we continue: the existing fallback chain handles every LLM call,
+    # so all NPCs get previous-day dialogue rather than a hard crash.
+    llm_ok, llm_msg = verify_connection()
+    if llm_ok:
+        logger.info("LLM check: %s", llm_msg)
+    else:
+        logger.error("LLM NOT AVAILABLE — %s", llm_msg)
+        logger.error("All NPC dialogue will use previous-day fallbacks.")
+
+    had_failures = not llm_ok
 
     # Load required data
     game_state  = load_json(GAME_STATE_FILE,  "game_state.json")

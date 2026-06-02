@@ -21,10 +21,57 @@ import json
 import time
 import logging
 import requests
+from urllib.parse import urlparse
 
 from config import OLLAMA_URL, OLLAMA_MODEL, MAX_RETRIES, RETRY_DELAY
 
 logger = logging.getLogger(__name__)
+
+
+# ── Connection verification ───────────────────────────────────────────────────
+
+def verify_connection() -> tuple[bool, str]:
+    """
+    Check that Ollama is reachable and the configured model is loaded.
+    Returns (ok, diagnostic_message).
+    """
+    parsed   = urlparse(OLLAMA_URL)
+    tags_url = f"{parsed.scheme}://{parsed.netloc}/api/tags"
+
+    try:
+        resp = requests.get(tags_url, timeout=5)
+        resp.raise_for_status()
+    except requests.ConnectionError:
+        return False, (
+            f"Cannot connect to Ollama at {parsed.netloc} — is it running?\n"
+            f"  Start it with: ollama serve"
+        )
+    except requests.Timeout:
+        return False, f"Ollama at {parsed.netloc} timed out — may be overloaded or not responding."
+    except requests.RequestException as exc:
+        return False, f"Ollama request error: {exc}"
+
+    try:
+        models = [m.get("name", "") for m in resp.json().get("models", [])]
+    except ValueError:
+        return False, "Ollama is running but returned unexpected data from /api/tags."
+
+    if not models:
+        return False, (
+            f"Ollama is running but has no models loaded.\n"
+            f"  Fix: ollama pull {OLLAMA_MODEL}"
+        )
+
+    # Exact match first; fall back to prefix match (e.g. "gemma4" matches "gemma4:e4b")
+    model_base = OLLAMA_MODEL.split(":")[0]
+    if not any(m == OLLAMA_MODEL or m.startswith(model_base) for m in models):
+        return False, (
+            f"Model '{OLLAMA_MODEL}' not found in Ollama.\n"
+            f"  Available: {', '.join(models)}\n"
+            f"  Fix: ollama pull {OLLAMA_MODEL}"
+        )
+
+    return True, f"Ollama OK — model '{OLLAMA_MODEL}' is ready."
 
 
 # ── Thinking strip ────────────────────────────────────────────────────────────

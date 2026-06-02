@@ -45,7 +45,7 @@ from config import (
     NPC_RULES_FILE,
     NAME_USAGE_FILE,
 )
-from ollama_client import call_ollama_json
+from ollama_client import call_ollama_json, verify_connection
 
 logging.basicConfig(
     level=logging.INFO,
@@ -534,6 +534,18 @@ def main() -> None:
     print("\n╔══════════════════════════════════════════╗")
     print("║         World Generation Pipeline        ║")
     print("╚══════════════════════════════════════════╝\n")
+
+    # LLM connectivity check
+    llm_ok, llm_msg = verify_connection()
+    if llm_ok:
+        print(f"  LLM: {llm_msg}")
+    else:
+        print(f"\n  WARNING — LLM not available:\n  {llm_msg}")
+        print("  World generation will use fallback content for all NPC and lore generation.")
+        choice = input("  Continue anyway? [y/N]: ").strip().lower()
+        if choice != "y":
+            print("Aborting.")
+            return
 
     if WORLD_REG_FILE.exists() and WORLD_LORE_FILE.exists():
         print("WARNING: world_registry.json and world_lore.json already exist.")
