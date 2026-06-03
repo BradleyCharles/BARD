@@ -3,9 +3,14 @@
   "description": "Tracks first name usage across all world generation runs. Names that reach retired_threshold are added to retired_names and excluded from future generation prompts.",
   "retired_threshold": 5,
   "first_name_counts": {
-    "Kaelen": 1,
-    "Yara": 1,
-    "Rostam": 1
+    "Kaelen": 4,
+    "Yara": 2,
+    "Rostam": 1,
+    "Veridian": 1,
+    "Dragan": 1,
+    "Milo\u0161": 1,
+    "Elara": 1,
+    "Borislav": 1
   },
   "retired_names": []
 }

@@ -366,7 +366,7 @@ func load_game(slot: int) -> bool:
 	available_bounties= s.get("available_bounties", [])
 	var ws            : Dictionary = s.get("world_state", {})
 	monsters_killed_today   = ws.get("monsters_killed_today",   {})
-	monsters_killed_history = ws.get("monsters_killed_history", [])
+	monsters_killed_history.assign(ws.get("monsters_killed_history", []))
 
 	bounties_updated.emit()
 	scripts_updated.emit()

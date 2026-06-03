@@ -1,0 +1,59 @@
+{
+	"active_bounties": [],
+	"available_bounties": [
+		{
+			"flavor": "A gathering of slimes has taken hold along the forest road. Merchants are refusing the route until the threat is cleared.",
+			"id": "slime1_zone_a_medium",
+			"monster_type": "slime1",
+			"quantity": 10.0,
+			"reward_text": "12 gold upon verified completion.",
+			"zone": "zone_a"
+		},
+		{
+			"flavor": "A great seething host of slimes blankets the upper ridge. This is not a nuisance — it is an infestation. The guild pays well for resolution.",
+			"id": "slime1_zone_c_large",
+			"monster_type": "slime1",
+			"quantity": 20.0,
+			"reward_text": "55 gold upon verified completion.",
+			"zone": "zone_c"
+		},
+		{
+			"flavor": "A sizable cluster of slimes has settled in the marsh hollows. Trappers have lost more than one snare to the muck.",
+			"id": "slime1_zone_b_medium",
+			"monster_type": "slime1",
+			"quantity": 10.0,
+			"reward_text": "18 gold upon verified completion.",
+			"zone": "zone_b"
+		}
+	],
+	"flags": {
+		"aldric_warned_about_east": false,
+		"first_bounty_accepted": false,
+		"first_bounty_completed": false,
+		"met_aldric": false,
+		"met_gareth": false,
+		"met_mira": false,
+		"player_slept_at_inn": false
+	},
+	"meta": {
+		"day": 1,
+		"scene_path": "res://world/town.tscn",
+		"schema_version": "1.0"
+	},
+	"owned_weapons": [
+		"sword"
+	],
+	"player_health": 100,
+	"player_name": "Hunter",
+	"scripts": 0,
+	"slime_goop": 0,
+	"weapon_upgrades": {
+
+	},
+	"world_state": {
+		"monsters_killed_history": [],
+		"monsters_killed_today": {
+
+		}
+	}
+}

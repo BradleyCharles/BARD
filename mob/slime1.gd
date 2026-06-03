@@ -2,16 +2,13 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-const ASSET_BASE   := "res://assets/Slime1/Without_shadow/"
-const IDLE_FRAMES  := 6
-const IDLE_FPS     := 8.0
-
-const MOB_RADIUS: float = 30.0
+const ASSET_BASE  := "res://assets/Slime1/Without_shadow/Slime1/"
+const MOB_RADIUS  : float = 30.0
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var min_speed : float  = 60.0
-@export var max_speed : float  = 120.0
+@export var min_speed : float   = 60.0
+@export var max_speed : float   = 120.0
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
@@ -20,11 +17,13 @@ const MOB_RADIUS: float = 30.0
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
-var wander_speed : float = 0.0
+var wander_speed : float  = 0.0
 var wander_timer : Timer
-var is_moving    : bool  = false
+var is_moving    : bool   = false
 var viewport_rect: Rect2
 var facing       : String = "down"
+var _is_dying    : bool   = false
+var _is_hurt     : bool   = false
 
 
 func _ready() -> void:
@@ -63,46 +62,84 @@ func set_playable_rect(rect: Rect2) -> void:
 # ── Sprite setup ──────────────────────────────────────────────────────────────
 
 func _build_sprite_frames() -> void:
-	var sf       := SpriteFrames.new()
+	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	var idle_dir := ASSET_BASE + "slime1_idle/"
-	_add_anim(sf, "idle_down",  idle_dir, "idle_down",  IDLE_FRAMES, IDLE_FPS, true)
-	_add_anim(sf, "idle_up",    idle_dir, "idle_up",    IDLE_FRAMES, IDLE_FPS, true)
-	_add_anim(sf, "idle_right", idle_dir, "idle_right", IDLE_FRAMES, IDLE_FPS, true)
+	for anim: String in ["Idle", "Walk", "Run", "Hurt", "Death"]:
+		for dir: String in ["front", "back", "left", "right"]:
+			var anim_name := anim.to_lower() + "_" + dir
+			var path      := ASSET_BASE + anim + "/Slime1_" + anim + "_" + dir + ".aseprite"
+			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 
 
-func _add_anim(sf: SpriteFrames, anim_name: String, folder: String,
-			   prefix: String, count: int, fps: float, loop: bool) -> void:
+func _merge_anim(sf: SpriteFrames, anim_name: String, path: String) -> void:
+	var src: SpriteFrames = load(path) as SpriteFrames
+	var loop: bool = not (anim_name.begins_with("hurt") or anim_name.begins_with("death"))
 	sf.add_animation(anim_name)
 	sf.set_animation_loop(anim_name, loop)
-	sf.set_animation_speed(anim_name, fps)
-	for i in count:
-		var tex := load(folder + prefix + str(i) + ".png") as Texture2D
-		sf.add_frame(anim_name, tex)
+	sf.set_animation_speed(anim_name, src.get_animation_speed("default"))
+	for i: int in src.get_frame_count("default"):
+		sf.add_frame(anim_name, src.get_frame_texture("default", i))
 
 
 # ── Animation helpers ─────────────────────────────────────────────────────────
 
-func _play_idle() -> void:
+func _play_anim(prefix: String) -> void:
+	if _is_dying or _is_hurt:
+		return
+	_sprite.flip_h = false
 	match facing:
-		"down":
-			_sprite.flip_h = false
-			_sprite.play("idle_down")
-		"up":
-			_sprite.flip_h = false
-			_sprite.play("idle_up")
-		"right":
-			_sprite.flip_h = false
-			_sprite.play("idle_right")
-		"left":
-			_sprite.flip_h = true
-			_sprite.play("idle_right")
+		"down":  _sprite.play(prefix + "_front")
+		"up":    _sprite.play(prefix + "_back")
+		"right": _sprite.play(prefix + "_right")
+		"left":  _sprite.play(prefix + "_left")
+
+
+func _play_idle() -> void:
+	_play_anim("idle")
+
+
+func _play_walk() -> void:
+	_play_anim("walk")
+
+
+func _play_run() -> void:
+	_play_anim("run")
+
+
+# ── Damage / Death overrides ──────────────────────────────────────────────────
+
+func take_damage(amount: int, knockback_vec: Vector2) -> void:
+	super.take_damage(amount, knockback_vec)
+	if health <= 0:
+		return
+	_is_hurt = true
+	_sprite.flip_h = false
+	match facing:
+		"down":  _sprite.play("hurt_front")
+		"up":    _sprite.play("hurt_back")
+		"right": _sprite.play("hurt_right")
+		"left":  _sprite.play("hurt_left")
+
+
+func _on_died() -> void:
+	_is_dying = true
+	_is_hurt  = false
+	died.emit(self)
+	linear_velocity = Vector2.ZERO
+	_sprite.flip_h  = false
+	match facing:
+		"down":  _sprite.play("death_front")
+		"up":    _sprite.play("death_back")
+		"right": _sprite.play("death_right")
+		"left":  _sprite.play("death_left")
 
 
 # ── AI / Physics ──────────────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
+	if _is_dying:
+		return
 	super._physics_process(delta)
 
 	var dist := _distance_to_player()
@@ -112,7 +149,7 @@ func _physics_process(delta: float) -> void:
 			wander_timer.stop()
 		linear_velocity = _direction_to_player_with_noise(max_speed)
 		_update_facing(linear_velocity)
-		_play_idle()
+		_play_run()
 	elif ai_state == AIState.CHASE_STATE:
 		ai_state = AIState.WANDER_STATE
 		_begin_move()
@@ -135,7 +172,7 @@ func _begin_move() -> void:
 	_update_facing(linear_velocity)
 	wander_timer.wait_time = randf_range(1.0, 3.0)
 	wander_timer.start()
-	_play_idle()
+	_play_walk()
 
 
 func _update_facing(vel: Vector2) -> void:
@@ -159,6 +196,8 @@ func _on_wander_timeout() -> void:
 # ── Boundary enforcement ──────────────────────────────────────────────────────
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	if _is_dying:
+		return
 	var pos      := state.transform.origin
 	var hit_wall := false
 	var x_min    := viewport_rect.position.x + MOB_RADIUS
@@ -195,4 +234,14 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 # ── Animation callbacks ───────────────────────────────────────────────────────
 
 func _on_animation_finished() -> void:
-	pass
+	if _is_dying:
+		queue_free()
+		return
+	if _is_hurt:
+		_is_hurt = false
+		if ai_state == AIState.CHASE_STATE:
+			_play_run()
+		elif is_moving:
+			_play_walk()
+		else:
+			_play_idle()
