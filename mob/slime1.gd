@@ -306,7 +306,7 @@ func _on_animation_finished() -> void:
 		return
 	if _is_hurt:
 		_is_hurt = false
-		if ai_state == AIState.CHASE_STATE or ai_state == AIState.FLEE_STATE:
+		if _is_aggroed or ai_state == AIState.CHASE_STATE or ai_state == AIState.FLEE_STATE:
 			_play_run()
 		elif is_moving:
 			_play_walk()
