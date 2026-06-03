@@ -95,7 +95,7 @@ func _build_ui() -> void:
 	center.add_child(sep)
 
 	var has_save : bool = SceneManager.has_save(0)
-	var options  : Array[String] = ["New Game", "Continue", "Load"]
+	var options  : Array[String] = ["Continue", "Load", "New Game"]
 	for i in options.size():
 		var lbl := Label.new()
 		lbl.text = options[i]
@@ -114,7 +114,7 @@ func _build_ui() -> void:
 func _highlight(idx: int) -> void:
 	var has_save : bool = SceneManager.has_save(0)
 	for i in _buttons.size():
-		var disabled : bool = (i == 1 and not has_save)
+		var disabled : bool = (i == 0 and not has_save)
 		if disabled:
 			_buttons[i].add_theme_color_override("font_color", _C_DISABLED)
 		else:
@@ -158,7 +158,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _step(from: int, dir: int) -> int:
 	var has_save: bool = SceneManager.has_save(0)
 	var next: int = (from + dir + _buttons.size()) % _buttons.size()
-	if next == 1 and not has_save:
+	if next == 0 and not has_save:
 		next = (next + dir + _buttons.size()) % _buttons.size()
 	return next
 
@@ -181,11 +181,11 @@ func _highlight_picker() -> void:
 
 func _confirm_selection() -> void:
 	match _selection:
-		0: _start_new_game()
-		1:
+		0:
 			if SceneManager.has_save(0):
 				SceneManager.load_game(0)
-		2: _show_load_picker()
+		1: _show_load_picker()
+		2: _start_new_game()
 
 
 func _show_load_picker() -> void:
