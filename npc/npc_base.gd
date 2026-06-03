@@ -193,6 +193,7 @@ func _ready() -> void:
 	_build_sprite_frames()
 	_detection.area_entered.connect(_on_area_entered)
 	_detection.area_exited.connect(_on_area_exited)
+	_add_physics_body()
 
 	var shape := _detection.get_node("CollisionShape2D")
 	if shape and shape.shape is CircleShape2D:
@@ -514,6 +515,18 @@ func _pick_wander_direction() -> void:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+func _add_physics_body() -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask  = 0
+	var shape_node := CollisionShape2D.new()
+	var circle     := CircleShape2D.new()
+	circle.radius  = 12.0
+	shape_node.shape = circle
+	body.add_child(shape_node)
+	add_child(body)
+
 
 func _try_play(anim: String) -> void:
 	if _sprite.sprite_frames and _sprite.sprite_frames.has_animation(anim):

@@ -1,4 +1,4 @@
-extends Area2D
+extends CharacterBody2D
 
 signal hit
 signal fly_caught
@@ -170,21 +170,21 @@ func _process(delta: float) -> void:
 		facing = move_input.normalized()
 		_last_move_dir = facing
 
-	var velocity: Vector2
+	var move_vel: Vector2
 
 	if is_attacking:
-		velocity = Vector2.ZERO
+		move_vel = Vector2.ZERO
 	elif is_dodging:
-		velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
+		move_vel = -facing.normalized() * PlayerStats.DODGE_SPEED
 	elif is_rolling:
-		velocity = facing.normalized() * PlayerStats.ROLL_SPEED
+		move_vel = facing.normalized() * PlayerStats.ROLL_SPEED
 	elif _knockback_time > 0.0:
-		velocity = _knockback_vel
+		move_vel = _knockback_vel
 	else:
 		if move_input.length() > 0:
-			velocity = facing * speed
+			move_vel = facing * speed
 		else:
-			velocity = Vector2.ZERO
+			move_vel = Vector2.ZERO
 
 	if combat_enabled:
 		if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
@@ -194,40 +194,42 @@ func _process(delta: float) -> void:
 		if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
 				and not is_dying and _cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
 			_start_dodge()
-			velocity = -facing.normalized() * PlayerStats.DODGE_SPEED
+			move_vel = -facing.normalized() * PlayerStats.DODGE_SPEED
 
-		if Input.is_action_just_pressed(PlayerInput.ROLL) and not is_attacking \
-				and not is_dying and _roll_cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
+		if Input.is_action_just_pressed(PlayerInput.ROLL) \
+				and not is_attacking and not is_dying \
+				and _roll_cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
 			_start_roll()
-			velocity = facing.normalized() * PlayerStats.ROLL_SPEED
+			move_vel = facing.normalized() * PlayerStats.ROLL_SPEED
 
 	var can_swap: bool = not is_attacking and not is_dodging and not is_rolling
 	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and can_swap:
 		_cycle_weapon()
 
-	position += velocity * delta
+	velocity = move_vel
+	move_and_slide()
 	position = position.clamp(_world_bounds.position, _world_bounds.end)
 
 	if not is_attacking and not _is_hurt and not is_dodging and not is_rolling:
-		_update_animation(velocity if not is_dodging else Vector2.ZERO)
+		_update_animation(move_vel if not is_dodging else Vector2.ZERO)
 
 
-func _update_animation(velocity: Vector2) -> void:
+func _update_animation(move_dir: Vector2) -> void:
 	var anim: String
 	var flip := false
 
-	if velocity.length() == 0:
+	if move_dir.length() == 0:
 		if abs(facing.y) > abs(facing.x):
 			anim = "idle_up" if facing.y < 0 else "idle_down"
 		else:
 			anim = "idle"
 			flip = facing.x < 0
 	else:
-		if abs(velocity.y) > abs(velocity.x):
-			anim = "walk_up" if velocity.y < 0 else "walk_down"
+		if abs(move_dir.y) > abs(move_dir.x):
+			anim = "walk_up" if move_dir.y < 0 else "walk_down"
 		else:
 			anim = "walk"
-			flip = velocity.x < 0
+			flip = move_dir.x < 0
 
 	_sprite.flip_h = flip
 	if _sprite.animation != anim:
