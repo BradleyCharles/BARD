@@ -110,10 +110,7 @@ func _compute_playable_rect() -> void:
 # ── Bounty Spawning ───────────────────────────────────────────────────────────
 
 func _start_bounty_spawning() -> void:
-	var all_bounties: Array = []
-	all_bounties.append_array(SceneManager.available_bounties)
-	all_bounties.append_array(SceneManager.active_bounties)
-	for bounty in all_bounties:
+	for bounty in SceneManager.active_bounties:
 		_start_bounty_zone(bounty)
 
 
@@ -159,15 +156,15 @@ func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
 	var zone_rect : Rect2 = _zone_rects[zone]
 	var mob               = scene.instantiate()
 	mob.set_meta("bounty_zone", zone)
-	if mob.has_method("set_playable_rect"):
-		mob.set_playable_rect(_playable_rect)
-	elif mob.has_method("set_world_size"):
-		mob.set_world_size(world_size)
 	mob.position = Vector2(
 		randf_range(zone_rect.position.x + SPAWN_MARGIN, zone_rect.end.x - SPAWN_MARGIN),
 		randf_range(zone_rect.position.y + SPAWN_MARGIN, zone_rect.end.y - SPAWN_MARGIN)
 	)
 	_mob_container.add_child(mob)
+	if mob.has_method("set_playable_rect"):
+		mob.set_playable_rect(_playable_rect)
+	elif mob.has_method("set_world_size"):
+		mob.set_world_size(world_size)
 
 	if mob.has_signal("died"):
 		mob.died.connect(_on_mob_died)
@@ -216,11 +213,11 @@ func _spawn_boss(type: String) -> void:
 
 	var boss = scene.instantiate()
 	boss.position = world_size * 0.5
+	_mob_container.add_child(boss)
 	if boss.has_method("set_playable_rect"):
 		boss.set_playable_rect(_playable_rect)
 	elif boss.has_method("set_world_size"):
 		boss.set_world_size(world_size)
-	_mob_container.add_child(boss)
 	if boss.has_signal("died"):
 		boss.died.connect(_on_mob_died)
 

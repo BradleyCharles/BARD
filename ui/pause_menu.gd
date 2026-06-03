@@ -10,11 +10,12 @@ const _C_BORDER  := Color(0.50, 0.40, 0.20, 0.90)
 const _C_GOLD    := Color(0.95, 0.85, 0.45, 1.0)
 const _C_DIM     := Color(0.60, 0.55, 0.45, 1.0)
 
-var _font       : Font
-var _buttons    : Array[Label] = []
-var _selection  : int = 0
-var _is_open    : bool = false
-var _scene_path : String = ""
+var _font              : Font
+var _buttons           : Array[Label] = []
+var _fullscreen_label  : Label = null
+var _selection         : int = 0
+var _is_open           : bool = false
+var _scene_path        : String = ""
 
 var _load_picker : Control = null
 
@@ -79,7 +80,23 @@ func _build_ui() -> void:
 		vbox.add_child(lbl)
 		_buttons.append(lbl)
 
+	var fs_lbl := Label.new()
+	fs_lbl.text = _fullscreen_label_text()
+	fs_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	fs_lbl.add_theme_font_size_override("font_size", 28)
+	fs_lbl.add_theme_color_override("font_color", _C_DIM)
+	if _font:
+		fs_lbl.add_theme_font_override("font", _font)
+	vbox.add_child(fs_lbl)
+	_buttons.append(fs_lbl)
+	_fullscreen_label = fs_lbl
+
 	_highlight(_selection)
+
+
+func _fullscreen_label_text() -> String:
+	var is_fs: bool = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	return "Fullscreen  [%s]" % ("ON" if is_fs else "OFF")
 
 
 func _highlight(idx: int) -> void:
@@ -93,6 +110,7 @@ func open(current_scene_path: String) -> void:
 	_scene_path = current_scene_path
 	_selection  = 0
 	_highlight(_selection)
+	_fullscreen_label.text = _fullscreen_label_text()
 	visible = true
 	_is_open = true
 	get_tree().paused = true
@@ -135,6 +153,13 @@ func _confirm_selection() -> void:
 			close()
 		2:
 			_show_load_picker()
+		3:
+			var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
+			if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			else:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			_fullscreen_label.text = _fullscreen_label_text()
 
 
 func _show_load_picker() -> void:
