@@ -293,10 +293,11 @@ func _start_new_game() -> void:
 	await get_tree().process_frame
 
 	var project_path : String = ProjectSettings.globalize_path("res://")
-	var progress_path := project_path + "worldgen_progress.json"
-	if FileAccess.file_exists(progress_path):
-		DirAccess.remove_absolute(progress_path)
-	var script       : String = project_path + "pipeline/world_gen.py"
+	for stale: String in ["worldgen_progress.json", "pipeline_ready.flag"]:
+		var p := project_path + stale
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+	var script : String = project_path + "pipeline/world_gen.py"
 	var _pid         : int    = OS.create_process(PYTHON_EXE, [script])
 
 	# Poll for world_registry.json + pipeline_ready.flag (world_gen writes both)

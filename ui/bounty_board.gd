@@ -33,6 +33,7 @@ var _row_map       : Dictionary = {}
 
 var _detail_panel  : Control = null
 var _detail_open   : bool    = false
+var _input_guard   : bool    = false
 
 
 func _ready() -> void:
@@ -50,6 +51,7 @@ func _ready() -> void:
 
 func open() -> void:
 	_selected_idx = 0
+	_input_guard  = true
 	_refresh()
 	_root.show()
 	_is_open = true
@@ -73,6 +75,9 @@ func is_board_open() -> bool:
 
 func _process(_delta: float) -> void:
 	if not _is_open:
+		return
+	if _input_guard:
+		_input_guard = false
 		return
 	if _detail_open:
 		if Input.is_action_just_pressed(PlayerInput.MENU_CANCEL):
