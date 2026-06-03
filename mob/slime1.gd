@@ -6,6 +6,7 @@ const ASSET_BASE          := "res://assets/Slime1/Without_shadow/Slime1/"
 const MOB_RADIUS          : float = 30.0
 const PACK_TRIGGER_RADIUS : float = 200.0
 const PACK_COUNT_NEEDED   : int   = 2
+const LINK_SCAN_INTERVAL  : float = 0.5
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
@@ -19,13 +20,15 @@ const PACK_COUNT_NEEDED   : int   = 2
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
-var wander_speed : float  = 0.0
-var wander_timer : Timer
-var is_moving    : bool   = false
-var viewport_rect: Rect2
-var facing       : String = "down"
-var _is_dying    : bool   = false
-var _is_hurt     : bool   = false
+var wander_speed     : float  = 0.0
+var wander_timer     : Timer
+var is_moving        : bool   = false
+var viewport_rect    : Rect2
+var facing           : String = "down"
+var _is_dying        : bool   = false
+var _is_hurt         : bool   = false
+var _is_aggroed      : bool   = false
+var _link_scan_timer : float  = 0.0
 
 
 func _ready() -> void:
@@ -138,7 +141,24 @@ func _on_died() -> void:
 		"left":  _sprite.play("death_left")
 
 
-# ── Pack helpers ──────────────────────────────────────────────────────────────
+# ── Link / Pack system ────────────────────────────────────────────────────────
+
+## Called externally (or by _link_pack cascade) to permanently aggro this slime.
+func trigger_aggro() -> void:
+	if _is_aggroed or _is_dying:
+		return
+	_is_aggroed = true
+	_link_pack()
+
+
+func _link_pack() -> void:
+	for mob in get_tree().get_nodes_in_group("ground_mobs"):
+		if mob == self:
+			continue
+		if mob.get_meta("monster_type", "") == "slime1":
+			if global_position.distance_to(mob.global_position) <= PACK_TRIGGER_RADIUS:
+				mob.call("trigger_aggro")
+
 
 func _count_nearby_mobs() -> int:
 	var count: int = 0
@@ -157,24 +177,33 @@ func _physics_process(delta: float) -> void:
 		return
 	super._physics_process(delta)
 
-	var dist       := _distance_to_player()
-	var in_aggro   := dist < aggro_radius
-	var pack_count := _count_nearby_mobs()
+	var dist     := _distance_to_player()
+	var in_aggro := dist < aggro_radius
 
-	if in_aggro:
-		if pack_count >= PACK_COUNT_NEEDED:
-			if ai_state != AIState.CHASE_STATE:
-				ai_state = AIState.CHASE_STATE
-				wander_timer.stop()
+	if _is_aggroed:
+		# Already linked — chase player and periodically spread the link.
+		if ai_state != AIState.CHASE_STATE:
+			ai_state = AIState.CHASE_STATE
+			wander_timer.stop()
+		if _player_ref != null and is_instance_valid(_player_ref):
 			linear_velocity = _direction_to_player_with_noise(max_speed)
 			_update_facing(linear_velocity)
 			_play_run()
+		_link_scan_timer -= delta
+		if _link_scan_timer <= 0.0:
+			_link_pack()
+			_link_scan_timer = LINK_SCAN_INTERVAL
+	elif in_aggro:
+		# Not yet linked — check if pack condition is met to trigger.
+		if _count_nearby_mobs() >= PACK_COUNT_NEEDED:
+			trigger_aggro()
 		else:
 			if ai_state != AIState.FLEE_STATE:
 				ai_state = AIState.FLEE_STATE
 				wander_timer.stop()
 			if _player_ref != null and is_instance_valid(_player_ref):
-				var away: Vector2 = (global_position - _player_ref.global_position).normalized()
+				var away: Vector2 = \
+					(global_position - _player_ref.global_position).normalized()
 				linear_velocity = away * max_speed
 				_update_facing(linear_velocity)
 				_play_run()
