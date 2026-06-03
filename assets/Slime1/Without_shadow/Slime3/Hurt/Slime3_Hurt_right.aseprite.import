@@ -1,7 +1,7 @@
 [remap]
 
-importer="aseprite_wizard.plugin.noop"
-type="PackedDataContainer"
+importer="aseprite_wizard.plugin.spriteframes"
+type="SpriteFrames"
 uid="uid://cew8t4wbbsu80"
 path="res://.godot/imported/Slime3_Hurt_right.aseprite-de6fc58ffc5ab7d9a0d479d556be7cba.res"
 
@@ -12,3 +12,10 @@ dest_files=["res://.godot/imported/Slime3_Hurt_right.aseprite-de6fc58ffc5ab7d9a0
 
 [params]
 
+layer/exclude_layers_pattern=""
+layer/only_visible_layers=false
+sheet/sheet_type="packed"
+sheet/sheet_columns=12
+sheet/frame_padding=0
+sheet/scale=1
+animation/round_fps=true

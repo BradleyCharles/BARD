@@ -1,7 +1,7 @@
 [remap]
 
-importer="aseprite_wizard.plugin.noop"
-type="PackedDataContainer"
+importer="aseprite_wizard.plugin.spriteframes"
+type="SpriteFrames"
 uid="uid://d7w5fa85xris"
 path="res://.godot/imported/Slime2_Idle_left.aseprite-e59d86981e51ca5c9e965efafde95604.res"
 
@@ -12,3 +12,10 @@ dest_files=["res://.godot/imported/Slime2_Idle_left.aseprite-e59d86981e51ca5c9e9
 
 [params]
 
+layer/exclude_layers_pattern=""
+layer/only_visible_layers=false
+sheet/sheet_type="packed"
+sheet/sheet_columns=12
+sheet/frame_padding=0
+sheet/scale=1
+animation/round_fps=true

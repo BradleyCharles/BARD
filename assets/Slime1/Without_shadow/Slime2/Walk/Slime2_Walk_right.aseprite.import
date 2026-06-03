@@ -1,7 +1,7 @@
 [remap]
 
-importer="aseprite_wizard.plugin.noop"
-type="PackedDataContainer"
+importer="aseprite_wizard.plugin.spriteframes"
+type="SpriteFrames"
 uid="uid://be1w0jt5ons42"
 path="res://.godot/imported/Slime2_Walk_right.aseprite-a1b424a181376eefc9fb637b4bc30353.res"
 
@@ -12,3 +12,10 @@ dest_files=["res://.godot/imported/Slime2_Walk_right.aseprite-a1b424a181376eefc9
 
 [params]
 
+layer/exclude_layers_pattern=""
+layer/only_visible_layers=false
+sheet/sheet_type="packed"
+sheet/sheet_columns=12
+sheet/frame_padding=0
+sheet/scale=1
+animation/round_fps=true
