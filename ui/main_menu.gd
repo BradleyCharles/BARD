@@ -195,7 +195,8 @@ func _show_load_picker() -> void:
 	var picker := _build_slot_picker(
 		"Load Game",
 		func(slot: int) -> void:
-			_load_picker = null
+			_close_picker()
+			_busy = true
 			SceneManager.load_game(slot)
 	)
 	_canvas.add_child(picker)
@@ -296,7 +297,7 @@ func _start_new_game() -> void:
 	if FileAccess.file_exists(progress_path):
 		DirAccess.remove_absolute(progress_path)
 	var script       : String = project_path + "pipeline/world_gen.py"
-	var pid          : int    = OS.create_process(PYTHON_EXE, [script])
+	var _pid         : int    = OS.create_process(PYTHON_EXE, [script])
 
 	# Poll for world_registry.json + pipeline_ready.flag (world_gen writes both)
 	var elapsed : float = 0.0

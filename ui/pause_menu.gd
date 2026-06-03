@@ -17,7 +17,10 @@ var _selection         : int = 0
 var _is_open           : bool = false
 var _scene_path        : String = ""
 
-var _load_picker : Control = null
+var _load_picker    : Control          = null
+var _picker_rows    : Array[Label]    = []
+var _picker_actions : Array[Callable] = []
+var _picker_sel     : int             = 0
 
 
 func _ready() -> void:
@@ -126,7 +129,23 @@ func close() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _is_open or _load_picker != null:
+	if not _is_open:
+		return
+	if _load_picker != null:
+		if event.is_action_pressed(PlayerInput.MENU_UP):
+			_picker_sel = (_picker_sel - 1 + _picker_rows.size()) % _picker_rows.size()
+			_highlight_picker()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed(PlayerInput.MENU_DOWN):
+			_picker_sel = (_picker_sel + 1) % _picker_rows.size()
+			_highlight_picker()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed(PlayerInput.INTERACT):
+			_picker_actions[_picker_sel].call()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed(PlayerInput.MENU_CANCEL):
+			_close_picker()
+			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(PlayerInput.MENU_UP):
 		_selection = (_selection - 1 + _buttons.size()) % _buttons.size()
@@ -154,23 +173,45 @@ func _confirm_selection() -> void:
 		2:
 			_show_load_picker()
 		3:
-			var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
-			if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
-				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-			else:
-				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			if not OS.has_feature("editor"):
+				var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
+				if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
+					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+				else:
+					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 			_fullscreen_label.text = _fullscreen_label_text()
 
 
+func _highlight_picker() -> void:
+	for i in _picker_rows.size():
+		_picker_rows[i].add_theme_color_override(
+			"font_color", _C_GOLD if i == _picker_sel else _C_DIM
+		)
+
+
+func _close_picker() -> void:
+	if _load_picker:
+		_load_picker.queue_free()
+		_load_picker = null
+	_picker_rows.clear()
+	_picker_actions.clear()
+	_picker_sel = 0
+
+
 func _show_load_picker() -> void:
+	_picker_rows.clear()
+	_picker_actions.clear()
+	_picker_sel = 0
 	var picker := _build_slot_picker(
 		"Load Game",
 		func(slot: int) -> void:
+			_close_picker()
 			close()
 			SceneManager.load_game(slot)
 	)
 	add_child(picker)
 	_load_picker = picker
+	_highlight_picker()
 
 
 func _build_slot_picker(title_text: String, on_select: Callable) -> Control:
@@ -221,13 +262,13 @@ func _build_slot_picker(title_text: String, on_select: Callable) -> Control:
 
 		if has:
 			var s := slot
-			var btn := lbl
-			btn.mouse_filter = Control.MOUSE_FILTER_STOP
-			btn.gui_input.connect(func(ev: InputEvent) -> void:
-				if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed:
+			_picker_rows.append(lbl)
+			_picker_actions.append(func() -> void: on_select.call(s))
+			lbl.mouse_filter = Control.MOUSE_FILTER_STOP
+			lbl.gui_input.connect(func(ev: InputEvent) -> void:
+				if ev is InputEventMouseButton \
+						and (ev as InputEventMouseButton).pressed:
 					on_select.call(s)
-					root.queue_free()
-					_load_picker = null
 			)
 
 	var cancel := Label.new()
@@ -240,9 +281,10 @@ func _build_slot_picker(title_text: String, on_select: Callable) -> Control:
 	cancel.mouse_filter = Control.MOUSE_FILTER_STOP
 	cancel.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed:
-			root.queue_free()
-			_load_picker = null
+			_close_picker()
 	)
 	vbox.add_child(cancel)
+	_picker_rows.append(cancel)
+	_picker_actions.append(_close_picker)
 
 	return root

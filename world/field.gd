@@ -187,25 +187,22 @@ func _on_bounties_updated() -> void:
 
 func _check_boss_triggers() -> void:
 	if not _slime1_boss_spawned and _slime1_killed >= BOSS_KILL_THRESHOLD:
-		_spawn_boss("slime1")
+		_slime1_boss_spawned = true
+		call_deferred("_spawn_boss", "slime1")
 	if not _slime2_boss_spawned and _slime2_killed >= BOSS_KILL_THRESHOLD:
-		_spawn_boss("slime2")
+		_slime2_boss_spawned = true
+		call_deferred("_spawn_boss", "slime2")
 	if not _slime3_boss_spawned and _slime3_killed >= BOSS_KILL_THRESHOLD:
-		_spawn_boss("slime3")
+		_slime3_boss_spawned = true
+		call_deferred("_spawn_boss", "slime3")
 
 
 func _spawn_boss(type: String) -> void:
 	var scene: PackedScene
 	match type:
-		"slime1":
-			scene = slime1_boss_scene
-			_slime1_boss_spawned = true
-		"slime2":
-			scene = slime2_boss_scene
-			_slime2_boss_spawned = true
-		"slime3":
-			scene = slime3_boss_scene
-			_slime3_boss_spawned = true
+		"slime1": scene = slime1_boss_scene
+		"slime2": scene = slime2_boss_scene
+		"slime3": scene = slime3_boss_scene
 
 	if scene == null:
 		push_error("Field: no boss scene for type '%s'" % type)

@@ -130,11 +130,12 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if (event as InputEventKey).keycode == KEY_F11:
-			var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
-			if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
-				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-			else:
-				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			if not OS.has_feature("editor"):
+				var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
+				if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
+					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+				else:
+					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 			get_viewport().set_input_as_handled()
 
 

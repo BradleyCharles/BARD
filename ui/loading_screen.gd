@@ -20,7 +20,11 @@ extends CanvasLayer
 @onready var _overlay : ColorRect = $Overlay
 @onready var _label   : Label     = $Label
 
-const TYPE_INTERVAL := 0.04   # seconds between characters while typing
+const TYPE_INTERVAL := 0.04
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 # ── Public API (awaitable) ────────────────────────────────────────────────────
