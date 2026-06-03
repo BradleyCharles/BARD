@@ -564,6 +564,8 @@ func _show_day_summary(earned: int, turned: Array) -> void:
 
 	var panel           := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	var style           := StyleBoxFlat.new()
 	style.bg_color       = Color(0.07, 0.05, 0.03, 1.0)
 	style.border_color   = Color(0.55, 0.45, 0.25, 1.0)
@@ -654,7 +656,7 @@ func _show_overlay(message: String) -> void:
 		font = load(font_path)
 
 	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_CENTER)
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 	vbox.add_theme_constant_override("separation", 16)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	_overlay.add_child(vbox)

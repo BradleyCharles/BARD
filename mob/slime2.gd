@@ -217,14 +217,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	var pos      := state.transform.origin
 	var hit_wall := false
 
-	# Player separation
-	if _player_ref != null and is_instance_valid(_player_ref):
-		var to_player : Vector2 = _player_ref.global_position - pos
-		var min_sep   : float   = MOB_RADIUS + 30.0
-		if to_player.length() < min_sep and to_player.length() > 0.0:
-			pos -= to_player.normalized() * (min_sep - to_player.length())
-			hit_wall = true
-
 	var x_min := viewport_rect.position.x + MOB_RADIUS
 	var x_max := viewport_rect.end.x - MOB_RADIUS
 	var y_min := viewport_rect.position.y + MOB_RADIUS
