@@ -22,9 +22,10 @@ var _avail_list  : VBoxContainer
 var _active_list : VBoxContainer
 var _is_open     : bool = false
 
-var _selected_avail    : int   = 0
-var _avail_labels      : Array = []
-var _avail_underlines  : Array = []
+var _selected_avail    : int             = 0
+var _avail_labels      : Array           = []
+var _avail_underlines  : Array           = []
+var _avail_scroll      : ScrollContainer = null
 
 
 func _ready() -> void:
@@ -87,6 +88,8 @@ func _navigate(dir: int) -> void:
 		return
 	_selected_avail = (_selected_avail + dir + count) % count
 	_update_avail_cursor()
+	if _avail_scroll and _selected_avail < _avail_labels.size():
+		_avail_scroll.ensure_control_visible(_avail_labels[_selected_avail])
 
 
 func _accept_selected() -> void:
@@ -137,10 +140,15 @@ func _build_ui() -> void:
 	vbox.add_child(_sep())
 
 	vbox.add_child(_label("AVAILABLE", 17, _C_SECTION))
+	_avail_scroll = ScrollContainer.new()
+	_avail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_avail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(_avail_scroll)
 	_avail_list = VBoxContainer.new()
 	_avail_list.layout_mode = 2
+	_avail_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_avail_list.add_theme_constant_override("separation", 6)
-	vbox.add_child(_avail_list)
+	_avail_scroll.add_child(_avail_list)
 	vbox.add_child(_sep())
 
 	vbox.add_child(_label("ACTIVE", 17, _C_SECTION))

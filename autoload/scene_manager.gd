@@ -209,25 +209,14 @@ func refresh_daily_bounties() -> void:
 		file.close()
 		return
 	file.close()
-	var pool : Array = parser.get_data().get("bounties", [])
+	var pool: Array = parser.get_data().get("bounties", [])
 
-	var cap : int = 3
-	var occupied_zones : Array = active_bounties.map(func(b): return b.get("zone", ""))
-
-	var zones := ["zone_a", "zone_b", "zone_c"]
-	zones.shuffle()
-
+	var active_ids: Array = active_bounties.map(func(b: Dictionary) -> String: return b.get("id", ""))
 	available_bounties.clear()
-	for zone in zones:
-		if available_bounties.size() >= cap:
-			break
-		if zone in occupied_zones:
-			continue
-		var candidates : Array = pool.filter(func(b): return b.get("zone") == zone)
-		if candidates.is_empty():
-			continue
-		candidates.shuffle()
-		available_bounties.append(candidates[0].duplicate())
+	for bounty: Dictionary in pool:
+		var bid: String = bounty.get("id", "")
+		if not (bid in active_ids):
+			available_bounties.append(bounty.duplicate())
 
 	bounties_updated.emit()
 
