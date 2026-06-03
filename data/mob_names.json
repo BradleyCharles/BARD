@@ -1,0 +1,38 @@
+{
+	"slime1": [
+		"Verdant Ooze",
+		"Marsh Creep",
+		"Bog Slither",
+		"Mossy Puddle",
+		"Fen Glob",
+		"Murky Seep",
+		"Briar Slick",
+		"Damp Crawler",
+		"Mire Drift",
+		"Hollow Ooze"
+	],
+	"slime2": [
+		"Azure Pack",
+		"Cobalt Horde",
+		"Slate Swarm",
+		"Shadow Slick",
+		"Dusk Creep",
+		"Indigo Mass",
+		"Tide Slither",
+		"Storm Glob",
+		"Veil Crawler",
+		"Murk Swarm"
+	],
+	"slime3": [
+		"Crimson Brute",
+		"Scarlet Hulk",
+		"Ember Mass",
+		"Rust Colossus",
+		"Blood Swell",
+		"Forge Glob",
+		"Smoldering Creep",
+		"Ash Crusher",
+		"Char Behemoth",
+		"Cinder Beast"
+	]
+}

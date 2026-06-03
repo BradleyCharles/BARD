@@ -211,19 +211,59 @@ func refresh_daily_bounties() -> void:
 	file.close()
 	var pool: Array = parser.get_data().get("bounties", [])
 
-	var active_ids: Array = active_bounties.map(func(b: Dictionary) -> String: return b.get("id", ""))
+	var name_pool: Dictionary = _load_mob_names()
+	var active_ids: Array = active_bounties.map(
+		func(b: Dictionary) -> String: return b.get("id", ""))
 	available_bounties.clear()
 	for bounty: Dictionary in pool:
 		var bid: String = bounty.get("id", "")
 		if not (bid in active_ids):
-			available_bounties.append(bounty.duplicate())
+			var b: Dictionary = bounty.duplicate()
+			var names: Array = name_pool.get(b.get("monster_type", ""), [])
+			b["display_name"] = names[randi() % names.size()] if not names.is_empty() else bid
+			available_bounties.append(b)
 
 	bounties_updated.emit()
+
+
+func _load_mob_names() -> Dictionary:
+	var path := _project_path + "data/mob_names.json"
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		push_error("SceneManager: could not open mob_names.json")
+		return {}
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		file.close()
+		push_error("SceneManager: failed to parse mob_names.json")
+		return {}
+	file.close()
+	return parser.get_data()
+
+
+func difficulty_label(monster_type: String) -> String:
+	match monster_type:
+		"slime1": return "Easy"
+		"slime2": return "Medium"
+		"slime3": return "Hard"
+	return ""
+
+
+func size_label(quantity: int) -> String:
+	match quantity:
+		5:  return "Small"
+		10: return "Medium"
+		20: return "Large"
+	return ""
 
 
 func accept_bounty(bounty_id: String) -> void:
 	for i in available_bounties.size():
 		if available_bounties[i].get("id") == bounty_id:
+			var zone: String = available_bounties[i].get("zone", "")
+			for ab: Dictionary in active_bounties:
+				if ab.get("zone") == zone and ab.get("status") != "turned_in":
+					return
 			var bounty : Dictionary = available_bounties[i].duplicate()
 			bounty["killed"]        = 0
 			bounty["status"]        = "active"

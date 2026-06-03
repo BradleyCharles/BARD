@@ -5,27 +5,34 @@ signal board_closed
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG          := Color(0.09, 0.07, 0.05, 0.96)
-const _C_BORDER      := Color(0.52, 0.40, 0.20, 1.0)
-const _C_GOLD        := Color(0.88, 0.73, 0.38, 1.0)
-const _C_SECTION     := Color(0.68, 0.55, 0.28, 1.0)
-const _C_TEXT        := Color(0.82, 0.76, 0.64, 1.0)
-const _C_DIMMED      := Color(0.48, 0.42, 0.32, 0.55)
-const _C_EMPTY       := Color(0.50, 0.46, 0.38, 1.0)
-const _C_HINT        := Color(0.42, 0.38, 0.30, 1.0)
-const _C_PROGRESS    := Color(0.78, 0.70, 0.38, 1.0)
-const _C_COMPLETE    := Color(0.48, 0.74, 0.42, 1.0)
+const _C_BG        := Color(0.09, 0.07, 0.05, 0.97)
+const _C_BORDER    := Color(0.52, 0.40, 0.20, 1.0)
+const _C_GOLD      := Color(0.88, 0.73, 0.38, 1.0)
+const _C_SECTION   := Color(0.60, 0.50, 0.28, 1.0)
+const _C_TEXT      := Color(0.82, 0.76, 0.64, 1.0)
+const _C_DIMMED    := Color(0.48, 0.42, 0.32, 0.40)
+const _C_EMPTY     := Color(0.50, 0.46, 0.38, 1.0)
+const _C_HINT      := Color(0.42, 0.38, 0.30, 1.0)
+const _C_PROGRESS  := Color(0.78, 0.70, 0.38, 1.0)
+const _C_COMPLETE  := Color(0.48, 0.74, 0.42, 1.0)
+const _C_WARNING   := Color(0.85, 0.35, 0.25, 1.0)
 
-var _font        : Font
-var _root        : Control
-var _avail_list  : VBoxContainer
-var _active_list : VBoxContainer
-var _is_open     : bool = false
+const _ZONES       := ["zone_a", "zone_b", "zone_c"]
+const _ZONE_LABELS := {"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"}
 
-var _selected_avail    : int             = 0
-var _avail_labels      : Array           = []
-var _avail_underlines  : Array           = []
-var _avail_scroll      : ScrollContainer = null
+var _font          : Font
+var _root          : Control
+var _scroll        : ScrollContainer
+var _list          : VBoxContainer
+var _active_label  : Label
+var _is_open       : bool  = false
+
+var _selectable    : Array      = []
+var _selected_idx  : int        = 0
+var _row_map       : Dictionary = {}
+
+var _detail_panel  : Control = null
+var _detail_open   : bool    = false
 
 
 func _ready() -> void:
@@ -42,7 +49,7 @@ func _ready() -> void:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func open() -> void:
-	_selected_avail = 0
+	_selected_idx = 0
 	_refresh()
 	_root.show()
 	_is_open = true
@@ -51,6 +58,7 @@ func open() -> void:
 
 
 func close() -> void:
+	_close_detail()
 	_root.hide()
 	_is_open = false
 	_set_player_active(true)
@@ -66,37 +74,132 @@ func is_board_open() -> bool:
 func _process(_delta: float) -> void:
 	if not _is_open:
 		return
+	if _detail_open:
+		if Input.is_action_just_pressed(PlayerInput.MENU_CANCEL):
+			_close_detail()
+		elif Input.is_action_just_pressed(PlayerInput.INTERACT):
+			_accept_from_detail()
+		return
 	if Input.is_action_just_pressed(PlayerInput.MENU_CANCEL):
 		close()
 	elif Input.is_action_just_pressed(PlayerInput.MENU_UP):
 		_navigate(-1)
 	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
 		_navigate(1)
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if not _is_open:
-		return
-	if event.is_action_pressed(PlayerInput.INTERACT):
-		get_viewport().set_input_as_handled()
-		_accept_selected()
+	elif Input.is_action_just_pressed(PlayerInput.INTERACT):
+		_open_detail()
 
 
 func _navigate(dir: int) -> void:
-	var count := _avail_labels.size()
+	var count: int = _selectable.size()
 	if count == 0:
 		return
-	_selected_avail = (_selected_avail + dir + count) % count
-	_update_avail_cursor()
-	if _avail_scroll and _selected_avail < _avail_labels.size():
-		_avail_scroll.ensure_control_visible(_avail_labels[_selected_avail])
+	_selected_idx = (_selected_idx + dir + count) % count
+	_update_cursor()
+	var bid: String  = _selectable[_selected_idx].get("id", "")
+	var row: Control = _row_map.get(bid, null)
+	if _scroll and row:
+		_scroll.ensure_control_visible(row)
 
 
-func _accept_selected() -> void:
-	var available: Array = SceneManager.available_bounties
-	if _selected_avail < available.size():
-		var bid: String = available[_selected_avail].get("id", "")
-		SceneManager.accept_bounty(bid)
+# ── Detail modal ──────────────────────────────────────────────────────────────
+
+func _open_detail() -> void:
+	if _selectable.is_empty():
+		return
+	var bounty: Dictionary = _selectable[_selected_idx]
+	_close_detail()
+
+	_detail_open  = true
+	_detail_panel = Control.new()
+	_detail_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_detail_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_detail_panel)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.0, 0.0, 0.0, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_detail_panel.add_child(dim)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal     = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical       = Control.GROW_DIRECTION_BOTH
+	panel.custom_minimum_size = Vector2(580, 0)
+	panel.add_theme_stylebox_override("panel", _modal_style())
+	_detail_panel.add_child(panel)
+
+	var margin := MarginContainer.new()
+	for side: String in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 36)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	margin.add_child(vbox)
+
+	var display_name: String = bounty.get("display_name", bounty.get("id", ""))
+	var monster_type: String = bounty.get("monster_type", "")
+	var quantity    : int    = int(bounty.get("quantity", 0))
+	var zone        : String = bounty.get("zone", "")
+	var flavor      : String = bounty.get("flavor", "")
+
+	var diff  : String = SceneManager.difficulty_label(monster_type)
+	var size_s: String = SceneManager.size_label(quantity)
+	var zone_s: String = _ZONE_LABELS.get(zone, zone)
+
+	var title_lbl := _lbl(display_name, 30, _C_GOLD)
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title_lbl)
+
+	var tags_lbl := _lbl("%s  ·  %s  ·  %s" % [zone_s, diff, size_s], 18, _C_SECTION)
+	tags_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(tags_lbl)
+
+	vbox.add_child(_sep())
+
+	var flavor_lbl := _lbl(flavor, 20, _C_TEXT)
+	flavor_lbl.autowrap_mode      = TextServer.AUTOWRAP_WORD_SMART
+	flavor_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(flavor_lbl)
+
+	vbox.add_child(_sep())
+
+	vbox.add_child(_lbl("Target:  %d slimes" % quantity, 20, _C_TEXT))
+
+	var reward: String = bounty.get("reward_text", "")
+	vbox.add_child(_lbl("Reward:  %s" % reward, 20, _C_GOLD))
+
+	vbox.add_child(_sep())
+
+	if _is_zone_occupied(zone):
+		var warn := _lbl("Zone contract already active", 18, _C_WARNING)
+		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(warn)
+		var hint := _lbl("[B]  Back", 16, _C_HINT)
+		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(hint)
+	else:
+		var hint := _lbl("[A]  Accept Contract          [B]  Back", 18, _C_HINT)
+		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(hint)
+
+
+func _close_detail() -> void:
+	if _detail_panel:
+		_detail_panel.queue_free()
+		_detail_panel = null
+	_detail_open = false
+
+
+func _accept_from_detail() -> void:
+	if _selectable.is_empty():
+		return
+	var bounty: Dictionary = _selectable[_selected_idx]
+	if _is_zone_occupied(bounty.get("zone", "")):
+		return
+	SceneManager.accept_bounty(bounty.get("id", ""))
+	_close_detail()
 
 
 # ── UI Construction ───────────────────────────────────────────────────────────
@@ -108,57 +211,56 @@ func _build_ui() -> void:
 	add_child(_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.0, 0.0, 0.0, 0.52)
+	dim.color = Color(0.0, 0.0, 0.0, 0.55)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(dim)
 
 	var panel := PanelContainer.new()
-	panel.anchor_left   = 0.15
-	panel.anchor_top    = 0.06
-	panel.anchor_right  = 0.85
-	panel.anchor_bottom = 0.94
+	panel.anchor_left   = 0.10
+	panel.anchor_top    = 0.05
+	panel.anchor_right  = 0.90
+	panel.anchor_bottom = 0.95
 	panel.add_theme_stylebox_override("panel", _panel_style())
 	_root.add_child(panel)
 
-	var margin := MarginContainer.new()
-	margin.layout_mode = 2
-	margin.add_theme_constant_override("margin_left",   20)
-	margin.add_theme_constant_override("margin_top",    20)
-	margin.add_theme_constant_override("margin_right",  20)
-	margin.add_theme_constant_override("margin_bottom", 20)
-	panel.add_child(margin)
+	var outer := MarginContainer.new()
+	for side: String in ["left", "right", "top", "bottom"]:
+		outer.add_theme_constant_override("margin_" + side, 24)
+	panel.add_child(outer)
 
 	var vbox := VBoxContainer.new()
-	vbox.layout_mode = 2
 	vbox.add_theme_constant_override("separation", 10)
-	margin.add_child(vbox)
+	outer.add_child(vbox)
 
-	var title := _label("The Bounty Board", 30, _C_GOLD)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(title)
-	vbox.add_child(_sep())
+	# ── Header: title + active counter ──
+	var header := HBoxContainer.new()
+	vbox.add_child(header)
 
-	vbox.add_child(_label("AVAILABLE", 17, _C_SECTION))
-	_avail_scroll = ScrollContainer.new()
-	_avail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_avail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vbox.add_child(_avail_scroll)
-	_avail_list = VBoxContainer.new()
-	_avail_list.layout_mode = 2
-	_avail_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_avail_list.add_theme_constant_override("separation", 6)
-	_avail_scroll.add_child(_avail_list)
-	vbox.add_child(_sep())
+	var title := _lbl("The Bounty Board", 32, _C_GOLD)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
 
-	vbox.add_child(_label("ACTIVE", 17, _C_SECTION))
-	_active_list = VBoxContainer.new()
-	_active_list.layout_mode = 2
-	_active_list.add_theme_constant_override("separation", 6)
-	vbox.add_child(_active_list)
+	_active_label = _lbl("ACTIVE  0 / 3", 22, _C_GOLD)
+	_active_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	header.add_child(_active_label)
 
 	vbox.add_child(_sep())
-	var hint := _label("↑↓  Navigate     [A]  Accept     [B]  Close", 13, _C_HINT)
+
+	# ── Scrollable zone list ──
+	_scroll = ScrollContainer.new()
+	_scroll.size_flags_vertical        = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode     = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(_scroll)
+
+	_list = VBoxContainer.new()
+	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_list.add_theme_constant_override("separation", 4)
+	_scroll.add_child(_list)
+
+	vbox.add_child(_sep())
+
+	var hint := _lbl("↑↓  Navigate     [A]  Details     [B]  Close", 15, _C_HINT)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(hint)
 
@@ -166,125 +268,195 @@ func _build_ui() -> void:
 # ── Refresh ───────────────────────────────────────────────────────────────────
 
 func _refresh() -> void:
-	_clear(_avail_list)
-	_clear(_active_list)
-	_avail_labels.clear()
-	_avail_underlines.clear()
+	for child in _list.get_children():
+		_list.remove_child(child)
+		child.queue_free()
+	_selectable.clear()
+	_row_map.clear()
 
-	var available : Array = SceneManager.available_bounties
-	var active    : Array = SceneManager.active_bounties
+	var available: Array = SceneManager.available_bounties
+	var active   : Array = SceneManager.active_bounties
 
-	if available.is_empty():
-		_avail_list.add_child(_label("No bounties posted today.", 15, _C_EMPTY))
+	_update_active_counter(active)
+
+	var by_zone: Dictionary = {}
+	for z: String in _ZONES:
+		by_zone[z] = []
+	for bounty: Dictionary in available:
+		var z: String = bounty.get("zone", "")
+		if z in by_zone:
+			by_zone[z].append(bounty)
+
+	for z: String in _ZONES:
+		var zone_bounties: Array = by_zone[z]
+		var occupied     : bool  = _is_zone_occupied(z)
+
+		var header_text: String = "── %s%s" % [
+			_ZONE_LABELS.get(z, z),
+			"  [Occupied]" if occupied else ""
+		]
+		var zone_header := _lbl(header_text, 18, _C_SECTION if not occupied else _C_DIMMED)
+		zone_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_list.add_child(zone_header)
+
+		if zone_bounties.is_empty():
+			_list.add_child(_lbl("  No contracts posted.", 18, _C_EMPTY))
+		else:
+			for bounty: Dictionary in zone_bounties:
+				var row: HBoxContainer = _bounty_row(bounty, occupied)
+				_list.add_child(row)
+				if not occupied:
+					var bid: String = bounty.get("id", "")
+					_row_map[bid] = row
+					_selectable.append(bounty)
+
+		_list.add_child(_zone_gap())
+
+	# ── Active contracts section ──
+	_list.add_child(_sep())
+	_list.add_child(_lbl("ACTIVE CONTRACTS", 18, _C_SECTION))
+
+	var real_active: Array = active.filter(
+		func(b: Dictionary) -> bool: return b.get("status") != "turned_in")
+	if real_active.is_empty():
+		_list.add_child(_lbl("  None.", 18, _C_EMPTY))
 	else:
-		for i in available.size():
-			_avail_list.add_child(_avail_row(available[i], i))
-		_selected_avail = clampi(_selected_avail, 0, available.size() - 1)
-		_update_avail_cursor()
+		for bounty: Dictionary in real_active:
+			_list.add_child(_active_row(bounty))
 
-	if active.is_empty():
-		_active_list.add_child(
-			_label("You have no active bounties.", 15, _C_EMPTY))
-	else:
-		for bounty in active:
-			_active_list.add_child(_active_row(bounty))
+	_selected_idx = clampi(_selected_idx, 0, max(0, _selectable.size() - 1))
+	_update_cursor()
 
 
-func _avail_row(bounty: Dictionary, idx: int) -> VBoxContainer:
-	var col := VBoxContainer.new()
-	col.layout_mode = 2
-	col.add_theme_constant_override("separation", 0)
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+func _bounty_row(bounty: Dictionary, dimmed: bool) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
 
-	var lbl := _label(bounty.get("flavor", ""), 15, _C_TEXT)
-	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_child(lbl)
+	var display_name: String = bounty.get("display_name", bounty.get("id", ""))
+	var monster_type: String = bounty.get("monster_type", "")
+	var quantity    : int    = int(bounty.get("quantity", 0))
+	var color       : Color  = _C_DIMMED if dimmed else _C_TEXT
 
-	var underline := ColorRect.new()
-	underline.custom_minimum_size = Vector2(0.0, 2.0)
-	underline.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	underline.color = _C_GOLD if idx == _selected_avail else Color.TRANSPARENT
-	col.add_child(underline)
+	var name_lbl := _lbl(display_name + " spotted", 24, color)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_lbl)
 
-	_avail_labels.append(lbl)
-	_avail_underlines.append(underline)
-	return col
+	var diff  : String = SceneManager.difficulty_label(monster_type)
+	var size_s: String = SceneManager.size_label(quantity)
+	var tag_color: Color = _C_DIMMED if dimmed else _C_SECTION
+	row.add_child(_lbl("%s · %s" % [diff, size_s], 18, tag_color))
 
-
-func _update_avail_cursor() -> void:
-	for i in _avail_labels.size():
-		var sel := (i == _selected_avail)
-		_avail_labels[i].add_theme_color_override(
-			"font_color", _C_GOLD if sel else _C_TEXT)
-		_avail_underlines[i].color = _C_GOLD if sel else Color.TRANSPARENT
+	return row
 
 
 func _active_row(bounty: Dictionary) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.layout_mode = 2
 	row.add_theme_constant_override("separation", 14)
 
-	var flavor := _label(bounty.get("flavor", ""), 15, _C_TEXT)
-	flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(flavor)
+	var display_name: String = bounty.get("display_name", bounty.get("id", ""))
+	var zone        : String = _ZONE_LABELS.get(bounty.get("zone", ""), bounty.get("zone", ""))
+	var killed      : int    = int(bounty.get("killed", 0))
+	var total       : int    = int(bounty.get("quantity", 0))
 
-	var status      : String = bounty.get("status", "active")
-	var badge_text  : String
-	var badge_color : Color
-	match status:
-		"complete", "turned_in":
-			badge_text  = "Complete"
-			badge_color = _C_COMPLETE
-		_:
-			badge_text  = "In Progress"
-			badge_color = _C_PROGRESS
+	var name_lbl := _lbl(display_name + "  —  " + zone, 20, _C_TEXT)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_lbl)
 
-	var badge := _label(badge_text, 15, badge_color)
-	badge.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	badge.custom_minimum_size  = Vector2(96.0, 0.0)
-	row.add_child(badge)
+	var status: String = bounty.get("status", "active")
+	var prog_text : String
+	var prog_color: Color
+	if status == "complete":
+		prog_text  = "Complete"
+		prog_color = _C_COMPLETE
+	else:
+		prog_text  = "%d / %d" % [killed, total]
+		prog_color = _C_PROGRESS
+
+	var prog_lbl := _lbl(prog_text, 20, prog_color)
+	prog_lbl.custom_minimum_size   = Vector2(96, 0)
+	prog_lbl.horizontal_alignment  = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(prog_lbl)
+
 	return row
 
 
-# ── Style Helpers ─────────────────────────────────────────────────────────────
+func _update_cursor() -> void:
+	if _selectable.is_empty():
+		return
+	var sel_bounty: Dictionary = _selectable[_selected_idx]
+	for bounty: Dictionary in _selectable:
+		var bid: String  = bounty.get("id", "")
+		var row: Control = _row_map.get(bid, null)
+		if not row:
+			continue
+		var name_lbl: Label = row.get_child(0) as Label if row.get_child_count() > 0 else null
+		if not (name_lbl is Label):
+			continue
+		var is_sel : bool   = (bounty == sel_bounty)
+		var display: String = bounty.get("display_name", bounty.get("id", ""))
+		name_lbl.text = ("▶  " if is_sel else "    ") + display + " spotted"
+		name_lbl.add_theme_color_override("font_color", _C_GOLD if is_sel else _C_TEXT)
 
-func _label(text: String, size: int, color: Color) -> Label:
-	var lbl := Label.new()
-	lbl.layout_mode = 2
-	lbl.text = text
+
+func _update_active_counter(active: Array) -> void:
+	var occupied: Array = []
+	for b: Dictionary in active:
+		var z: String = b.get("zone", "")
+		if b.get("status") != "turned_in" and not (z in occupied):
+			occupied.append(z)
+	_active_label.text = "ACTIVE  %d / 3" % occupied.size()
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+func _is_zone_occupied(zone: String) -> bool:
+	for b: Dictionary in SceneManager.active_bounties:
+		if b.get("zone") == zone and b.get("status") != "turned_in":
+			return true
+	return false
+
+
+func _lbl(text: String, size: int, color: Color) -> Label:
+	var l := Label.new()
+	l.text = text
 	if _font:
-		lbl.add_theme_font_override("font", _font)
-	lbl.add_theme_font_size_override("font_size", size)
-	lbl.add_theme_color_override("font_color", color)
-	return lbl
+		l.add_theme_font_override("font", _font)
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", color)
+	return l
 
 
 func _sep() -> HSeparator:
-	var s := HSeparator.new()
-	s.layout_mode = 2
+	var s     := HSeparator.new()
 	var style := StyleBoxFlat.new()
-	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.55)
+	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.45)
 	style.content_margin_top    = 1.0
 	style.content_margin_bottom = 1.0
 	s.add_theme_stylebox_override("separator", style)
 	return s
 
 
+func _zone_gap() -> Control:
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	return spacer
+
+
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color            = _C_BG
-	sb.border_width_left   = 2
-	sb.border_width_right  = 2
-	sb.border_width_top    = 2
-	sb.border_width_bottom = 2
-	sb.border_color               = _C_BORDER
-	sb.corner_radius_top_left     = 5
-	sb.corner_radius_top_right    = 5
-	sb.corner_radius_bottom_left  = 5
-	sb.corner_radius_bottom_right = 5
+	sb.bg_color = _C_BG
+	sb.set_border_width_all(2)
+	sb.border_color = _C_BORDER
+	sb.set_corner_radius_all(6)
+	return sb
+
+
+func _modal_style() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.07, 0.05, 0.03, 1.0)
+	sb.set_border_width_all(2)
+	sb.border_color = _C_BORDER
+	sb.set_corner_radius_all(8)
 	return sb
 
 
@@ -294,11 +466,3 @@ func _set_player_active(enabled: bool) -> void:
 	for node in get_tree().get_nodes_in_group("player"):
 		if node.has_method("set_gameplay_active"):
 			node.set_gameplay_active(enabled)
-
-
-# ── Internals ─────────────────────────────────────────────────────────────────
-
-func _clear(container: VBoxContainer) -> void:
-	for child in container.get_children():
-		container.remove_child(child)
-		child.queue_free()
