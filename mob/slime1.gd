@@ -2,13 +2,15 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-const ASSET_BASE  := "res://assets/Slime1/Without_shadow/Slime1/"
-const MOB_RADIUS  : float = 30.0
+const ASSET_BASE          := "res://assets/Slime1/Without_shadow/Slime1/"
+const MOB_RADIUS          : float = 30.0
+const PACK_TRIGGER_RADIUS : float = 200.0
+const PACK_COUNT_NEEDED   : int   = 2
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var min_speed : float   = 60.0
-@export var max_speed : float   = 120.0
+@export var min_speed : float   = 40.0
+@export var max_speed : float   = 70.0
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
@@ -27,11 +29,11 @@ var _is_hurt     : bool   = false
 
 
 func _ready() -> void:
-	max_health   = 3
-	personality  = Personality.WEAK_AGGRESSIVE
-	aggro_radius = 300.0
-	min_speed    = 40.0
-	max_speed    = 70.0
+	max_health      = 3
+	personality     = Personality.PACK_MENTALITY
+	aggro_radius    = 300.0
+	damage          = 1
+	knockback_force = 200.0
 
 	super._ready()
 
@@ -67,14 +69,15 @@ func _build_sprite_frames() -> void:
 	for anim: String in ["Idle", "Walk", "Run", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
-			var path      := ASSET_BASE + anim + "/Slime1_" + anim + "_" + dir + ".aseprite"
+			var path := "%s%s/Slime1_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
 			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 
 
 func _merge_anim(sf: SpriteFrames, anim_name: String, path: String) -> void:
 	var src: SpriteFrames = load(path) as SpriteFrames
-	var loop: bool = not (anim_name.begins_with("hurt") or anim_name.begins_with("death"))
+	var one_shot := anim_name.begins_with("hurt") or anim_name.begins_with("death")
+	var loop: bool = not one_shot
 	sf.add_animation(anim_name)
 	sf.set_animation_loop(anim_name, loop)
 	sf.set_animation_speed(anim_name, src.get_animation_speed("default"))
@@ -135,6 +138,18 @@ func _on_died() -> void:
 		"left":  _sprite.play("death_left")
 
 
+# ── Pack helpers ──────────────────────────────────────────────────────────────
+
+func _count_nearby_mobs() -> int:
+	var count: int = 0
+	for mob in get_tree().get_nodes_in_group("ground_mobs"):
+		if mob == self:
+			continue
+		if global_position.distance_to(mob.global_position) <= PACK_TRIGGER_RADIUS:
+			count += 1
+	return count
+
+
 # ── AI / Physics ──────────────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
@@ -142,17 +157,31 @@ func _physics_process(delta: float) -> void:
 		return
 	super._physics_process(delta)
 
-	var dist := _distance_to_player()
-	if dist < aggro_radius:
-		if ai_state != AIState.CHASE_STATE:
-			ai_state = AIState.CHASE_STATE
-			wander_timer.stop()
-		linear_velocity = _direction_to_player_with_noise(max_speed)
-		_update_facing(linear_velocity)
-		_play_run()
-	elif ai_state == AIState.CHASE_STATE:
-		ai_state = AIState.WANDER_STATE
-		_begin_move()
+	var dist       := _distance_to_player()
+	var in_aggro   := dist < aggro_radius
+	var pack_count := _count_nearby_mobs()
+
+	if in_aggro:
+		if pack_count >= PACK_COUNT_NEEDED:
+			if ai_state != AIState.CHASE_STATE:
+				ai_state = AIState.CHASE_STATE
+				wander_timer.stop()
+			linear_velocity = _direction_to_player_with_noise(max_speed)
+			_update_facing(linear_velocity)
+			_play_run()
+		else:
+			if ai_state != AIState.FLEE_STATE:
+				ai_state = AIState.FLEE_STATE
+				wander_timer.stop()
+			if _player_ref != null and is_instance_valid(_player_ref):
+				var away: Vector2 = (global_position - _player_ref.global_position).normalized()
+				linear_velocity = away * max_speed
+				_update_facing(linear_velocity)
+				_play_run()
+	else:
+		if ai_state in [AIState.CHASE_STATE, AIState.FLEE_STATE]:
+			ai_state = AIState.WANDER_STATE
+			_begin_move()
 
 
 # ── Wander ────────────────────────────────────────────────────────────────────
@@ -185,7 +214,7 @@ func _update_facing(vel: Vector2) -> void:
 
 
 func _on_wander_timeout() -> void:
-	if ai_state == AIState.CHASE_STATE:
+	if ai_state != AIState.WANDER_STATE:
 		return
 	if is_moving:
 		_begin_pause()
@@ -200,10 +229,19 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		return
 	var pos      := state.transform.origin
 	var hit_wall := false
-	var x_min    := viewport_rect.position.x + MOB_RADIUS
-	var x_max    := viewport_rect.end.x - MOB_RADIUS
-	var y_min    := viewport_rect.position.y + MOB_RADIUS
-	var y_max    := viewport_rect.end.y - MOB_RADIUS
+
+	# Player separation
+	if _player_ref != null and is_instance_valid(_player_ref):
+		var to_player : Vector2 = _player_ref.global_position - pos
+		var min_sep   : float   = MOB_RADIUS + 30.0
+		if to_player.length() < min_sep and to_player.length() > 0.0:
+			pos -= to_player.normalized() * (min_sep - to_player.length())
+			hit_wall = true
+
+	var x_min := viewport_rect.position.x + MOB_RADIUS
+	var x_max := viewport_rect.end.x - MOB_RADIUS
+	var y_min := viewport_rect.position.y + MOB_RADIUS
+	var y_max := viewport_rect.end.y - MOB_RADIUS
 
 	if pos.x < x_min:
 		pos.x = x_min
@@ -239,7 +277,7 @@ func _on_animation_finished() -> void:
 		return
 	if _is_hurt:
 		_is_hurt = false
-		if ai_state == AIState.CHASE_STATE:
+		if ai_state == AIState.CHASE_STATE or ai_state == AIState.FLEE_STATE:
 			_play_run()
 		elif is_moving:
 			_play_walk()

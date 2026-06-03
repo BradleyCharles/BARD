@@ -9,4 +9,4 @@ const DODGE_COOLDOWN: float = 0.5
 const ROLL_SPEED    : float = 500.0
 const ROLL_DURATION : float = 0.12
 const ROLL_COOLDOWN : float = 0.5
-const KNOCKBACK_DURATION: float = 0.18
+const KNOCKBACK_DURATION: float = 0.30

@@ -3,8 +3,11 @@
 [ext_resource type="Script" uid="uid://c2jki2638x1h4" path="res://world/field.gd" id="1_d8wuf"]
 [ext_resource type="PackedScene" uid="uid://bslime1scene1" path="res://mob/slime1.tscn" id="2_r2512"]
 [ext_resource type="FontFile" uid="uid://ddwgglepq5c3y" path="res://fonts/almendra.regular.ttf" id="3_1x2kq"]
-[ext_resource type="PackedScene" path="res://mob/slime1_elite.tscn" id="3_rs3rf"]
 [ext_resource type="PackedScene" path="res://mob/slime2.tscn" id="4_55kw1"]
+[ext_resource type="PackedScene" uid="uid://slime3_scene" path="res://mob/slime3.tscn" id="5_slime3"]
+[ext_resource type="PackedScene" uid="uid://slime1_boss_scene" path="res://mob/slime1_boss.tscn" id="6_s1boss"]
+[ext_resource type="PackedScene" uid="uid://slime2_boss_scene" path="res://mob/slime2_boss.tscn" id="7_s2boss"]
+[ext_resource type="PackedScene" uid="uid://slime3_boss_scene" path="res://mob/slime3_boss.tscn" id="8_s3boss"]
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player.tscn" id="4_mdjat"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="5_mdjat"]
 [ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="6_sh"]
@@ -17,8 +20,11 @@ size = Vector2(60, 136)
 [node name="Field" type="Node" unique_id=1749953835]
 script = ExtResource("1_d8wuf")
 slime1_scene = ExtResource("2_r2512")
-slime1_elite_scene = ExtResource("3_rs3rf")
 slime2_scene = ExtResource("4_55kw1")
+slime3_scene = ExtResource("5_slime3")
+slime1_boss_scene = ExtResource("6_s1boss")
+slime2_boss_scene = ExtResource("7_s2boss")
+slime3_boss_scene = ExtResource("8_s3boss")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1468043752]
 anchors_preset = 15

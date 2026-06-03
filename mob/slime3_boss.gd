@@ -2,13 +2,21 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-const ASSET_BASE  := "res://assets/Slime1/Without_shadow/Slime3/"
-const MOB_RADIUS  : float = 30.0
+const ASSET_BASE         := "res://assets/Slime1/Without_shadow/Slime3/"
+const MOB_RADIUS         : float = 40.0
+const BOSS_SPEED         : float = 60.0
+const AOE_DAMAGE         : int   = 7
+const AOE_KNOCKBACK      : float = 700.0
+const AOE_RADIUS         : float = 150.0
+const ATTACK_COOLDOWN    : float = 5.0
+const TELEGRAPH_DURATION : float = 1.5
+
+# ── Boss phase ────────────────────────────────────────────────────────────────
+
+enum BossPhase { NORMAL, TELEGRAPH, ATTACKING }
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var min_speed : float   = 60.0
-@export var max_speed : float   = 110.0
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
@@ -17,37 +25,29 @@ const MOB_RADIUS  : float = 30.0
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
-var wander_speed : float  = 0.0
-var wander_timer : Timer
-var is_moving    : bool   = false
-var viewport_rect: Rect2
-var facing       : String = "down"
-var _is_dying    : bool   = false
-var _is_hurt     : bool   = false
+var viewport_rect     : Rect2
+var facing            : String    = "down"
+var _is_dying         : bool      = false
+var _is_hurt          : bool      = false
+var _boss_phase       : BossPhase = BossPhase.NORMAL
+var _aoe_cooldown     : float     = 0.0
+var _telegraph_timer  : float     = 0.0
+var _telegraph_radius : float     = 0.0
 
 
 func _ready() -> void:
-	max_health      = 8
-	personality     = Personality.WEAK_AGGRESSIVE
-	aggro_radius    = 250.0
-	damage          = 2
-	knockback_force = 250.0
+	max_health      = 30
+	personality     = Personality.BOSS
+	damage          = 5
+	knockback_force = 600.0
 
 	super._ready()
 
-	set_meta("monster_type", "slime3")
+	set_meta("monster_type", "slime3_boss")
 	viewport_rect = Rect2(Vector2.ZERO, world_size)
-	wander_speed  = randf_range(min_speed, max_speed)
 
 	_build_sprite_frames()
 	_sprite.animation_finished.connect(_on_animation_finished)
-
-	wander_timer          = Timer.new()
-	wander_timer.one_shot = true
-	wander_timer.timeout.connect(_on_wander_timeout)
-	add_child(wander_timer)
-
-	_begin_move()
 
 
 func set_world_size(size: Vector2) -> void:
@@ -59,12 +59,16 @@ func set_playable_rect(rect: Rect2) -> void:
 	viewport_rect = rect
 
 
+func _reset_modulate() -> void:
+	modulate = Color.WHITE
+
+
 # ── Sprite setup ──────────────────────────────────────────────────────────────
 
 func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim: String in ["Idle", "Walk", "Run", "Hurt", "Death"]:
+	for anim: String in ["Idle", "Walk", "Run", "Hurt", "Death", "Attack"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
 			var path := "%s%s/Slime3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
@@ -74,7 +78,8 @@ func _build_sprite_frames() -> void:
 
 func _merge_anim(sf: SpriteFrames, anim_name: String, path: String) -> void:
 	var src: SpriteFrames = load(path) as SpriteFrames
-	var one_shot := anim_name.begins_with("hurt") or anim_name.begins_with("death")
+	var one_shot := anim_name.begins_with("hurt") or anim_name.begins_with("death") \
+		or anim_name.begins_with("attack")
 	var loop: bool = not one_shot
 	sf.add_animation(anim_name)
 	sf.set_animation_loop(anim_name, loop)
@@ -96,16 +101,45 @@ func _play_anim(prefix: String) -> void:
 		"left":  _sprite.play(prefix + "_left")
 
 
-func _play_idle() -> void:
-	_play_anim("idle")
-
-
-func _play_walk() -> void:
-	_play_anim("walk")
-
-
 func _play_run() -> void:
 	_play_anim("run")
+
+
+func _play_attack() -> void:
+	_sprite.flip_h = false
+	match facing:
+		"down":  _sprite.play("attack_front")
+		"up":    _sprite.play("attack_back")
+		"right": _sprite.play("attack_right")
+		"left":  _sprite.play("attack_left")
+
+
+# ── AOE Telegraph / Attack ────────────────────────────────────────────────────
+
+func _start_telegraph() -> void:
+	_boss_phase       = BossPhase.TELEGRAPH
+	_telegraph_timer  = 0.0
+	_telegraph_radius = 0.0
+
+
+func _fire_aoe() -> void:
+	_boss_phase       = BossPhase.ATTACKING
+	_telegraph_radius = 0.0
+	queue_redraw()
+	_play_attack()
+	if _distance_to_player() <= AOE_RADIUS \
+			and _player_ref != null and is_instance_valid(_player_ref):
+		var kb_dir: Vector2 = \
+			(_player_ref.global_position - global_position).normalized()
+		_player_ref.call_deferred("take_damage", AOE_DAMAGE, kb_dir * AOE_KNOCKBACK)
+
+
+func _draw() -> void:
+	if _telegraph_radius > 0.0:
+		var alpha: float = _telegraph_timer / TELEGRAPH_DURATION
+		var r: float = _telegraph_radius
+		draw_circle(Vector2.ZERO, r, Color(1.0, 0.0, 0.0, 0.25 * alpha))
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(1.0, 0.0, 0.0, 0.9), 2.0)
 
 
 # ── Damage / Death overrides ──────────────────────────────────────────────────
@@ -113,6 +147,8 @@ func _play_run() -> void:
 func take_damage(amount: int, knockback_vec: Vector2) -> void:
 	super.take_damage(amount, knockback_vec)
 	if health <= 0:
+		return
+	if _boss_phase != BossPhase.NORMAL:
 		return
 	_is_hurt = true
 	_sprite.flip_h = false
@@ -124,11 +160,15 @@ func take_damage(amount: int, knockback_vec: Vector2) -> void:
 
 
 func _on_died() -> void:
-	_is_dying = true
-	_is_hurt  = false
+	_is_dying         = true
+	_is_hurt          = false
+	_boss_phase       = BossPhase.NORMAL
+	_telegraph_radius = 0.0
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
-	_sprite.flip_h  = false
+	queue_redraw()
+	SceneManager.earn_slime_goop(20)
+	_sprite.flip_h = false
 	match facing:
 		"down":  _sprite.play("death_front")
 		"up":    _sprite.play("death_back")
@@ -143,37 +183,25 @@ func _physics_process(delta: float) -> void:
 		return
 	super._physics_process(delta)
 
-	var dist := _distance_to_player()
-	if dist < aggro_radius:
-		if ai_state != AIState.CHASE_STATE:
-			ai_state = AIState.CHASE_STATE
-			wander_timer.stop()
-		linear_velocity = _direction_to_player_with_noise(max_speed)
-		_update_facing(linear_velocity)
-		_play_run()
-	elif ai_state == AIState.CHASE_STATE:
-		ai_state = AIState.WANDER_STATE
-		_begin_move()
+	_aoe_cooldown = max(0.0, _aoe_cooldown - delta)
 
-
-# ── Wander ────────────────────────────────────────────────────────────────────
-
-func _begin_pause() -> void:
-	is_moving       = false
-	linear_velocity = Vector2.ZERO
-	_play_idle()
-	wander_timer.wait_time = randf_range(1.0, 4.0)
-	wander_timer.start()
-
-
-func _begin_move() -> void:
-	is_moving = true
-	var angle := randf() * TAU
-	linear_velocity = Vector2(cos(angle), sin(angle)) * wander_speed
-	_update_facing(linear_velocity)
-	wander_timer.wait_time = randf_range(1.0, 3.0)
-	wander_timer.start()
-	_play_walk()
+	match _boss_phase:
+		BossPhase.NORMAL:
+			if _player_ref != null and is_instance_valid(_player_ref):
+				linear_velocity = _direction_to_player_with_noise(BOSS_SPEED)
+				_update_facing(linear_velocity)
+				_play_run()
+			if _aoe_cooldown <= 0.0 and _distance_to_player() <= AOE_RADIUS:
+				_start_telegraph()
+		BossPhase.TELEGRAPH:
+			linear_velocity   = Vector2.ZERO
+			_telegraph_timer  += delta
+			_telegraph_radius  = (AOE_RADIUS / scale.x) * (_telegraph_timer / TELEGRAPH_DURATION)
+			queue_redraw()
+			if _telegraph_timer >= TELEGRAPH_DURATION:
+				_fire_aoe()
+		BossPhase.ATTACKING:
+			linear_velocity = Vector2.ZERO
 
 
 func _update_facing(vel: Vector2) -> void:
@@ -183,15 +211,6 @@ func _update_facing(vel: Vector2) -> void:
 		facing = "right" if vel.x >= 0.0 else "left"
 	else:
 		facing = "down" if vel.y >= 0.0 else "up"
-
-
-func _on_wander_timeout() -> void:
-	if ai_state == AIState.CHASE_STATE:
-		return
-	if is_moving:
-		_begin_pause()
-	else:
-		_begin_move()
 
 
 # ── Boundary enforcement ──────────────────────────────────────────────────────
@@ -237,8 +256,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		var t := state.transform
 		t.origin = pos
 		state.transform = t
-		if is_moving and ai_state == AIState.WANDER_STATE:
-			call_deferred("_begin_pause")
 
 
 # ── Animation callbacks ───────────────────────────────────────────────────────
@@ -249,9 +266,9 @@ func _on_animation_finished() -> void:
 		return
 	if _is_hurt:
 		_is_hurt = false
-		if ai_state == AIState.CHASE_STATE:
-			_play_run()
-		elif is_moving:
-			_play_walk()
-		else:
-			_play_idle()
+		_play_run()
+		return
+	if _boss_phase == BossPhase.ATTACKING:
+		_boss_phase   = BossPhase.NORMAL
+		_aoe_cooldown = ATTACK_COOLDOWN
+		_play_run()

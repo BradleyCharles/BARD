@@ -24,22 +24,29 @@ extends Node
 ##   └── DayLabel        (Label, top-left anchor, font_size=32)
 
 
-@export var slime1_scene      : PackedScene
-@export var slime1_elite_scene: PackedScene
-@export var slime2_scene      : PackedScene
+@export var slime1_scene     : PackedScene
+@export var slime2_scene     : PackedScene
+@export var slime3_scene     : PackedScene
+@export var slime1_boss_scene: PackedScene
+@export var slime2_boss_scene: PackedScene
+@export var slime3_boss_scene: PackedScene
 ## Logical size of the playable field world in pixels.
-@export var world_size        : Vector2 = Vector2(3840.0, 2160.0)
+@export var world_size       : Vector2 = Vector2(3840.0, 2160.0)
 
-const SPAWN_MARGIN            : float = 40.0
-const _BOSS_THRESHOLD_MIN     : int   = 19
-const _BOSS_THRESHOLD_MAX     : int   = 20
+const SPAWN_MARGIN        : float = 40.0
+const BOSS_KILL_THRESHOLD : int   = 20
+const MAX_MOBS_PER_ZONE   : int   = 5
 
-var _bounty_timers    : Dictionary = {}
-var _zone_rects       : Dictionary = {}
-var _playable_rect    : Rect2      = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
-var _slimes_killed    : int  = 0
-var _boss_spawned     : bool = false
-var _boss_threshold   : int  = 0
+var _bounty_timers   : Dictionary = {}
+var _zone_rects      : Dictionary = {}
+var _playable_rect   : Rect2      = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
+
+var _slime1_killed       : int  = 0
+var _slime2_killed       : int  = 0
+var _slime3_killed       : int  = 0
+var _slime1_boss_spawned : bool = false
+var _slime2_boss_spawned : bool = false
+var _slime3_boss_spawned : bool = false
 
 @onready var _player        = $Player
 @onready var _entrance      : Area2D    = $TownEntrance
@@ -52,8 +59,6 @@ var _pause_menu : CanvasLayer = null
 
 
 func _ready() -> void:
-	# Half-viewport in world px at 1.5× zoom — player is clamped to this inset so the
-	# camera (which follows the player freely) never shows void beyond the world edge.
 	var hv := Vector2(1920.0 / 1.5, 1080.0 / 1.5) * 0.5
 	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
 	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.35), true)
@@ -70,7 +75,6 @@ func _ready() -> void:
 	}
 
 	_compute_playable_rect()
-	_boss_threshold = randi_range(_BOSS_THRESHOLD_MIN, _BOSS_THRESHOLD_MAX)
 
 	var pm_script : GDScript = load("res://ui/pause_menu.gd")
 	_pause_menu = CanvasLayer.new()
@@ -136,9 +140,6 @@ func _start_bounty_zone(bounty: Dictionary) -> void:
 	)
 
 
-const MAX_MOBS_PER_ZONE: int = 10
-
-
 func _count_zone_mobs(zone: String) -> int:
 	var count: int = 0
 	for mob in _mob_container.get_children():
@@ -151,12 +152,7 @@ func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
 	if _count_zone_mobs(zone) >= MAX_MOBS_PER_ZONE:
 		return
 
-	var scene: PackedScene
-	# 10% chance to spawn elite when type is slime1
-	if monster_type == "slime1" and randf() < 0.1 and slime1_elite_scene != null:
-		scene = slime1_elite_scene
-	else:
-		scene = _get_mob_scene(monster_type)
+	var scene: PackedScene = _get_mob_scene(monster_type)
 	if scene == null:
 		return
 
@@ -181,6 +177,7 @@ func _get_mob_scene(monster_type: String) -> PackedScene:
 	match monster_type:
 		"slime1": return slime1_scene
 		"slime2": return slime2_scene
+		"slime3": return slime3_scene
 	push_error("Field: no scene registered for monster_type '%s'" % monster_type)
 	return null
 
@@ -189,22 +186,35 @@ func _on_bounties_updated() -> void:
 	_start_bounty_spawning()
 
 
-# ── Boss trigger ──────────────────────────────────────────────────────────────
+# ── Boss triggers ─────────────────────────────────────────────────────────────
 
-func _check_boss_trigger() -> void:
-	if _boss_spawned:
+func _check_boss_triggers() -> void:
+	if not _slime1_boss_spawned and _slime1_killed >= BOSS_KILL_THRESHOLD:
+		_spawn_boss("slime1")
+	if not _slime2_boss_spawned and _slime2_killed >= BOSS_KILL_THRESHOLD:
+		_spawn_boss("slime2")
+	if not _slime3_boss_spawned and _slime3_killed >= BOSS_KILL_THRESHOLD:
+		_spawn_boss("slime3")
+
+
+func _spawn_boss(type: String) -> void:
+	var scene: PackedScene
+	match type:
+		"slime1":
+			scene = slime1_boss_scene
+			_slime1_boss_spawned = true
+		"slime2":
+			scene = slime2_boss_scene
+			_slime2_boss_spawned = true
+		"slime3":
+			scene = slime3_boss_scene
+			_slime3_boss_spawned = true
+
+	if scene == null:
+		push_error("Field: no boss scene for type '%s'" % type)
 		return
-	if _slimes_killed >= _boss_threshold:
-		_spawn_boss()
 
-
-func _spawn_boss() -> void:
-	_boss_spawned = true
-	var boss_scene: PackedScene = load("res://mob/slime3.tscn")
-	if boss_scene == null:
-		push_error("Field: could not load slime3.tscn")
-		return
-	var boss = boss_scene.instantiate()
+	var boss = scene.instantiate()
 	boss.position = world_size * 0.5
 	if boss.has_method("set_playable_rect"):
 		boss.set_playable_rect(_playable_rect)
@@ -229,13 +239,14 @@ func _on_mob_died(mob_body: Node) -> void:
 
 	if mob_body.has_meta("bounty_zone"):
 		var zone: String = mob_body.get_meta("bounty_zone")
-		# Elites count as their base type for bounty purposes
-		var bounty_type: String = "slime1" if monster_type == "slime1_elite" else monster_type
-		SceneManager.record_bounty_kill(bounty_type, zone)
+		SceneManager.record_bounty_kill(monster_type, zone)
 
-	# All mob kills count toward the boss trigger
-	_slimes_killed += 1
-	_check_boss_trigger()
+	match monster_type:
+		"slime1": _slime1_killed += 1
+		"slime2": _slime2_killed += 1
+		"slime3": _slime3_killed += 1
+
+	_check_boss_triggers()
 
 
 func _on_entrance_entered(area: Area2D) -> void:

@@ -9,6 +9,7 @@ radius = 26.0
 
 [node name="Slime1" type="RigidBody2D" unique_id=373678051 groups=["mobs"]]
 gravity_scale = 0.0
+lock_rotation = true
 script = ExtResource("1_slime1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1595696230]
