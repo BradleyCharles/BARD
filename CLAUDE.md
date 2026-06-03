@@ -37,6 +37,7 @@ Godot 4.6 RPG demo with a local LLM (Ollama/Gemma 4 E4B) pipeline that regenerat
 - UI components are built entirely in code (no `.tscn` layout nodes for UI logic).
 - All scene transitions go through `SceneManager.go_to_field()` / `go_to_town()`.
 - UI reacts to signals (`bounties_updated`, `scripts_updated`, `player_health_changed`) — never poll state directly.
+- Menus, overlays, and loading screens must be centered on screen. Use `PRESET_FULL_RECT` + `ALIGNMENT_CENTER` on VBoxContainers, or `PRESET_CENTER` + `grow_horizontal/vertical = GROW_DIRECTION_BOTH` on fixed-size panels. Never use bare `PRESET_CENTER` on a zero-size container — it anchors the top-left corner at screen center and pushes content into the bottom-right quadrant.
 
 ## GDScript Type Safety (required)
 
