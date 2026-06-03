@@ -2,8 +2,9 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-const ASSET_BASE  := "res://assets/Slime1/Without_shadow/Slime3/"
-const MOB_RADIUS  : float = 30.0
+const ASSET_BASE    := "res://assets/Slime1/Without_shadow/Slime3/"
+const MOB_RADIUS    : float = 30.0
+const CONTACT_RADIUS: float = 44.0
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
@@ -143,14 +144,21 @@ func _physics_process(delta: float) -> void:
 		return
 	super._physics_process(delta)
 
+	if _is_hurt:
+		return
+
 	var dist := _distance_to_player()
 	if dist < aggro_radius:
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
-		linear_velocity = _direction_to_player_with_noise(max_speed)
-		_update_facing(linear_velocity)
-		_play_run()
+		if dist > CONTACT_RADIUS:
+			linear_velocity = _direction_to_player_with_noise(max_speed)
+			_update_facing(linear_velocity)
+			_play_run()
+		else:
+			linear_velocity = Vector2.ZERO
+			_play_idle()
 	elif ai_state == AIState.CHASE_STATE:
 		ai_state = AIState.WANDER_STATE
 		_begin_move()
@@ -201,14 +209,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		return
 	var pos      := state.transform.origin
 	var hit_wall := false
-
-	# Player separation
-	if _player_ref != null and is_instance_valid(_player_ref):
-		var to_player : Vector2 = _player_ref.global_position - pos
-		var min_sep   : float   = MOB_RADIUS + 30.0
-		if to_player.length() < min_sep and to_player.length() > 0.0:
-			pos -= to_player.normalized() * (min_sep - to_player.length())
-			hit_wall = true
 
 	var x_min := viewport_rect.position.x + MOB_RADIUS
 	var x_max := viewport_rect.end.x - MOB_RADIUS

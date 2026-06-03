@@ -4,6 +4,7 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE          := "res://assets/Slime1/Without_shadow/Slime1/"
 const MOB_RADIUS          : float = 30.0
+const CONTACT_RADIUS      : float = 44.0
 const PACK_TRIGGER_RADIUS : float = 200.0
 const PACK_COUNT_NEEDED   : int   = 2
 const LINK_SCAN_INTERVAL  : float = 0.5
@@ -177,6 +178,9 @@ func _physics_process(delta: float) -> void:
 		return
 	super._physics_process(delta)
 
+	if _is_hurt:
+		return
+
 	var dist     := _distance_to_player()
 	var in_aggro := dist < aggro_radius
 
@@ -186,9 +190,13 @@ func _physics_process(delta: float) -> void:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
 		if _player_ref != null and is_instance_valid(_player_ref):
-			linear_velocity = _direction_to_player_with_noise(max_speed)
-			_update_facing(linear_velocity)
-			_play_run()
+			if dist > CONTACT_RADIUS:
+				linear_velocity = _direction_to_player_with_noise(max_speed)
+				_update_facing(linear_velocity)
+				_play_run()
+			else:
+				linear_velocity = Vector2.ZERO
+				_play_idle()
 		_link_scan_timer -= delta
 		if _link_scan_timer <= 0.0:
 			_link_pack()
