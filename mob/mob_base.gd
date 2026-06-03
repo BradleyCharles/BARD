@@ -25,7 +25,8 @@ var _hurt_timer: float  = 0.0
 func _ready() -> void:
 	health = max_health
 	add_to_group("ground_mobs")
-	collision_mask = 0
+	collision_layer = 8
+	collision_mask  = 0
 	_find_player()
 
 

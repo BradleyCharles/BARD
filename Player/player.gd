@@ -9,6 +9,7 @@ signal weapon_changed(weapon_name: String)
 @onready var _sprite     : AnimatedSprite2D  = $AnimatedSprite2D
 @onready var _body_shape : CollisionShape2D  = $CollisionShape2D
 @onready var _sword      : Area2D            = $SwordHitbox
+@onready var _hurt_area  : Area2D            = $HurtArea
 
 var _world_bounds: Rect2 = Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0))
 
@@ -73,6 +74,8 @@ func _ready() -> void:
 	_sprite.frame_changed.connect(_on_frame_changed)
 	_sprite.animation_finished.connect(_on_animation_finished)
 	_sword.body_entered.connect(_on_sword_hit)
+	_sword.collision_mask     = 8
+	_hurt_area.collision_mask = 8
 	hide()
 
 
