@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://slime3_boss_scene"]
+
+[ext_resource type="Script" path="res://mob/slime3.gd" id="1_slime3"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_default"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_slime3"]
+radius = 40.0
+
+[node name="Slime3" type="RigidBody2D" groups=["mobs"]]
+gravity_scale = 0.0
+script = ExtResource("1_slime3")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(3, 3)
+sprite_frames = SubResource("SpriteFrames_default")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_slime3")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]

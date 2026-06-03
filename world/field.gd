@@ -200,9 +200,9 @@ func _check_boss_trigger() -> void:
 
 func _spawn_boss() -> void:
 	_boss_spawned = true
-	var boss_scene: PackedScene = load("res://mob/slime1_boss.tscn")
+	var boss_scene: PackedScene = load("res://mob/slime3.tscn")
 	if boss_scene == null:
-		push_error("Field: could not load slime1_boss.tscn")
+		push_error("Field: could not load slime3.tscn")
 		return
 	var boss = boss_scene.instantiate()
 	boss.position = world_size * 0.5

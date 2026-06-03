@@ -71,6 +71,46 @@
       "quantity": 20,
       "flavor": "A great seething host of slimes blankets the upper ridge. This is not a nuisance — it is an infestation. The guild pays well for resolution.",
       "reward_text": "55 gold upon verified completion."
+    },
+    {
+      "id": "slime2_zone_a_small",
+      "monster_type": "slime2",
+      "zone": "zone_a",
+      "quantity": 5,
+      "flavor": "A few dark slimes have been spotted lurking near the outer trails. They scatter when alone but grow bold in numbers — approach with caution.",
+      "reward_text": "6 gold upon verified completion."
+    },
+    {
+      "id": "slime2_zone_a_medium",
+      "monster_type": "slime2",
+      "zone": "zone_a",
+      "quantity": 10,
+      "flavor": "A pack of the darker variety has taken root along the forest road. Witnesses say they coordinate in ways ordinary slimes do not.",
+      "reward_text": "15 gold upon verified completion."
+    },
+    {
+      "id": "slime2_zone_b_small",
+      "monster_type": "slime2",
+      "zone": "zone_b",
+      "quantity": 5,
+      "flavor": "A handful of pack slimes has appeared in the fen. Each one alone is timid, but they have a habit of finding each other quickly.",
+      "reward_text": "9 gold upon verified completion."
+    },
+    {
+      "id": "slime2_zone_b_large",
+      "monster_type": "slime2",
+      "zone": "zone_b",
+      "quantity": 20,
+      "flavor": "A swarming colony of pack slimes has overtaken the marsh hollows. In those numbers they show no fear. The guild urges extreme caution.",
+      "reward_text": "42 gold upon verified completion."
+    },
+    {
+      "id": "slime2_zone_c_medium",
+      "monster_type": "slime2",
+      "zone": "zone_c",
+      "quantity": 10,
+      "flavor": "A coordinated group of dark slimes patrols the ridge approach. Split them apart and they flee — let them cluster and they charge.",
+      "reward_text": "30 gold upon verified completion."
     }
   ]
 }
