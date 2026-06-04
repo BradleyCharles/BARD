@@ -3,9 +3,10 @@ extends "res://mob/mob_base.gd"
 ## Slime2 — passive until attacked.
 ## Wanders normally. When hit, turns aggressive and alerts nearby slime2s.
 
-const ASSET_BASE  := "res://assets/Slime1/Without_shadow/Slime2/"
-const MOB_RADIUS  : float = 30.0
-const ALERT_RADIUS: float = 200.0
+const ASSET_BASE    := "res://assets/Slime1/Without_shadow/Slime2/"
+const MOB_RADIUS    : float = 30.0
+const ALERT_RADIUS  : float = 200.0
+const CONTACT_RADIUS: float = 44.0
 
 @export var min_speed : float   = 50.0
 @export var max_speed : float   = 100.0
@@ -158,17 +159,27 @@ func _physics_process(delta: float) -> void:
 		return
 	super._physics_process(delta)
 
+	if _is_hurt:
+		return
+
 	if _is_aggroed and _player_ref != null and is_instance_valid(_player_ref):
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
-		linear_velocity = _direction_to_player_with_noise(max_speed)
-		_update_facing(linear_velocity)
-		_play_run()
+		var dist: float = _distance_to_player()
+		if dist > CONTACT_RADIUS and not _player_is_invincible():
+			linear_velocity = _direction_to_player_with_noise(max_speed)
+			_update_facing(linear_velocity)
+			_play_run()
+		else:
+			linear_velocity = Vector2.ZERO
+			_play_idle()
 	elif not _is_aggroed:
 		if ai_state == AIState.CHASE_STATE:
 			ai_state = AIState.WANDER_STATE
 			_begin_move()
+
+	linear_velocity += _calc_separation()
 
 
 # ── Wander ────────────────────────────────────────────────────────────────────

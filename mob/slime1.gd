@@ -4,7 +4,7 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE          := "res://assets/Slime1/Without_shadow/Slime1/"
 const MOB_RADIUS          : float = 30.0
-const CONTACT_RADIUS      : float = 50.0
+const CONTACT_RADIUS      : float = 44.0
 const PACK_TRIGGER_RADIUS : float = 200.0
 const PACK_COUNT_NEEDED   : int   = 2
 const LINK_SCAN_INTERVAL  : float = 0.5
@@ -219,6 +219,8 @@ func _physics_process(delta: float) -> void:
 		if ai_state in [AIState.CHASE_STATE, AIState.FLEE_STATE]:
 			ai_state = AIState.WANDER_STATE
 			_begin_move()
+
+	linear_velocity += _calc_separation()
 
 
 # ── Wander ────────────────────────────────────────────────────────────────────

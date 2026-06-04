@@ -4,7 +4,7 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE    := "res://assets/Slime1/Without_shadow/Slime3/"
 const MOB_RADIUS    : float = 30.0
-const CONTACT_RADIUS: float = 64.0
+const CONTACT_RADIUS: float = 44.0
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
@@ -162,6 +162,8 @@ func _physics_process(delta: float) -> void:
 	elif ai_state == AIState.CHASE_STATE:
 		ai_state = AIState.WANDER_STATE
 		_begin_move()
+
+	linear_velocity += _calc_separation()
 
 
 # ── Wander ────────────────────────────────────────────────────────────────────

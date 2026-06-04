@@ -26,11 +26,15 @@ Godot 2D physics uses 32 bit-flag layers. Only layers with names assigned in **P
 
 | Node | Type | `collision_layer` | `collision_mask` | Purpose |
 |------|------|-------------------|------------------|---------|
-| Player (root) | CharacterBody2D | 2 | **9** (1+8) | Blocked by world (layer 1) and entity bodies (layer 8); set in `_ready()` |
+| Player (root) | CharacterBody2D | 2 | **1** | Blocked by world geometry only; set in `_ready()` |
 | SwordHitbox | Area2D | 0 | **8** | Detects mob bodies on layer 8; `body_entered` → `_on_sword_hit` |
-| HurtArea | Area2D | 2 | **8** | Detects mob bodies on layer 8; `body_entered` → `_on_body_entered` |
+| HurtArea | Area2D | 2 | **8** | Detects mob bodies on layer 8 via `CircleShape2D(r=14)`; `body_entered` → `_on_body_entered` |
 
-`collision_mask = 9` and both Area2D masks are set **in code** inside `player.gd:_ready()`, overriding the `.tscn` defaults. Do not change the `.tscn` values — they are overridden at runtime.
+All masks are set **in code** in `player.gd:_ready()`, overriding `.tscn` defaults.
+
+**Why `collision_mask = 1` (world only):** Godot 4's `CharacterBody2D.move_and_slide()` runs a recovery step every frame that pushes the character out of any overlapping shape on its mask. Including mob bodies (layer 8) in the mask meant `move_and_slide()` recovery would push the player away from any mob it overlapped — even when the mob had zero velocity. Removing mobs from the mask eliminates this entirely.
+
+**How blocking still works:** `_block_mob_movement(vel)` in `player.gd` cancels any velocity component pointing toward a mob within `body_radius + _PLAYER_RADIUS` distance, before `move_and_slide()` is called. This is purely script-level — no physics recovery, no pushing.
 
 ### Mobs — `mob/mob_base.gd`
 
@@ -114,6 +118,10 @@ Defined in `Player/weapons/sword_data.gd` and `axe_data.gd`.
 
 All mobs extend `RigidBody2D`. Movement is set via `linear_velocity` directly each physics frame. Boundary clamping is done manually in `_integrate_forces()` — mobs do not rely on physics wall collision.
 
+**`body_radius`:** Auto-computed in `_ready()` from the mob's `CircleShape2D` radius × `scale.x`. Used by `_block_mob_movement()` in the player and `_calc_separation()` for mob-mob spacing. Automatically accounts for any tscn scale changes.
+
+**`_calc_separation()`:** Returns a push vector away from any overlapping mob. Each subclass calls `linear_velocity += _calc_separation()` at the end of `_physics_process`. Prevents stacking.
+
 **Signals:** `died(mob: Node)` — emitted before `queue_free()`, connected by `field.gd` at spawn time.
 
 **`take_damage(amount, knockback_vec)`:** Applies impulse, flashes red for 0.15 s, kills if health ≤ 0.
@@ -166,8 +174,8 @@ Both slime1 and slime3 call `_player_is_invincible()` (defined in `mob_base.gd`)
 | Player-separation code inside `_integrate_forces` on mobs | Keeps mob permanently away from player; `HurtArea.body_entered` never fires; mob deals no damage |
 | Setting `linear_velocity` every frame without an `_is_hurt` guard | Overrides `apply_central_impulse` knockback in the same frame it's applied; knockback appears to do nothing |
 | Changing only mob `collision_mask` (without moving mob to a new layer) | Player's CharacterBody2D uses *its own* mask, not the mob's. Player mask=1 still detects mob layer=1 regardless of mob mask |
-| Moving StaticBody2D in player's collision mask | Godot 4 tracks transform delta on static bodies and computes apparent velocity; CharacterBody2D move_and_slide() uses that velocity to push the player when the body moves into them — this is why wandering NPCs must have no physics body |
-| CONTACT_RADIUS ≤ (mob radius + player radius) | Mob collision shape overlaps player's; CharacterBody2D recovery in move_and_slide() pushes the player every frame even when mob velocity = 0 |
+| Adding mob layer (8) back to player `collision_mask` | `move_and_slide()` recovery pushes the player out of ANY overlapping shape on its mask every frame — even stationary mobs will shove the player continuously |
+| Moving StaticBody2D in player's collision mask | Godot 4 computes apparent velocity from transform delta on static bodies; CharacterBody2D `move_and_slide()` uses it to push the player — this is why wandering NPCs have no physics body |
 
 ---
 

@@ -52,6 +52,7 @@ const ROW_DOWN  = 0
 const ROW_RIGHT = 2
 const ROW_UP    = 3
 const FRAME_SIZE = 64
+const _PLAYER_RADIUS: float = 20.0
 
 
 func _ready() -> void:
@@ -70,7 +71,7 @@ func _ready() -> void:
 		},
 	}
 	add_to_group("player")
-	collision_mask = 9
+	collision_mask = 1
 	_build_sprite_frames()
 	_sprite.frame_changed.connect(_on_frame_changed)
 	_sprite.animation_finished.connect(_on_animation_finished)
@@ -214,7 +215,7 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and can_swap:
 		_cycle_weapon()
 
-	velocity = move_vel
+	velocity = _block_mob_movement(move_vel)
 	move_and_slide()
 	position = position.clamp(_world_bounds.position, _world_bounds.end)
 
@@ -342,6 +343,32 @@ func _on_animation_finished() -> void:
 		elif _death_signal == "fly_caught":
 			fly_caught.emit()
 		_death_signal = ""
+
+
+# ── Mob blocking (script-level, keeps player out of mob bodies without recovery push) ──
+
+func _block_mob_movement(vel: Vector2) -> Vector2:
+	if vel.length_squared() < 1.0:
+		return vel
+	for mob in get_tree().get_nodes_in_group("ground_mobs"):
+		if not is_instance_valid(mob):
+			continue
+		var mob_node: Node2D = mob as Node2D
+		if mob_node == null:
+			continue
+		var to_mob: Vector2 = mob_node.global_position - global_position
+		var dist: float = to_mob.length()
+		if dist < 1.0:
+			continue
+		var raw_radius: Variant = (mob as Object).get("body_radius")
+		var mob_radius: float = float(raw_radius) if raw_radius != null else 30.0
+		var block_dist: float = mob_radius + _PLAYER_RADIUS
+		if dist < block_dist:
+			var push_dir: Vector2 = to_mob.normalized()
+			var dot: float = vel.dot(push_dir)
+			if dot > 0.0:
+				vel -= push_dir * dot
+	return vel
 
 
 # ── Collision ──────────────────────────────────────────────────────────────────

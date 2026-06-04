@@ -16,10 +16,11 @@ enum AIState     { WANDER_STATE = 0, CHASE_STATE = 1, FLEE_STATE = 2 }
 @export var damage        : int   = 1
 @export var knockback_force: float = 150.0
 
-var health     : int    = 1
-var ai_state   : int    = AIState.WANDER_STATE
-var _player_ref: Node2D = null
-var _hurt_timer: float  = 0.0
+var health      : int    = 1
+var ai_state    : int    = AIState.WANDER_STATE
+var _player_ref : Node2D = null
+var _hurt_timer : float  = 0.0
+var body_radius : float  = 30.0
 
 
 func _ready() -> void:
@@ -28,6 +29,15 @@ func _ready() -> void:
 	collision_layer = 8
 	collision_mask  = 0
 	_find_player()
+	_compute_body_radius()
+
+
+func _compute_body_radius() -> void:
+	for child in get_children():
+		var cs: CollisionShape2D = child as CollisionShape2D
+		if cs != null and cs.shape is CircleShape2D:
+			body_radius = (cs.shape as CircleShape2D).radius * scale.x
+			return
 
 
 func _find_player() -> void:
@@ -85,3 +95,23 @@ func _player_is_invincible() -> bool:
 		return false
 	var iframes: Variant = _player_ref.get("_iframes")
 	return iframes != null and float(iframes) > 0.0
+
+
+func _calc_separation() -> Vector2:
+	var sep := Vector2.ZERO
+	for other in get_tree().get_nodes_in_group("ground_mobs"):
+		if other == self or not is_instance_valid(other):
+			continue
+		var other_node: Node2D = other as Node2D
+		if other_node == null:
+			continue
+		var to_self: Vector2 = global_position - other_node.global_position
+		var dist: float = to_self.length()
+		if dist < 0.1:
+			continue
+		var raw: Variant = (other as Object).get("body_radius")
+		var other_radius: float = float(raw) if raw != null else 30.0
+		var min_dist: float = body_radius + other_radius
+		if dist < min_dist:
+			sep += to_self.normalized() * (min_dist - dist) * 3.0
+	return sep
