@@ -43,8 +43,9 @@ var _knockback_time: float   = 0.0
 
 # ── Weapon system ─────────────────────────────────────────────────────────────
 
-var _weapon_stats: Dictionary = {}
-var active_weapon: String     = SwordData.ID
+var _weapon_stats:  Dictionary       = {}
+var active_weapon:  String           = SwordData.ID
+var _weapon_sprite: AnimatedSprite2D = null
 
 const _PLAYER_RADIUS: float = 20.0
 
@@ -72,6 +73,12 @@ func _ready() -> void:
 	_sword.body_entered.connect(_on_sword_hit)
 	_sword.collision_mask     = 8
 	_hurt_area.collision_mask = 8
+	_weapon_sprite = AnimatedSprite2D.new()
+	_weapon_sprite.z_index = 1
+	_weapon_sprite.visible = false
+	add_child(_weapon_sprite)
+	_build_weapon_frames()
+	_weapon_sprite.animation_finished.connect(_on_weapon_anim_finished)
 	hide()
 
 
@@ -115,6 +122,29 @@ func _copy_anim(sf: SpriteFrames, anim: String, path: String, fps: float, loop: 
 	sf.set_animation_speed(anim, fps)
 	for i: int in src.get_frame_count(src_anim):
 		sf.add_frame(anim, src.get_frame_texture(src_anim, i))
+
+
+func _build_weapon_frames() -> void:
+	var sf := SpriteFrames.new()
+	sf.remove_animation("default")
+
+	sf.add_animation(SwordData.ID)
+	sf.set_animation_loop(SwordData.ID, false)
+	sf.set_animation_speed(SwordData.ID, SwordData.SWING_FPS)
+	for i: int in range(1, 9):
+		sf.add_frame(SwordData.ID, load("res://assets/Sword/%d.png" % i))
+
+	sf.add_animation(AxeData.ID)
+	sf.set_animation_loop(AxeData.ID, false)
+	sf.set_animation_speed(AxeData.ID, AxeData.SWING_FPS)
+	for i: int in range(1, 11):
+		sf.add_frame(AxeData.ID, load("res://assets/Axe/%d.png" % i))
+
+	_weapon_sprite.sprite_frames = sf
+
+
+func _on_weapon_anim_finished() -> void:
+	_weapon_sprite.visible = false
 
 
 # ── Game loop ─────────────────────────────────────────────────────────────────
@@ -288,9 +318,19 @@ func _start_attack() -> void:
 	if attack_dir.y != 0.0:
 		anim = "attack_up" if attack_dir.y < 0.0 else "attack_down"
 		_sprite.flip_h = false
+		_weapon_sprite.rotation_degrees = -90.0 if attack_dir.y < 0.0 else 90.0
+		_weapon_sprite.flip_h = false
 	else:
 		anim = "attack"
 		_sprite.flip_h = attack_dir.x < 0.0
+		_weapon_sprite.rotation_degrees = 0.0
+		_weapon_sprite.flip_h = attack_dir.x < 0.0
+
+	_weapon_sprite.scale    = (stats["hitbox"] as Vector2) / 496.0
+	_weapon_sprite.position = attack_dir * 24.0
+	_weapon_sprite.sprite_frames.set_animation_speed(active_weapon, stats["swing_fps"])
+	_weapon_sprite.play(active_weapon)
+	_weapon_sprite.visible = true
 
 	_sprite.play(anim)
 
@@ -305,8 +345,9 @@ func _on_frame_changed() -> void:
 func _on_animation_finished() -> void:
 	var anim := _sprite.animation
 	if anim in ["attack", "attack_up", "attack_down"]:
-		is_attacking      = false
-		_sword.monitoring = false
+		is_attacking           = false
+		_sword.monitoring      = false
+		_weapon_sprite.visible = false
 		_update_animation(Vector2.ZERO)
 	elif anim == "hurt":
 		_is_hurt = false
@@ -373,9 +414,10 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 		return
 	health -= amount
 	SceneManager.set_player_health(health)
-	_iframes     = PlayerStats.IFRAME_TIME
-	is_attacking = false
-	_sword.monitoring = false
+	_iframes               = PlayerStats.IFRAME_TIME
+	is_attacking           = false
+	_sword.monitoring      = false
+	_weapon_sprite.visible = false
 	if knockback.length_squared() > 0.0:
 		_knockback_vel  = knockback
 		_knockback_time = PlayerStats.KNOCKBACK_DURATION
@@ -389,10 +431,11 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 func _start_dying(signal_name: String) -> void:
 	if is_dying:
 		return
-	is_dying      = true
-	_death_signal = signal_name
-	is_attacking  = false
-	_sword.monitoring = false
+	is_dying               = true
+	_death_signal          = signal_name
+	is_attacking           = false
+	_sword.monitoring      = false
+	_weapon_sprite.visible = false
 	_body_shape.set_deferred("disabled", true)
 	_sprite.flip_h = false
 	_sprite.play("hurt")
@@ -432,8 +475,9 @@ func start(pos: Vector2, combat: bool = false) -> void:
 	facing          = Vector2.RIGHT
 	_last_move_dir  = Vector2.RIGHT
 	_body_shape.disabled = false
-	_sword.monitoring    = false
-	_sprite.flip_h       = false
+	_sword.monitoring      = false
+	_weapon_sprite.visible = false
+	_sprite.flip_h         = false
 	_iframes  = 0.0
 	_is_hurt  = false
 	health    = PlayerStats.MAX_HEALTH

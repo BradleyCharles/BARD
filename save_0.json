@@ -1,5 +1,18 @@
 {
-	"active_bounties": [],
+	"active_bounties": [
+		{
+			"day_accepted": 1,
+			"display_name": "Ash Crusher",
+			"flavor": "A great host of the apex slime variety holds the upper ridge. The guild has exhausted all other options. Bring skill and patience.",
+			"id": "slime3_zone_c_large",
+			"killed": 20,
+			"monster_type": "slime3",
+			"quantity": 20.0,
+			"reward_text": "80 gold upon verified completion.",
+			"status": "turned_in",
+			"zone": "zone_c"
+		}
+	],
 	"available_bounties": [
 		{
 			"display_name": "Bog Slither",
@@ -191,15 +204,6 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "Ash Crusher",
-			"flavor": "A great host of the apex slime variety holds the upper ridge. The guild has exhausted all other options. Bring skill and patience.",
-			"id": "slime3_zone_c_large",
-			"monster_type": "slime3",
-			"quantity": 20.0,
-			"reward_text": "80 gold upon verified completion.",
-			"zone": "zone_c"
-		},
-		{
 			"display_name": "Rust Colossus",
 			"flavor": "The largest slimes have been spotted on the ridge approach. They are territorial and relentless. This posting is not for novices.",
 			"id": "slime3_zone_c_small",
@@ -234,21 +238,23 @@
 		"met_aldric": false,
 		"met_gareth": false,
 		"met_mira": false,
+		"met_tarek_marrowski": true,
 		"met_varkos": true,
 		"player_slept_at_inn": false
 	},
 	"meta": {
 		"day": 1,
-		"scene_path": "res://world/town.tscn",
+		"scene_path": "res://world/field.tscn",
 		"schema_version": "1.0"
 	},
 	"owned_weapons": [
-		"sword"
+		"sword",
+		"axe"
 	],
 	"player_health": 100,
 	"player_name": "Hunter",
 	"scripts": 0,
-	"slime_goop": 0,
+	"slime_goop": 20,
 	"weapon_upgrades": {
 
 	},
@@ -257,7 +263,8 @@
 		"monsters_killed_today": {
 			"slime1": 3.0,
 			"slime2": 3.0,
-			"slime3": 1.0
+			"slime3": 21.0,
+			"slime3_boss": 1
 		}
 	}
 }
