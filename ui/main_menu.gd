@@ -123,34 +123,37 @@ func _highlight(idx: int) -> void:
 			)
 
 
+func _process(_delta: float) -> void:
+	if _busy:
+		return
+	if _load_picker != null:
+		if Input.is_action_just_pressed(PlayerInput.MENU_UP):
+			_picker_sel = (_picker_sel - 1 + _picker_rows.size()) % _picker_rows.size()
+			_highlight_picker()
+		elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
+			_picker_sel = (_picker_sel + 1) % _picker_rows.size()
+			_highlight_picker()
+		return
+	if Input.is_action_just_pressed(PlayerInput.MENU_UP):
+		_selection = _step(_selection, -1)
+		_highlight(_selection)
+	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
+		_selection = _step(_selection, 1)
+		_highlight(_selection)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _busy:
 		return
 	if _load_picker != null:
-		if event.is_action_pressed(PlayerInput.MENU_UP):
-			_picker_sel = (_picker_sel - 1 + _picker_rows.size()) % _picker_rows.size()
-			_highlight_picker()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed(PlayerInput.MENU_DOWN):
-			_picker_sel = (_picker_sel + 1) % _picker_rows.size()
-			_highlight_picker()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed(PlayerInput.INTERACT):
+		if event.is_action_pressed(PlayerInput.INTERACT):
 			_picker_actions[_picker_sel].call()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed(PlayerInput.MENU_CANCEL):
 			_close_picker()
 			get_viewport().set_input_as_handled()
 		return
-	if event.is_action_pressed(PlayerInput.MENU_UP):
-		_selection = _step(_selection, -1)
-		_highlight(_selection)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(PlayerInput.MENU_DOWN):
-		_selection = _step(_selection, 1)
-		_highlight(_selection)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(PlayerInput.INTERACT):
+	if event.is_action_pressed(PlayerInput.INTERACT):
 		_confirm_selection()
 		get_viewport().set_input_as_handled()
 

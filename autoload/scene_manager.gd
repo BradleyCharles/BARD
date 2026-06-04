@@ -35,7 +35,7 @@ var flags : Dictionary = {
 
 var scripts                  : int        = 0
 var slime_goop               : int        = 0
-var owned_weapons            : Array      = ["sword"]
+var owned_weapons            : Array      = ["sword", "axe"]
 var weapon_upgrades          : Dictionary = {}
 var _scripts_earned_today    : int        = 0
 var _bounties_turned_in_today: Array      = []

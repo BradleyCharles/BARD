@@ -60,6 +60,19 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _input_guard:
 		_input_guard = false
+		return
+	if _confirm_overlay != null:
+		if Input.is_action_just_pressed(PlayerInput.MENU_UP):
+			_confirm_sel = (_confirm_sel - 1 + _confirm_rows.size()) % _confirm_rows.size()
+			_highlight_confirm()
+		elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
+			_confirm_sel = (_confirm_sel + 1) % _confirm_rows.size()
+			_highlight_confirm()
+		return
+	if Input.is_action_just_pressed(PlayerInput.MENU_UP):
+		_navigate(-1)
+	elif Input.is_action_just_pressed(PlayerInput.MENU_DOWN):
+		_navigate(1)
 
 
 # ── Input ─────────────────────────────────────────────────────────────────────
@@ -69,15 +82,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if _confirm_overlay != null:
-		if event.is_action_pressed(PlayerInput.MENU_UP):
-			_confirm_sel = (_confirm_sel - 1 + _confirm_rows.size()) % _confirm_rows.size()
-			_highlight_confirm()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed(PlayerInput.MENU_DOWN):
-			_confirm_sel = (_confirm_sel + 1) % _confirm_rows.size()
-			_highlight_confirm()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed(PlayerInput.INTERACT):
+		if event.is_action_pressed(PlayerInput.INTERACT):
 			_confirm_actions[_confirm_sel].call()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed(PlayerInput.MENU_CANCEL):
@@ -85,13 +90,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
-	if event.is_action_pressed(PlayerInput.MENU_UP):
-		_navigate(-1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(PlayerInput.MENU_DOWN):
-		_navigate(1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(PlayerInput.INTERACT):
+	if event.is_action_pressed(PlayerInput.INTERACT):
 		_try_drop()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(PlayerInput.MENU_CANCEL) \
