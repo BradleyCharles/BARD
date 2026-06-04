@@ -53,18 +53,28 @@ const _PLAYER_RADIUS: float = 20.0
 func _ready() -> void:
 	_weapon_stats = {
 		SwordData.ID: {
-			"damage":        SwordData.DAMAGE,
-			"swing_fps":     SwordData.SWING_FPS,
-			"knockback":     SwordData.KNOCKBACK,
-			"hitbox":        SwordData.hitbox,
-			"sprite_offset": SwordData.SPRITE_OFFSET,
+			"damage":         SwordData.DAMAGE,
+			"swing_fps":      SwordData.SWING_FPS,
+			"knockback":      SwordData.KNOCKBACK,
+			"hitbox":         SwordData.hitbox,
+			"sprite_path":    SwordData.SPRITE_PATH,
+			"frame_count":    SwordData.FRAME_COUNT,
+			"native_size":    SwordData.NATIVE_SIZE,
+			"sprite_offset":  SwordData.SPRITE_OFFSET,
+			"hit_frame_start":SwordData.HIT_FRAME_START,
+			"hit_frame_end":  SwordData.HIT_FRAME_END,
 		},
 		AxeData.ID: {
-			"damage":        AxeData.DAMAGE,
-			"swing_fps":     AxeData.SWING_FPS,
-			"knockback":     AxeData.KNOCKBACK,
-			"hitbox":        AxeData.hitbox,
-			"sprite_offset": AxeData.SPRITE_OFFSET,
+			"damage":         AxeData.DAMAGE,
+			"swing_fps":      AxeData.SWING_FPS,
+			"knockback":      AxeData.KNOCKBACK,
+			"hitbox":         AxeData.hitbox,
+			"sprite_path":    AxeData.SPRITE_PATH,
+			"frame_count":    AxeData.FRAME_COUNT,
+			"native_size":    AxeData.NATIVE_SIZE,
+			"sprite_offset":  AxeData.SPRITE_OFFSET,
+			"hit_frame_start":AxeData.HIT_FRAME_START,
+			"hit_frame_end":  AxeData.HIT_FRAME_END,
 		},
 	}
 	add_to_group("player")
@@ -130,17 +140,13 @@ func _build_weapon_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 
-	sf.add_animation(SwordData.ID)
-	sf.set_animation_loop(SwordData.ID, false)
-	sf.set_animation_speed(SwordData.ID, SwordData.SWING_FPS)
-	for i: int in range(1, 9):
-		sf.add_frame(SwordData.ID, load("res://assets/Sword/%d.png" % i))
-
-	sf.add_animation(AxeData.ID)
-	sf.set_animation_loop(AxeData.ID, false)
-	sf.set_animation_speed(AxeData.ID, AxeData.SWING_FPS)
-	for i: int in range(1, 11):
-		sf.add_frame(AxeData.ID, load("res://assets/Axe/%d.png" % i))
+	for weapon_id: String in _weapon_stats:
+		var ws: Dictionary = _weapon_stats[weapon_id]
+		sf.add_animation(weapon_id)
+		sf.set_animation_loop(weapon_id, false)
+		sf.set_animation_speed(weapon_id, ws["swing_fps"])
+		for i: int in range(1, int(ws["frame_count"]) + 1):
+			sf.add_frame(weapon_id, load(ws["sprite_path"] + "%d.png" % i))
 
 	_weapon_sprite.sprite_frames = sf
 
@@ -328,7 +334,7 @@ func _start_attack() -> void:
 		_weapon_sprite.rotation_degrees = 0.0
 		_weapon_sprite.flip_h = attack_dir.x < 0.0
 
-	_weapon_sprite.scale    = (stats["hitbox"] as Vector2) / 496.0
+	_weapon_sprite.scale    = (stats["hitbox"] as Vector2) / float(stats["native_size"])
 	_weapon_sprite.position = attack_dir * float(stats["sprite_offset"])
 	_weapon_sprite.sprite_frames.set_animation_speed(active_weapon, stats["swing_fps"])
 	_weapon_sprite.play(active_weapon)
@@ -340,8 +346,9 @@ func _start_attack() -> void:
 func _on_frame_changed() -> void:
 	if not is_attacking:
 		return
-	var f := _sprite.frame
-	_sword.monitoring = (f >= 2 and f <= 6)
+	var stats: Dictionary = _weapon_stats.get(active_weapon, _weapon_stats[SwordData.ID])
+	var f: int = _sprite.frame
+	_sword.monitoring = f >= int(stats["hit_frame_start"]) and f <= int(stats["hit_frame_end"])
 
 
 func _on_animation_finished() -> void:

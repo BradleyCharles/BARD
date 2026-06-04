@@ -1,9 +1,14 @@
 class_name AxeData
 
-const ID        : String = "axe"
-const DAMAGE    : int    = 2
-const SWING_FPS : float  = 24.0
-const KNOCKBACK : float  = 600.0
+const ID             : String = "axe"
+const DAMAGE         : int    = 2
+const SWING_FPS      : float  = 24.0
+const KNOCKBACK      : float  = 600.0
+const SPRITE_PATH    : String = "res://assets/Axe/"
+const FRAME_COUNT    : int    = 10
+const NATIVE_SIZE    : float  = 496.0
+const SPRITE_OFFSET  : float  = 0.0
+const HIT_FRAME_START: int    = 2
+const HIT_FRAME_END  : int    = 7
 # Vector2 cannot be a GDScript const — static var is required for object types
-static var hitbox:  Vector2 = Vector2(60.0, 40.0)
-const SPRITE_OFFSET : float  = 24.0
+static var hitbox: Vector2 = Vector2(60.0, 40.0)
