@@ -469,6 +469,41 @@ Insufficient funds: a transient `_insufficient_funds` node is injected into `_di
 
 ---
 
+## 11a. Pause Menu — Bounty Management
+
+**Owner:** `ui/pause_bounty_screen.gd`  
+**Trigger:** "Bounties" option in the pause menu (index 3)
+
+Opened as a `Control` child of the pause menu's CanvasLayer. Uses the same dark-parchment palette and split layout (scrollable list left, detail pane right) as the bounty board.
+
+### What it shows
+- All active bounties with `status != "turned_in"`: name, zone, kill progress.
+- Detail pane: monster image, flavor text, current progress, reward, and a "[A] Drop this contract" prompt.
+
+### Navigation
+- ↑↓ (`menu_up` / `menu_down`): cycle through active bounties.
+- `interact` (A / E): open drop-confirm dialog for the selected bounty.
+- `menu_cancel` or `pause` (B / Esc): close and return to pause menu.
+
+### Drop-confirm overlay
+A small centered panel warns:  
+*"Dropping this contract will reset all kill progress and return it to the bounty board."*  
+Options: **Yes, drop it** / **No, keep it**. Navigated with ↑↓; confirmed with `interact`.
+
+### Drop flow
+```
+Player confirms drop
+  → SceneManager.drop_bounty(bounty_id)
+      • remove from active_bounties
+      • re-read bounty_pool.json → append fresh copy to available_bounties
+      • bounties_updated.emit()
+  → screen refreshes automatically
+```
+
+Kill progress is always lost on drop — the bounty returns to the board in its original unstarted state.
+
+---
+
 ## 12. Bounty Board
 
 **Owner:** `ui/bounty_board.gd` + `world/bounty_board_object.gd`

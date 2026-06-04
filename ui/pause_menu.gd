@@ -27,6 +27,8 @@ var _confirm_rows     : Array[Label]    = []
 var _confirm_actions  : Array[Callable] = []
 var _confirm_sel      : int             = 0
 
+var _bounty_screen : Control = null
+
 
 func _ready() -> void:
 	layer        = 250
@@ -81,7 +83,7 @@ func _build_ui() -> void:
 	sep.add_theme_color_override("color", Color(0.50, 0.40, 0.20, 0.60))
 	vbox.add_child(sep)
 
-	for option in ["Resume", "Save", "Load"]:
+	for option in ["Resume", "Save", "Load", "Bounties"]:
 		var lbl := Label.new()
 		lbl.text = option
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -136,12 +138,16 @@ func close() -> void:
 	get_tree().paused = false
 	_close_confirm()
 	_close_picker()
+	_close_bounty_screen()
 
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _is_open:
+		return
+
+	if _bounty_screen != null:
 		return
 
 	if _confirm_overlay != null:
@@ -200,7 +206,8 @@ func _confirm_selection() -> void:
 		0: close()
 		1: _show_save_picker()
 		2: _show_load_picker()
-		3:
+		3: _open_bounty_screen()
+		4:
 			if not OS.has_feature("editor"):
 				var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
 				if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
@@ -208,6 +215,23 @@ func _confirm_selection() -> void:
 				else:
 					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 			_fullscreen_label.text = _fullscreen_label_text()
+
+
+# ── Bounty screen ────────────────────────────────────────────────────────────
+
+func _open_bounty_screen() -> void:
+	var script: GDScript = load("res://ui/pause_bounty_screen.gd")
+	_bounty_screen = Control.new()
+	_bounty_screen.set_script(script)
+	_bounty_screen.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_bounty_screen)
+	(_bounty_screen as Object).connect("screen_closed", _close_bounty_screen)
+
+
+func _close_bounty_screen() -> void:
+	if _bounty_screen:
+		_bounty_screen.queue_free()
+		_bounty_screen = null
 
 
 # ── Picker helpers ────────────────────────────────────────────────────────────

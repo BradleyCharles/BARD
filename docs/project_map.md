@@ -99,6 +99,7 @@ BARD/
 │   ├── dialog_box.tscn
 │   ├── bounty_board.gd           # Full-screen bounty board overlay (CanvasLayer)
 │   ├── bounty_board.tscn
+│   ├── pause_bounty_screen.gd    # Pause-menu sub-screen: view/drop active bounties
 │   ├── bounty_tracker.gd         # Passive bottom-right HUD: active bounty progress
 │   ├── bounty_tracker.tscn
 │   ├── bounty_turnin.gd          # Turn-in overlay: complete contracts → earn Scripts
@@ -170,6 +171,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `record_kill(monster_type)` | Increment `monsters_killed_today` |
 | `record_bounty_kill(monster_type, zone)` | Increment bounty kill counter; mark complete when quota met |
 | `accept_bounty(bounty_id)` | Move bounty from available → active |
+| `drop_bounty(bounty_id)` | Remove from active, restore fresh copy to available (resets progress) |
 | `turn_in_bounty(bounty_id)` | Mark turned_in, award Scripts |
 | `refresh_daily_bounties()` | Repopulate available list from bounty_pool.json |
 | `earn_scripts(amount)` | Add to `scripts`, emit `scripts_updated` |

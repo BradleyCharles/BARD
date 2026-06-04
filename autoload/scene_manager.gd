@@ -274,6 +274,36 @@ func accept_bounty(bounty_id: String) -> void:
 			return
 
 
+func drop_bounty(bounty_id: String) -> void:
+	for i in active_bounties.size():
+		if active_bounties[i].get("id") == bounty_id:
+			active_bounties.remove_at(i)
+			_restore_bounty_to_available(bounty_id)
+			bounties_updated.emit()
+			return
+
+
+func _restore_bounty_to_available(bounty_id: String) -> void:
+	var path := _project_path + "data/bounty_pool.json"
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		file.close()
+		return
+	file.close()
+	var pool: Array = parser.get_data().get("bounties", [])
+	var name_pool: Dictionary = _load_mob_names()
+	for bounty: Dictionary in pool:
+		if bounty.get("id") == bounty_id:
+			var b: Dictionary = bounty.duplicate()
+			var names: Array = name_pool.get(b.get("monster_type", ""), [])
+			b["display_name"] = names[randi() % names.size()] if not names.is_empty() else bounty_id
+			available_bounties.append(b)
+			return
+
+
 func record_bounty_kill(monster_type: String, zone: String) -> void:
 	for bounty in active_bounties:
 		if bounty.get("monster_type") == monster_type and bounty.get("zone") == zone \
