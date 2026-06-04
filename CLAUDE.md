@@ -22,6 +22,28 @@ Keep the map accurate — it is the primary orientation document for this codeba
 
 ---
 
+## Game Mechanics Reference
+
+**Read [`docs/game_mechanics.md`](docs/game_mechanics.md) before working on combat, collision, AI, or any physics interaction.**
+
+It contains:
+- Full collision layer map (which layer/mask values each entity uses and why)
+- Damage flow for player↔mob in both directions
+- Mob AI rules (contact radius, hurt-state bypass, pack logic)
+- Known anti-patterns and why they break things
+- Checklist for adding a new enemy type
+
+**Update `docs/game_mechanics.md` whenever you:**
+- Add or change collision layer/mask assignments on any entity
+- Add or modify a damage pathway (HurtArea, SwordHitbox, or new attack types)
+- Add, remove, or change mob AI behaviour (chase, flee, contact stop, knockback)
+- Add a new enemy or NPC type
+- Fix a combat or physics bug — document what was wrong and why
+
+Keep it current — it is the authoritative reference for how the physics and combat systems actually work.
+
+---
+
 ## Project Overview
 
 Godot 4.6 RPG demo with a local LLM (Ollama/Gemma 4 E4B) pipeline that regenerates NPC dialogue each in-game night based on game state. Academic project.
