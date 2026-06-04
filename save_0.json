@@ -1,42 +1,5 @@
 {
-	"active_bounties": [
-		{
-			"day_accepted": 1,
-			"display_name": "Damp Crawler",
-			"flavor": "A small number of oozing creatures have been spotted near the outer trails. Travelers report slick residue on the stones.",
-			"id": "slime1_zone_a_small",
-			"killed": 3,
-			"monster_type": "slime1",
-			"quantity": 5.0,
-			"reward_text": "5 gold upon verified completion.",
-			"status": "active",
-			"zone": "zone_a"
-		},
-		{
-			"day_accepted": 1,
-			"display_name": "Tide Slither",
-			"flavor": "A handful of pack slimes has appeared in the fen. Each one alone is docile, but they have a habit of finding each other quickly.",
-			"id": "slime2_zone_b_small",
-			"killed": 3,
-			"monster_type": "slime2",
-			"quantity": 5.0,
-			"reward_text": "10 gold upon verified completion.",
-			"status": "active",
-			"zone": "zone_b"
-		},
-		{
-			"day_accepted": 1,
-			"display_name": "Blood Swell",
-			"flavor": "The largest slimes have been spotted on the ridge approach. They are territorial and relentless. This posting is not for novices.",
-			"id": "slime3_zone_c_small",
-			"killed": 1,
-			"monster_type": "slime3",
-			"quantity": 5.0,
-			"reward_text": "18 gold upon verified completion.",
-			"status": "active",
-			"zone": "zone_c"
-		}
-	],
+	"active_bounties": [],
 	"available_bounties": [
 		{
 			"display_name": "Bog Slither",
@@ -235,6 +198,33 @@
 			"quantity": 20.0,
 			"reward_text": "80 gold upon verified completion.",
 			"zone": "zone_c"
+		},
+		{
+			"display_name": "Rust Colossus",
+			"flavor": "The largest slimes have been spotted on the ridge approach. They are territorial and relentless. This posting is not for novices.",
+			"id": "slime3_zone_c_small",
+			"monster_type": "slime3",
+			"quantity": 5.0,
+			"reward_text": "18 gold upon verified completion.",
+			"zone": "zone_c"
+		},
+		{
+			"display_name": "Azure Pack",
+			"flavor": "A handful of pack slimes has appeared in the fen. Each one alone is docile, but they have a habit of finding each other quickly.",
+			"id": "slime2_zone_b_small",
+			"monster_type": "slime2",
+			"quantity": 5.0,
+			"reward_text": "10 gold upon verified completion.",
+			"zone": "zone_b"
+		},
+		{
+			"display_name": "Verdant Ooze",
+			"flavor": "A small number of oozing creatures have been spotted near the outer trails. Travelers report slick residue on the stones.",
+			"id": "slime1_zone_a_small",
+			"monster_type": "slime1",
+			"quantity": 5.0,
+			"reward_text": "5 gold upon verified completion.",
+			"zone": "zone_a"
 		}
 	],
 	"flags": {
@@ -244,6 +234,7 @@
 		"met_aldric": false,
 		"met_gareth": false,
 		"met_mira": false,
+		"met_varkos": true,
 		"player_slept_at_inn": false
 	},
 	"meta": {
@@ -264,9 +255,9 @@
 	"world_state": {
 		"monsters_killed_history": [],
 		"monsters_killed_today": {
-			"slime1": 3,
-			"slime2": 3,
-			"slime3": 1
+			"slime1": 3.0,
+			"slime2": 3.0,
+			"slime3": 1.0
 		}
 	}
 }
