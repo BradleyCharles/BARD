@@ -46,12 +46,6 @@ var _knockback_time: float   = 0.0
 var _weapon_stats: Dictionary = {}
 var active_weapon: String     = SwordData.ID
 
-# ── Sprite sheet rows ─────────────────────────────────────────────────────────
-
-const ROW_DOWN  = 0
-const ROW_RIGHT = 2
-const ROW_UP    = 3
-const FRAME_SIZE = 64
 const _PLAYER_RADIUS: float = 20.0
 
 
@@ -87,52 +81,40 @@ func set_world_bounds(bounds: Rect2) -> void:
 	_world_bounds = bounds
 
 
-# ── Sprite sheet setup ────────────────────────────────────────────────────────
-
-func _make_atlas(sheet: Texture2D, col: int, row: int) -> AtlasTexture:
-	var a := AtlasTexture.new()
-	a.atlas = sheet
-	a.region = Rect2(col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE)
-	return a
-
-
-func _add_anim(sf: SpriteFrames, anim: String, sheet: Texture2D,
-			   row: int, count: int, fps: float, loop: bool) -> void:
-	sf.add_animation(anim)
-	sf.set_animation_loop(anim, loop)
-	sf.set_animation_speed(anim, fps)
-	for i in count:
-		sf.add_frame(anim, _make_atlas(sheet, i, row))
-
+# ── Sprite setup ──────────────────────────────────────────────────────────────
 
 func _build_sprite_frames() -> void:
-	var base := "res://assets/Swordsman_lvl1/Without_shadow/"
-	var idle_tex  : Texture2D = load(base + "Swordsman_lvl1_Idle_without_shadow.png")
-	var walk_tex  : Texture2D = load(base + "Swordsman_lvl1_Walk_without_shadow.png")
-	var atk_tex   : Texture2D = load(base + "Swordsman_lvl1_attack_without_shadow.png")
-	var hurt_tex  : Texture2D = load(base + "Swordsman_lvl1_Hurt_without_shadow.png")
-	var death_tex : Texture2D = load(base + "Swordsman_lvl1_Death_without_shadow.png")
-
+	const BASE := "res://assets/Swordsman_lvl3/"
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 
-	_add_anim(sf, "idle",         idle_tex, ROW_RIGHT, 12, 8.0,  true)
-	_add_anim(sf, "idle_up",      idle_tex, ROW_UP,     4, 8.0,  true)
-	_add_anim(sf, "idle_down",    idle_tex, ROW_DOWN,  12, 8.0,  true)
+	_copy_anim(sf, "idle",        BASE + "Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_side_right.aseprite",    8.0, true)
+	_copy_anim(sf, "idle_up",     BASE + "Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_back.aseprite",           8.0, true)
+	_copy_anim(sf, "idle_down",   BASE + "Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_front.aseprite",          8.0, true)
 
-	_add_anim(sf, "walk",         walk_tex, ROW_RIGHT,  6, 8.0,  true)
-	_add_anim(sf, "walk_up",      walk_tex, ROW_UP,     6, 8.0,  true)
-	_add_anim(sf, "walk_down",    walk_tex, ROW_DOWN,   6, 8.0,  true)
+	_copy_anim(sf, "walk",        BASE + "Swordsman_lvl3_Walk/Swordsman_lvl3_Walk_side_right.aseprite",    8.0, true)
+	_copy_anim(sf, "walk_up",     BASE + "Swordsman_lvl3_Walk/Swordsman_lvl3_Walk_back.aseprite",           8.0, true)
+	_copy_anim(sf, "walk_down",   BASE + "Swordsman_lvl3_Walk/Swordsman_lvl3_Walk_front.aseprite",          8.0, true)
 
-	_add_anim(sf, "attack",       atk_tex, ROW_RIGHT, 8, 20.0, false)
-	_add_anim(sf, "attack_up",    atk_tex, ROW_UP,    8, 20.0, false)
-	_add_anim(sf, "attack_down",  atk_tex, ROW_DOWN,  8, 20.0, false)
+	_copy_anim(sf, "attack",      BASE + "Swordsman_lvl3_Attack/Swordsman_lvl3_attack_side_right.aseprite", 20.0, false)
+	_copy_anim(sf, "attack_up",   BASE + "Swordsman_lvl3_Attack/Swordsman_lvl3_attack_back.aseprite",       20.0, false)
+	_copy_anim(sf, "attack_down", BASE + "Swordsman_lvl3_Attack/Swordsman_lvl3_attack_front.aseprite",      20.0, false)
 
-	_add_anim(sf, "hurt",  hurt_tex,  ROW_RIGHT, 5, 12.0, false)
-	_add_anim(sf, "death", death_tex, ROW_RIGHT, 7, 10.0, false)
+	_copy_anim(sf, "hurt",  BASE + "Swordsman_lvl3_Hurt/Swordsman_lvl3_Hurt_side_right.aseprite",   12.0, false)
+	_copy_anim(sf, "death", BASE + "Swordsman_lvl3_Death/Swordsman_lvl3_Death_side_right.aseprite",  10.0, false)
 
 	_sprite.sprite_frames = sf
 	_sprite.play("idle")
+
+
+func _copy_anim(sf: SpriteFrames, anim: String, path: String, fps: float, loop: bool) -> void:
+	var src: SpriteFrames = load(path)
+	var src_anim: String = src.get_animation_names()[0]
+	sf.add_animation(anim)
+	sf.set_animation_loop(anim, loop)
+	sf.set_animation_speed(anim, fps)
+	for i: int in src.get_frame_count(src_anim):
+		sf.add_frame(anim, src.get_frame_texture(src_anim, i))
 
 
 # ── Game loop ─────────────────────────────────────────────────────────────────

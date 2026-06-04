@@ -538,32 +538,25 @@ func _try_play(anim: String) -> void:
 
 # ── Sprite setup ──────────────────────────────────────────────────────────────
 
-const FRAME_SIZE := 64
-const ROW_DOWN   := 0
-const ROW_RIGHT  := 2
-const ROW_UP     := 3
-
 func _build_sprite_frames() -> void:
-	var base     := "res://assets/Swordsman_lvl1/Without_shadow/"
-	var idle_tex : Texture2D = load(base + "Swordsman_lvl1_Idle_without_shadow.png")
+	var level: String = "Swordsman_lvl1" if is_wanderer else "Swordsman_lvl2"
+	var base: String = "res://assets/%s/%s_Idle/%s_Idle_" % [level, level, level]
 
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 
-	_add_anim(sf, "idle_down",  idle_tex, ROW_DOWN,  12, 8.0, true)
-	_add_anim(sf, "idle_right", idle_tex, ROW_RIGHT, 12, 8.0, true)
-	_add_anim(sf, "idle_up",    idle_tex, ROW_UP,     4, 8.0, true)
+	_copy_anim(sf, "idle_down",  base + "front.aseprite",      8.0, true)
+	_copy_anim(sf, "idle_right", base + "side_right.aseprite", 8.0, true)
+	_copy_anim(sf, "idle_up",    base + "back.aseprite",       8.0, true)
 
 	_sprite.sprite_frames = sf
 
 
-func _add_anim(sf: SpriteFrames, anim: String, sheet: Texture2D,
-			   row: int, count: int, fps: float, loop: bool) -> void:
+func _copy_anim(sf: SpriteFrames, anim: String, path: String, fps: float, loop: bool) -> void:
+	var src: SpriteFrames = load(path)
+	var src_anim: String = src.get_animation_names()[0]
 	sf.add_animation(anim)
 	sf.set_animation_loop(anim, loop)
 	sf.set_animation_speed(anim, fps)
-	for i in count:
-		var a := AtlasTexture.new()
-		a.atlas  = sheet
-		a.region = Rect2(i * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE)
-		sf.add_frame(anim, a)
+	for i: int in src.get_frame_count(src_anim):
+		sf.add_frame(anim, src.get_frame_texture(src_anim, i))

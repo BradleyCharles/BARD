@@ -35,11 +35,24 @@ BARD/
 │       ├── blacksmith_A.json
 │       ├── guild_commander_A.json
 │       └── innkeeper_A.json
-├── assets/                       # Sprite sheets
-│   ├── Swordsman_lvl1/Without_shadow/   # Player: idle, walk, attack, hurt, death
-│   ├── Slime1/Without_shadow/           # Enemy 1: individual PNGs per frame (idle_down0–5, etc.)
-│   ├── Slime2/                          # Enemy 2: spritesheet — Idle 384×256, Walk 512×256, 64px, 4 rows
-│   └── Slime3/                          # Enemy 3 (not yet integrated)
+├── assets/                       # Sprite sheets and animation sources
+│   ├── Swordsman_lvl1/           # Wandering NPC sprites (.aseprite per direction)
+│   │   ├── Swordsman_lvl1_Idle/          # front/back/side_left/side_right
+│   │   ├── Swordsman_lvl1_Walk/
+│   │   ├── Swordsman_lvl1_Walk_attack/
+│   │   ├── Swordsman_lvl1_Run/
+│   │   ├── Swordsman_lvl1_Run_attack/
+│   │   ├── Swordsman_lvl1_Attack/
+│   │   ├── Swordsman_lvl1_Hurt/
+│   │   └── Swordsman_lvl1_Death/
+│   ├── Swordsman_lvl2/           # Named NPC sprites (innkeeper, blacksmith, guild master) — same layout as lvl1
+│   ├── Swordsman_lvl3/           # Player sprites — same layout as lvl1
+│   ├── Sword/                    # Sword attack animation: individual PNGs 1.png–8.png
+│   ├── Axe/                      # Axe attack animation: individual PNGs 1.png–10.png
+│   ├── Bounty_Board/             # Bounty board world object sprites
+│   ├── Slime1/Without_shadow/    # Enemy 1: individual PNGs per frame (idle_down0–5, etc.)
+│   ├── Slime2/Without_shadow/    # Enemy 2: spritesheet — Idle 384×256, Walk 512×256, 64px, 4 rows
+│   └── Slime3/Without_shadow/    # Enemy 3 (not yet integrated)
 ├── autoload/
 │   └── scene_manager.gd          # Global singleton: all game state + pipeline orchestration
 ├── data/
@@ -188,7 +201,9 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 
 8-directional movement (arrow keys / WASD, left stick) clamped to world bounds set by the scene.
 
-**Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, attack / attack_up / attack_down, hurt, death — all built from sprite-sheet atlas at runtime.
+**Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, attack / attack_up / attack_down, hurt, death. Source: `assets/Swordsman_lvl3/` (.aseprite files, one per direction: front/back/side_left/side_right), imported via AsepriteWizard plugin. Weapon swing overlays come from `assets/Sword/` (1–8 PNGs) and `assets/Axe/` (1–10 PNGs).
+
+> **Note:** `_build_sprite_frames()` in `player.gd` currently references the old `Swordsman_lvl1/Without_shadow/` path (now removed) and must be rewritten to load from `Swordsman_lvl3/`.
 
 **Combat:**
 - Attack: `A` key / gamepad West (X) button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
@@ -273,7 +288,13 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 
 **`reload_dialogue()`:** Reloads from `dialogue/{npc_id}_day{N}.json` without re-instantiating. Called by `SceneManager._reload_all_dialogue()` after each pipeline run.
 
-**Wanderers:** Background NPCs with `is_wanderer = true` wander at `WANDER_SPEED = 38 px/s`, picking new direction every 2.5–6 s (30% idle chance), carrying no dialogue.
+**Wanderers:** Background NPCs with `is_wanderer = true` wander at `WANDER_SPEED = 38 px/s`, picking new direction every 2.5–6 s (30% idle chance), carrying no dialogue. Use `assets/Swordsman_lvl1/` sprites.
+
+**Sprite assignment by NPC type:**
+- Wanderers → `assets/Swordsman_lvl1/` (.aseprite per direction)
+- Named NPCs (innkeeper, blacksmith, guild master) → `assets/Swordsman_lvl2/`
+
+> **Note:** `_build_sprite_frames()` in `npc_base.gd` currently references the old `Swordsman_lvl1/Without_shadow/` path (now removed) and must be rewritten to load from the correct lvl1/lvl2 directory based on `is_wanderer`.
 
 ---
 
