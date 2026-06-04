@@ -45,7 +45,7 @@ Set unconditionally in `mob_base._ready()`, inherited by all mob subclasses (sli
 
 ### NPCs — `npc/npc_base.gd` (`_add_physics_body()`)
 
-Each NPC (Node2D root) gets a `StaticBody2D` child added programmatically in `_ready()`:
+Only **non-wandering NPCs** (named characters) get a `StaticBody2D` child. Wandering background NPCs have no physics body.
 
 | Property | Value | Reason |
 |----------|-------|--------|
@@ -53,7 +53,7 @@ Each NPC (Node2D root) gets a `StaticBody2D` child added programmatically in `_r
 | `collision_mask` | **0** | StaticBody2D is immovable by definition; mask 0 prevents any force feedback |
 | Shape | `CircleShape2D`, radius 12 | Approximate NPC footprint |
 
-`StaticBody2D` nodes do not apply impulses when they move. When a wandering NPC walks into the player's space, no push occurs — the overlap resolves passively on the player's next `move_and_slide()` call. The player can walk into an NPC and be stopped; NPCs do not launch the player.
+Named NPCs (innkeeper, blacksmith, guild commander) are stationary; their static body blocks the player without pushing. Wandering NPCs have no body — player can pass through them — because a `StaticBody2D` that moves between frames reports its apparent velocity to the physics server and actively pushes `CharacterBody2D` bodies it overlaps.
 
 ---
 
@@ -136,7 +136,18 @@ All mobs extend `RigidBody2D`. Movement is set via `linear_velocity` directly ea
 
 ### Contact Radius (tuning knob)
 
-`CONTACT_RADIUS: float = 44.0` is defined as a constant in both `slime1.gd` and `slime3.gd`. Adjust this value to control how close mobs stop to the player before halting their chase. At 44 px, the mob's collision shape edge is approximately touching the player's collision shape edge.
+`CONTACT_RADIUS` is defined as a constant in both `slime1.gd` and `slime3.gd`. It must be **greater than (mob collision radius + player collision radius)** to prevent the mob's physics body from overlapping the player's — overlap causes `CharacterBody2D.move_and_slide()` recovery to push the player even when the mob is stationary.
+
+| Mob | Mob radius | Player effective radius | Min safe CONTACT_RADIUS | Actual value |
+|-----|-----------|------------------------|------------------------|--------------|
+| slime1 | 26 px | 20 px (capsule r=10 × scale 2) | > 46 px | **50 px** |
+| slime3 | 40 px | 20 px | > 60 px | **64 px** |
+
+The player's `HurtArea` uses a `CircleShape2D(radius=14)` set in code (effective 28 px at player scale 2), making the damage trigger radius larger than the physical overlap radius. This creates the gap that allows mobs to stop before overlapping while still being within damage range.
+
+### Iframe Pause
+
+Both slime1 and slime3 call `_player_is_invincible()` (defined in `mob_base.gd`) before resuming chase. While the player has active iframes the mob holds its position — it pauses at contact distance after landing a hit and only resumes when the iframes expire. This prevents mobs from walking into the player continuously and also prevents recovery-push during the damage animation.
 
 ---
 
@@ -155,7 +166,8 @@ All mobs extend `RigidBody2D`. Movement is set via `linear_velocity` directly ea
 | Player-separation code inside `_integrate_forces` on mobs | Keeps mob permanently away from player; `HurtArea.body_entered` never fires; mob deals no damage |
 | Setting `linear_velocity` every frame without an `_is_hurt` guard | Overrides `apply_central_impulse` knockback in the same frame it's applied; knockback appears to do nothing |
 | Changing only mob `collision_mask` (without moving mob to a new layer) | Player's CharacterBody2D uses *its own* mask, not the mob's. Player mask=1 still detects mob layer=1 regardless of mob mask |
-| NPC StaticBody2D on layer 1 | Player mask=1 detects it; when NPC wanders into player, moving StaticBody2D resolves the overlap by pushing the player |
+| Moving StaticBody2D in player's collision mask | Godot 4 tracks transform delta on static bodies and computes apparent velocity; CharacterBody2D move_and_slide() uses that velocity to push the player when the body moves into them — this is why wandering NPCs must have no physics body |
+| CONTACT_RADIUS ≤ (mob radius + player radius) | Mob collision shape overlaps player's; CharacterBody2D recovery in move_and_slide() pushes the player every frame even when mob velocity = 0 |
 
 ---
 

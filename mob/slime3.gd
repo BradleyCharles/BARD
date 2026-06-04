@@ -4,7 +4,7 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE    := "res://assets/Slime1/Without_shadow/Slime3/"
 const MOB_RADIUS    : float = 30.0
-const CONTACT_RADIUS: float = 44.0
+const CONTACT_RADIUS: float = 64.0
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
@@ -152,7 +152,7 @@ func _physics_process(delta: float) -> void:
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
-		if dist > CONTACT_RADIUS:
+		if dist > CONTACT_RADIUS and not _player_is_invincible():
 			linear_velocity = _direction_to_player_with_noise(max_speed)
 			_update_facing(linear_velocity)
 			_play_run()

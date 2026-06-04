@@ -77,6 +77,10 @@ func _ready() -> void:
 	_sword.body_entered.connect(_on_sword_hit)
 	_sword.collision_mask     = 8
 	_hurt_area.collision_mask = 8
+	var hurt_shape := _hurt_area.get_node("CollisionShape2D") as CollisionShape2D
+	var hurt_circle := CircleShape2D.new()
+	hurt_circle.radius = 14.0
+	hurt_shape.shape = hurt_circle
 	hide()
 
 

@@ -193,7 +193,8 @@ func _ready() -> void:
 	_build_sprite_frames()
 	_detection.area_entered.connect(_on_area_entered)
 	_detection.area_exited.connect(_on_area_exited)
-	_add_physics_body()
+	if not is_wanderer:
+		_add_physics_body()
 
 	var shape := _detection.get_node("CollisionShape2D")
 	if shape and shape.shape is CircleShape2D:

@@ -78,3 +78,10 @@ func _distance_to_player() -> float:
 	if _player_ref == null or not is_instance_valid(_player_ref):
 		return INF
 	return global_position.distance_to(_player_ref.global_position)
+
+
+func _player_is_invincible() -> bool:
+	if _player_ref == null or not is_instance_valid(_player_ref):
+		return false
+	var iframes: Variant = _player_ref.get("_iframes")
+	return iframes != null and float(iframes) > 0.0
