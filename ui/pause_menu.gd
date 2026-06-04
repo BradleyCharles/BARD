@@ -27,7 +27,7 @@ var _confirm_rows     : Array[Label]    = []
 var _confirm_actions  : Array[Callable] = []
 var _confirm_sel      : int             = 0
 
-var _bounty_screen : Control = null
+var _bounty_screen : CanvasLayer = null
 
 
 func _ready() -> void:
@@ -221,9 +221,8 @@ func _confirm_selection() -> void:
 
 func _open_bounty_screen() -> void:
 	var script: GDScript = load("res://ui/pause_bounty_screen.gd")
-	_bounty_screen = Control.new()
+	_bounty_screen = CanvasLayer.new()
 	_bounty_screen.set_script(script)
-	_bounty_screen.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_bounty_screen)
 	(_bounty_screen as Object).connect("screen_closed", _close_bounty_screen)
 

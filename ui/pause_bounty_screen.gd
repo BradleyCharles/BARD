@@ -1,4 +1,4 @@
-extends Control
+extends CanvasLayer
 
 ## Pause-menu sub-screen listing active bounties.
 ## The player can navigate and drop a bounty, which returns it to the board.
@@ -11,15 +11,13 @@ const _C_BORDER   := Color(0.52, 0.40, 0.20, 1.0)
 const _C_GOLD     := Color(0.88, 0.73, 0.38, 1.0)
 const _C_SECTION  := Color(0.60, 0.50, 0.28, 1.0)
 const _C_TEXT     := Color(0.82, 0.76, 0.64, 1.0)
-const _C_DIMMED   := Color(0.48, 0.42, 0.32, 0.45)
 const _C_EMPTY    := Color(0.50, 0.46, 0.38, 1.0)
 const _C_HINT     := Color(0.42, 0.38, 0.30, 1.0)
 const _C_PROGRESS := Color(0.78, 0.70, 0.38, 1.0)
 const _C_COMPLETE := Color(0.48, 0.74, 0.42, 1.0)
 const _C_WARNING  := Color(0.85, 0.35, 0.25, 1.0)
-
-const _C_PANEL   := Color(0.07, 0.05, 0.03, 1.0)
-const _C_DIM     := Color(0.60, 0.55, 0.45, 1.0)
+const _C_PANEL    := Color(0.07, 0.05, 0.03, 1.0)
+const _C_DIM      := Color(0.60, 0.55, 0.45, 1.0)
 
 const _ZONE_LABELS: Dictionary = {
 	"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"
@@ -30,6 +28,7 @@ var _tex_slime2: Texture2D
 var _tex_slime3: Texture2D
 
 var _font        : Font
+var _ref         : Control
 var _list        : VBoxContainer
 var _detail_pane : VBoxContainer
 var _scroll      : ScrollContainer
@@ -37,7 +36,7 @@ var _scroll      : ScrollContainer
 var _bounties     : Array      = []
 var _selected_idx : int        = 0
 var _row_map      : Dictionary = {}
-var _input_guard  : bool       = true
+var _input_guard  : bool       = false
 
 var _confirm_overlay : Control          = null
 var _confirm_rows    : Array[Label]    = []
@@ -46,14 +45,15 @@ var _confirm_sel     : int             = 0
 
 
 func _ready() -> void:
+	layer        = 260
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	set_anchors_preset(Control.PRESET_FULL_RECT)
 	if ResourceLoader.exists(_FONT_PATH):
 		_font = load(_FONT_PATH)
 	_tex_slime1 = _load_tex("res://assets/Bounty_Board/Slime1_bounty.png")
 	_tex_slime2 = _load_tex("res://assets/Bounty_Board/Slime2_bounty.png")
 	_tex_slime3 = _load_tex("res://assets/Bounty_Board/Slime3_bounty.png")
 	_build_ui()
+	_input_guard = true
 	_refresh()
 
 
@@ -125,11 +125,16 @@ func _try_drop() -> void:
 # ── UI Construction ───────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
+	_ref = Control.new()
+	_ref.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ref.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_ref)
+
 	var dim := ColorRect.new()
 	dim.color = Color(0.0, 0.0, 0.0, 0.60)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(dim)
+	_ref.add_child(dim)
 
 	var panel := PanelContainer.new()
 	panel.anchor_left   = 0.04
@@ -137,7 +142,7 @@ func _build_ui() -> void:
 	panel.anchor_right  = 0.96
 	panel.anchor_bottom = 0.96
 	panel.add_theme_stylebox_override("panel", _panel_style())
-	add_child(panel)
+	_ref.add_child(panel)
 
 	var outer := MarginContainer.new()
 	for side: String in ["left", "right", "top", "bottom"]:
@@ -365,6 +370,7 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(root)
 
 	var bg := ColorRect.new()
 	bg.color = Color(0.0, 0.0, 0.0, 0.72)
@@ -395,11 +401,11 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)
 
-	var sep := HSeparator.new()
 	var sep_style := StyleBoxFlat.new()
-	sep_style.bg_color = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.40)
+	sep_style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.40)
 	sep_style.content_margin_top    = 1.0
 	sep_style.content_margin_bottom = 1.0
+	var sep := HSeparator.new()
 	sep.add_theme_stylebox_override("separator", sep_style)
 	vbox.add_child(sep)
 
@@ -432,7 +438,6 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 		_confirm_rows.append(lbl)
 		_confirm_actions.append(cb)
 
-	add_child(root)
 	_confirm_overlay = root
 	_highlight_confirm()
 
