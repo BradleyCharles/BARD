@@ -16,11 +16,12 @@ enum AIState     { WANDER_STATE = 0, CHASE_STATE = 1, FLEE_STATE = 2 }
 @export var damage        : int   = 1
 @export var knockback_force: float = 150.0
 
-var health      : int    = 1
-var ai_state    : int    = AIState.WANDER_STATE
-var _player_ref : Node2D = null
-var _hurt_timer : float  = 0.0
-var body_radius : float  = 30.0
+var health         : int    = 1
+var ai_state       : int    = AIState.WANDER_STATE
+var _player_ref    : Node2D = null
+var _hurt_timer    : float  = 0.0
+var body_radius    : float  = 30.0
+var contact_radius : float  = 44.0
 
 
 func _ready() -> void:
@@ -36,7 +37,8 @@ func _compute_body_radius() -> void:
 	for child in get_children():
 		var cs: CollisionShape2D = child as CollisionShape2D
 		if cs != null and cs.shape is CircleShape2D:
-			body_radius = (cs.shape as CircleShape2D).radius * scale.x
+			body_radius    = (cs.shape as CircleShape2D).radius * scale.x
+			contact_radius = body_radius + 20.0
 			return
 
 

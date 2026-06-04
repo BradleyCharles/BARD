@@ -78,10 +78,6 @@ func _ready() -> void:
 	_sword.body_entered.connect(_on_sword_hit)
 	_sword.collision_mask     = 8
 	_hurt_area.collision_mask = 8
-	var hurt_shape := _hurt_area.get_node("CollisionShape2D") as CollisionShape2D
-	var hurt_circle := CircleShape2D.new()
-	hurt_circle.radius = 14.0
-	hurt_shape.shape = hurt_circle
 	hide()
 
 
@@ -350,21 +346,24 @@ func _on_animation_finished() -> void:
 func _block_mob_movement(vel: Vector2) -> Vector2:
 	if vel.length_squared() < 1.0:
 		return vel
-	for mob in get_tree().get_nodes_in_group("ground_mobs"):
-		if not is_instance_valid(mob):
+	var blockers: Array = []
+	blockers.append_array(get_tree().get_nodes_in_group("ground_mobs"))
+	blockers.append_array(get_tree().get_nodes_in_group("npc_blocker"))
+	for blocker in blockers:
+		if not is_instance_valid(blocker):
 			continue
-		var mob_node: Node2D = mob as Node2D
-		if mob_node == null:
+		var blocker_node: Node2D = blocker as Node2D
+		if blocker_node == null:
 			continue
-		var to_mob: Vector2 = mob_node.global_position - global_position
-		var dist: float = to_mob.length()
+		var to_blocker: Vector2 = blocker_node.global_position - global_position
+		var dist: float = to_blocker.length()
 		if dist < 1.0:
 			continue
-		var raw_radius: Variant = (mob as Object).get("body_radius")
-		var mob_radius: float = float(raw_radius) if raw_radius != null else 30.0
-		var block_dist: float = mob_radius + _PLAYER_RADIUS
+		var raw_radius: Variant = (blocker as Object).get("body_radius")
+		var blocker_radius: float = float(raw_radius) if raw_radius != null else 30.0
+		var block_dist: float = blocker_radius + _PLAYER_RADIUS
 		if dist < block_dist:
-			var push_dir: Vector2 = to_mob.normalized()
+			var push_dir: Vector2 = to_blocker.normalized()
 			var dot: float = vel.dot(push_dir)
 			if dot > 0.0:
 				vel -= push_dir * dot

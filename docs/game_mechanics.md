@@ -142,20 +142,19 @@ All mobs extend `RigidBody2D`. Movement is set via `linear_velocity` directly ea
 - **Hurt bypass:** same early-return pattern as slime1.
 - **Previously broken:** had explicit player-separation code in `_integrate_forces()` that kept the mob ≥ 60 px from the player, preventing `HurtArea.body_entered` from ever firing (mob never reached the player). Removed.
 
-### Contact Radius (tuning knob)
+### Contact Radius
 
-`CONTACT_RADIUS` is defined as a constant in both `slime1.gd` and `slime3.gd`. It must be **greater than (mob collision radius + player collision radius)** to prevent the mob's physics body from overlapping the player's — overlap causes `CharacterBody2D.move_and_slide()` recovery to push the player even when the mob is stationary.
+`contact_radius` is a `var` on `mob_base.gd`, computed automatically in `_ready()` as:
 
-| Mob | Mob radius | Player effective radius | Min safe CONTACT_RADIUS | Actual value |
-|-----|-----------|------------------------|------------------------|--------------|
-| slime1 | 26 px | 20 px (capsule r=10 × scale 2) | > 46 px | **50 px** |
-| slime3 | 40 px | 20 px | > 60 px | **64 px** |
+```
+contact_radius = body_radius + 20.0   # 20 px = player capsule effective radius at scale 2
+```
 
-The player's `HurtArea` uses a `CircleShape2D(radius=14)` set in code (effective 28 px at player scale 2), making the damage trigger radius larger than the physical overlap radius. This creates the gap that allows mobs to stop before overlapping while still being within damage range.
+Because `body_radius` is derived from `CircleShape2D.radius × scale.x`, `contact_radius` automatically adjusts when a mob's tscn scale changes — no manual constant to update. All slime subclasses use `contact_radius` (not a local const) so the value is always in sync with the actual collision geometry.
 
 ### Iframe Pause
 
-Both slime1 and slime3 call `_player_is_invincible()` (defined in `mob_base.gd`) before resuming chase. While the player has active iframes the mob holds its position — it pauses at contact distance after landing a hit and only resumes when the iframes expire. This prevents mobs from walking into the player continuously and also prevents recovery-push during the damage animation.
+All slimes call `_player_is_invincible()` (defined in `mob_base.gd`) before resuming chase. While the player has active iframes the mob holds position — it pauses at contact distance after landing a hit and only resumes when iframes expire.
 
 ---
 

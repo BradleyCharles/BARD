@@ -172,6 +172,7 @@ var _prompt_lbl : Label
 var _dialogue_nodes  : Dictionary = {}
 var _dialogue_box    : Node       = null
 var _player_in_range : bool       = false
+var body_radius      : float      = 12.0
 
 # Wander (background NPCs only)
 var _wander_dir   : Vector2 = Vector2.ZERO
@@ -195,6 +196,7 @@ func _ready() -> void:
 	_detection.area_exited.connect(_on_area_exited)
 	if not is_wanderer:
 		_add_physics_body()
+		add_to_group("npc_blocker")
 
 	var shape := _detection.get_node("CollisionShape2D")
 	if shape and shape.shape is CircleShape2D:
