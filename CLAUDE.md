@@ -44,6 +44,28 @@ Keep it current — it is the authoritative reference for how the physics and co
 
 ---
 
+## Game Systems Reference
+
+**Read [`docs/game_systems.md`](docs/game_systems.md) before working on any of these areas:**
+bounty system, dialogue, scene transitions, save/load, end-of-day, LLM pipeline, world generation, weapon shop/upgrades, NPC behaviour, mob spawning, boss triggers, or the progress bar/loading overlay.
+
+It contains:
+- End-to-end flow for every major game system with sequence steps
+- Data formats and file ownership (what writes what, what reads what)
+- Edge cases, guards, and rules that are not obvious from the code
+- How systems interconnect (e.g. dialogue actions → SceneManager → pipeline)
+
+**Update `docs/game_systems.md` whenever you:**
+- Add, remove, or significantly change any feature listed in its Table of Contents
+- Change a data file format (bounty_pool, game_state, dialogue JSON, save files)
+- Add a new pipeline mode, LLM prompt, or flag file
+- Add a new UI overlay, HUD, or scene-level system
+- Fix a bug caused by a misunderstanding of how a system works — document the corrected understanding
+
+Keep it current — it is the single reference for how the game's features connect and behave.
+
+---
+
 ## Project Overview
 
 Godot 4.6 RPG demo with a local LLM (Ollama/Gemma 4 E4B) pipeline that regenerates NPC dialogue each in-game night based on game state. Academic project.
