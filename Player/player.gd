@@ -53,16 +53,18 @@ const _PLAYER_RADIUS: float = 20.0
 func _ready() -> void:
 	_weapon_stats = {
 		SwordData.ID: {
-			"damage":    SwordData.DAMAGE,
-			"swing_fps": SwordData.SWING_FPS,
-			"knockback": SwordData.KNOCKBACK,
-			"hitbox":    SwordData.hitbox,
+			"damage":        SwordData.DAMAGE,
+			"swing_fps":     SwordData.SWING_FPS,
+			"knockback":     SwordData.KNOCKBACK,
+			"hitbox":        SwordData.hitbox,
+			"sprite_offset": SwordData.SPRITE_OFFSET,
 		},
 		AxeData.ID: {
-			"damage":    AxeData.DAMAGE,
-			"swing_fps": AxeData.SWING_FPS,
-			"knockback": AxeData.KNOCKBACK,
-			"hitbox":    AxeData.hitbox,
+			"damage":        AxeData.DAMAGE,
+			"swing_fps":     AxeData.SWING_FPS,
+			"knockback":     AxeData.KNOCKBACK,
+			"hitbox":        AxeData.hitbox,
+			"sprite_offset": AxeData.SPRITE_OFFSET,
 		},
 	}
 	add_to_group("player")
@@ -91,24 +93,24 @@ func set_world_bounds(bounds: Rect2) -> void:
 # ── Sprite setup ──────────────────────────────────────────────────────────────
 
 func _build_sprite_frames() -> void:
-	const BASE := "res://assets/Swordsman_lvl3/"
+	const B := "res://assets/Swordsman_lvl3/Swordsman_lvl3_"
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 
-	_copy_anim(sf, "idle",        BASE + "Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_side_right.aseprite",    8.0, true)
-	_copy_anim(sf, "idle_up",     BASE + "Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_back.aseprite",           8.0, true)
-	_copy_anim(sf, "idle_down",   BASE + "Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_front.aseprite",          8.0, true)
+	_copy_anim(sf, "idle",        B + "Idle/Swordsman_lvl3_Idle_side_right.aseprite",   8.0, true)
+	_copy_anim(sf, "idle_up",     B + "Idle/Swordsman_lvl3_Idle_back.aseprite",          8.0, true)
+	_copy_anim(sf, "idle_down",   B + "Idle/Swordsman_lvl3_Idle_front.aseprite",         8.0, true)
 
-	_copy_anim(sf, "walk",        BASE + "Swordsman_lvl3_Walk/Swordsman_lvl3_Walk_side_right.aseprite",    8.0, true)
-	_copy_anim(sf, "walk_up",     BASE + "Swordsman_lvl3_Walk/Swordsman_lvl3_Walk_back.aseprite",           8.0, true)
-	_copy_anim(sf, "walk_down",   BASE + "Swordsman_lvl3_Walk/Swordsman_lvl3_Walk_front.aseprite",          8.0, true)
+	_copy_anim(sf, "walk",        B + "Walk/Swordsman_lvl3_Walk_side_right.aseprite",   8.0, true)
+	_copy_anim(sf, "walk_up",     B + "Walk/Swordsman_lvl3_Walk_back.aseprite",          8.0, true)
+	_copy_anim(sf, "walk_down",   B + "Walk/Swordsman_lvl3_Walk_front.aseprite",         8.0, true)
 
-	_copy_anim(sf, "attack",      BASE + "Swordsman_lvl3_Attack/Swordsman_lvl3_attack_side_right.aseprite", 20.0, false)
-	_copy_anim(sf, "attack_up",   BASE + "Swordsman_lvl3_Attack/Swordsman_lvl3_attack_back.aseprite",       20.0, false)
-	_copy_anim(sf, "attack_down", BASE + "Swordsman_lvl3_Attack/Swordsman_lvl3_attack_front.aseprite",      20.0, false)
+	_copy_anim(sf, "attack",      B + "Attack/Swordsman_lvl3_attack_side_right.aseprite", 20.0, false)
+	_copy_anim(sf, "attack_up",   B + "Attack/Swordsman_lvl3_attack_back.aseprite",       20.0, false)
+	_copy_anim(sf, "attack_down", B + "Attack/Swordsman_lvl3_attack_front.aseprite",      20.0, false)
 
-	_copy_anim(sf, "hurt",  BASE + "Swordsman_lvl3_Hurt/Swordsman_lvl3_Hurt_side_right.aseprite",   12.0, false)
-	_copy_anim(sf, "death", BASE + "Swordsman_lvl3_Death/Swordsman_lvl3_Death_side_right.aseprite",  10.0, false)
+	_copy_anim(sf, "hurt",  B + "Hurt/Swordsman_lvl3_Hurt_side_right.aseprite",  12.0, false)
+	_copy_anim(sf, "death", B + "Death/Swordsman_lvl3_Death_side_right.aseprite", 10.0, false)
 
 	_sprite.sprite_frames = sf
 	_sprite.play("idle")
@@ -327,7 +329,7 @@ func _start_attack() -> void:
 		_weapon_sprite.flip_h = attack_dir.x < 0.0
 
 	_weapon_sprite.scale    = (stats["hitbox"] as Vector2) / 496.0
-	_weapon_sprite.position = attack_dir * 24.0
+	_weapon_sprite.position = attack_dir * float(stats["sprite_offset"])
 	_weapon_sprite.sprite_frames.set_animation_speed(active_weapon, stats["swing_fps"])
 	_weapon_sprite.play(active_weapon)
 	_weapon_sprite.visible = true
