@@ -70,6 +70,7 @@ func _ready() -> void:
 		},
 	}
 	add_to_group("player")
+	collision_mask = 9
 	_build_sprite_frames()
 	_sprite.frame_changed.connect(_on_frame_changed)
 	_sprite.animation_finished.connect(_on_animation_finished)
