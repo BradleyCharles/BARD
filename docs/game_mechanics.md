@@ -152,9 +152,9 @@ contact_radius = body_radius + 20.0   # 20 px = player capsule effective radius 
 
 Because `body_radius` is derived from `CircleShape2D.radius × scale.x`, `contact_radius` automatically adjusts when a mob's tscn scale changes — no manual constant to update. All slime subclasses use `contact_radius` (not a local const) so the value is always in sync with the actual collision geometry.
 
-### Iframe Pause
+### Contact Stop
 
-All slimes call `_player_is_invincible()` (defined in `mob_base.gd`) before resuming chase. While the player has active iframes the mob holds position — it pauses at contact distance after landing a hit and only resumes when iframes expire.
+All slimes stop (`linear_velocity = Vector2.ZERO`) when within `contact_radius` of the player and chase when further. Player iframes prevent re-damage if a mob re-enters the hurt area, so no mob-side iframe check is needed. The previous pattern (`dist > contact_radius and not _player_is_invincible()`) was a bug: `_player_is_invincible()` is global state, so any mob hitting the player caused ALL mobs to stop rather than just the one at contact range.
 
 ---
 

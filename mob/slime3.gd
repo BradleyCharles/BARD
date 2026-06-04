@@ -152,7 +152,7 @@ func _physics_process(delta: float) -> void:
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
-		if dist > contact_radius and not _player_is_invincible():
+		if dist > contact_radius:
 			linear_velocity = _direction_to_player_with_noise(max_speed)
 			_update_facing(linear_velocity)
 			_play_run()
