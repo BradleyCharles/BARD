@@ -50,9 +50,10 @@ BARD/
 │   ├── Sword/                    # Sword attack animation: individual PNGs 1.png–8.png
 │   ├── Axe/                      # Axe attack animation: individual PNGs 1.png–10.png
 │   ├── Bounty_Board/             # Bounty board world object sprites
-│   ├── Slime1/Without_shadow/    # Enemy 1: individual PNGs per frame (idle_down0–5, etc.)
-│   ├── Slime2/Without_shadow/    # Enemy 2: spritesheet — Idle 384×256, Walk 512×256, 64px, 4 rows
-│   └── Slime3/Without_shadow/    # Enemy 3 (not yet integrated)
+│   └── Slime1/Without_shadow/    # All slime sprites — .aseprite per animation/direction
+│       ├── Slime1/               # slime1 and slime1_boss assets
+│       ├── Slime2/               # slime2 and slime2_boss assets
+│       └── Slime3/               # slime3 and slime3_boss assets
 ├── autoload/
 │   └── scene_manager.gd          # Global singleton: all game state + pipeline orchestration
 ├── data/
@@ -73,14 +74,18 @@ BARD/
 │   └── main.tscn
 ├── mob/                          # Enemy definitions
 │   ├── mob_base.gd               # Shared base (extends RigidBody2D): health, take_damage, died signal, AI state machine
-│   ├── slime1.gd                 # Slime1: WEAK_AGGRESSIVE AI (chases when player < 150px), HP=1
+│   ├── slime1.gd                 # Slime1: PACK_MENTALITY, HP=3, flees alone; links pack on 2+ nearby; chases when linked
 │   ├── slime1.tscn
-│   ├── slime1_elite.gd           # Elite slime: HP=5, aggro=200px, purple tint, 10% Slime Goop drop
-│   ├── slime1_elite.tscn
-│   ├── slime1_boss.gd            # Boss slime: HP=10, always chases, red 5× scale, 100% drop (5 goop)
+│   ├── slime1_boss.gd            # Slime1 Boss: HP=10, always chases, AOE attack, drops 5 Goop
 │   ├── slime1_boss.tscn
-│   ├── slime2.gd                 # Slime2: PACK_MENTALITY (flees alone; attacks in groups of 3+)
+│   ├── slime2.gd                 # Slime2: PACK_MENTALITY, HP=6, passive until hit; alerts nearby on damage
 │   ├── slime2.tscn
+│   ├── slime2_boss.gd            # Slime2 Boss: HP=20, always chases, AOE attack, drops 12 Goop
+│   ├── slime2_boss.tscn
+│   ├── slime3.gd                 # Slime3: WEAK_AGGRESSIVE, HP=8, chases on sight within 250px
+│   ├── slime3.tscn
+│   ├── slime3_boss.gd            # Slime3 Boss: HP=30, always chases, AOE attack, drops 20 Goop
+│   ├── slime3_boss.tscn
 │   └── mob.tscn                  # Unused legacy mob scene
 ├── npc/                          # NPC base system
 │   ├── npc_base.gd               # Proximity detection, dialogue loading/merging, wandering
@@ -362,15 +367,13 @@ Top-right CanvasLayer HUD. Displays `Scripts: N` (27 pt). When `SceneManager.sli
 - Three zones mapped to `ColorRect` terrain nodes: `zone_a` (NW), `zone_b` (NE), `zone_c` (SE).
 - On load, spawns mob count = `quantity - killed` for each active/available bounty.
 - Respawn: one mob every 8 s until zone quota is filled.
-- 10% of `slime1` spawns are replaced with `slime1_elite` (if `slime1_elite_scene` export is assigned).
 - Each spawned mob's `died` signal is connected to `_on_mob_died()`.
 - On kill: `SceneManager.record_kill()` and `SceneManager.record_bounty_kill()` called; mob frees itself.
 
-**Boss trigger:**
-- `_boss_threshold` = `randi_range(19, 20)` set in `_ready()`.
-- After `_slimes_killed` reaches the threshold, `_spawn_boss()` fires once.
-- Boss spawns at world center; `boss_health_bar.tscn` is instantiated and `init(boss)` called.
-- `@export var slime1_elite_scene: PackedScene` and `@export var slime2_scene: PackedScene` must be assigned in the Godot editor inspector after the .tscn files exist.
+**Boss triggers:**
+- `BOSS_KILL_THRESHOLD = 20`. Three independent kill counters (`_slime1_killed`, `_slime2_killed`, `_slime3_killed`) and boss-spawned flags, one per enemy type.
+- When a type's kill count reaches the threshold, its boss spawns once at world center; `boss_health_bar.tscn` is instantiated and `init(boss)` called.
+- Exports `slime1_scene`, `slime2_scene`, `slime3_scene`, `slime1_boss_scene`, `slime2_boss_scene`, `slime3_boss_scene` — all must be assigned in the Godot editor inspector.
 
 **TownEntrance** (Area2D at south edge): triggers `SceneManager.go_to_town()` when player enters.
 
@@ -412,38 +415,74 @@ Base class (extends `RigidBody2D`) for all enemy types.
 
 ### 13. Slime1 — `mob/slime1.gd`
 
-Extends `mob_base`. `max_health=1`, `personality=WEAK_AGGRESSIVE`, `aggro_radius=150`.
+Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=300`, `damage=1`, `knockback_force=200`. Speed 40–70 px/s.
 
-- Wander: random direction every 1–3 s, 30% idle chance, speed 60–120 px/s.
-- AI: chases player when within `aggro_radius`; wander resumes on exit.
-- Bounty zone meta: `set_meta("bounty_zone", zone)` so kills register to the correct bounty.
+- Wander: random direction, 1–3 s move / 1–4 s pause cycle.
+- AI (pack link system): When a slime1 enters aggro range with fewer than `PACK_COUNT_NEEDED=2` nearby mobs, it flees. When ≥2 mobs are within `PACK_TRIGGER_RADIUS=200px`, it calls `trigger_aggro()`, permanently switching to chase and cascading aggro to all slime1s within 200px. Aggro re-cascades every `LINK_SCAN_INTERVAL=0.5s`.
+- Once aggroed a slime1 never returns to wander or flee — it chases until death.
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime1/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
 - Boundary clamping in `_integrate_forces()`.
 
 ---
 
-### 14. Slime1 Elite — `mob/slime1_elite.gd`
+### 14. Slime1 Boss — `mob/slime1_boss.gd`
 
-Extends `slime1`. `max_health=5`, `aggro_radius=200`. Purple tint (`Color(0.7, 0.5, 1.0)`). 10% chance to drop 1 Slime Goop on death. Spawns at ~10% of normal slime1 spawn sites.
+Extends `mob_base`. `max_health=10`, `personality=BOSS`, `damage=3`, `knockback_force=400`. `BOSS_SPEED=50 px/s`. Drops 5 Slime Goop on death.
 
----
-
-### 15. Slime1 Boss — `mob/slime1_boss.gd`
-
-Extends `mob_base`. `max_health=10`, `personality=BOSS`, always chases. Red tint, 5× scale, 150 px/s. Drops 5 Slime Goop guaranteed on death. Spawns at world center after 19–20 slime kills. Has `_integrate_forces` boundary clamping (MOB_RADIUS=50).
-
----
-
-### 16. Slime2 — `mob/slime2.gd`
-
-Extends `mob_base`. `max_health=2`, `personality=PACK_MENTALITY`. Uses AtlasTexture spritesheet (`Slime2_Idle_without_shadow.png` 384×256, `Slime2_Walk_without_shadow.png` 512×256, 64 px frames, 4 rows: 0=Down, 1=Left, 2=Right, 3=Up).
-
-- Alone (pack < 3): flees from player when within aggro range.
-- In pack (≥ 3 slime2 within 200 px): chases player.
-- `_count_nearby_pack()` counts `"slime2"`-tagged mobs in `"ground_mobs"` group within `pack_radius`.
+- Always chases player.
+- **AOE attack:** When player is within `AOE_RADIUS=120px` and cooldown is ready, enters TELEGRAPH phase — renders an expanding red circle for `TELEGRAPH_DURATION=1.5s`, then fires AOE (`AOE_DAMAGE=3`, `AOE_KNOCKBACK=500`). `ATTACK_COOLDOWN=6s` after firing.
+- Invulnerable to hurt animation during TELEGRAPH/ATTACKING phases.
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime1/` (includes Attack animation set).
+- Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime1 kills. Boundary clamping (`MOB_RADIUS=40`) in `_integrate_forces()`.
 
 ---
 
-### 17. Weapon HUD — `ui/weapon_hud.gd`
+### 15. Slime2 — `mob/slime2.gd`
+
+Extends `mob_base`. `max_health=6`, `personality=PACK_MENTALITY`, `aggro_radius=200`, `damage=2`, `knockback_force=350`. Speed 50–100 px/s.
+
+- AI: **Passive until attacked.** Wanders normally; ignores the player. When hit, permanently sets `_is_aggroed = true` and calls `_alert_nearby_pack()`, which aggroes all slime2s within `ALERT_RADIUS=200px`. Once aggroed, chases player indefinitely.
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime2/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- Boundary clamping in `_integrate_forces()`.
+
+---
+
+### 16. Slime2 Boss — `mob/slime2_boss.gd`
+
+Extends `mob_base`. `max_health=20`, `personality=BOSS`, `damage=4`, `knockback_force=500`. `BOSS_SPEED=55 px/s`. Drops 12 Slime Goop on death.
+
+- Always chases player.
+- **AOE attack:** Same telegraph system as Slime1 Boss. `AOE_RADIUS=150px`, `AOE_DAMAGE=5`, `AOE_KNOCKBACK=600`, `ATTACK_COOLDOWN=5s`, `TELEGRAPH_DURATION=1.5s`.
+- Extra player-separation push in `_integrate_forces()`.
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime2/` (includes Attack animation set).
+- Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime2 kills.
+
+---
+
+### 17. Slime3 — `mob/slime3.gd`
+
+Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius=250`, `damage=2`, `knockback_force=250`. Speed 60–110 px/s.
+
+- Wander: random direction, 1–3 s move / 1–4 s pause cycle.
+- AI: Chases player on sight (within `aggro_radius`); returns to wander when player leaves range.
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime3/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- Boundary clamping in `_integrate_forces()`.
+
+---
+
+### 18. Slime3 Boss — `mob/slime3_boss.gd`
+
+Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_force=600`. `BOSS_SPEED=60 px/s`. Drops 20 Slime Goop on death.
+
+- Always chases player.
+- **AOE attack:** Same telegraph system as other bosses. `AOE_RADIUS=150px`, `AOE_DAMAGE=7`, `AOE_KNOCKBACK=700`, `ATTACK_COOLDOWN=5s`, `TELEGRAPH_DURATION=1.5s`.
+- Extra player-separation push in `_integrate_forces()`.
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime3/` (includes Attack animation set).
+- Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime3 kills.
+
+---
+
+### 19. Weapon HUD — `ui/weapon_hud.gd`
 
 Bottom-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
@@ -454,7 +493,7 @@ Bottom-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in co
 
 ---
 
-### 18. Boss Health Bar — `ui/boss_health_bar.gd`
+### 20. Boss Health Bar — `ui/boss_health_bar.gd`
 
 Top-center CanvasLayer (layer 20). Shown only while boss is alive.
 
