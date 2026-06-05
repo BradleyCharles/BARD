@@ -80,10 +80,7 @@ func _ready() -> void:
 	add_to_group("player")
 	collision_mask = 1
 	_sprite.scale = Vector2.ONE * PlayerStats.SPRITE_SCALE
-	var cap := _body_shape.shape as CapsuleShape2D
-	cap.radius *= PlayerStats.SPRITE_SCALE
-	cap.height *= PlayerStats.SPRITE_SCALE
-	_player_radius = cap.radius
+	_player_radius = (_body_shape.shape as CapsuleShape2D).radius
 	_build_sprite_frames()
 	_sprite.frame_changed.connect(_on_frame_changed)
 	_sprite.animation_finished.connect(_on_animation_finished)
@@ -312,7 +309,7 @@ func _start_attack() -> void:
 	else:
 		attack_dir = Vector2(-1.0 if facing.x < 0.0 else 1.0, 0.0)
 
-	_sword.position = attack_dir * 10.0 * PlayerStats.SPRITE_SCALE
+	_sword.position = attack_dir * 10.0
 	_sword.scale.x  = -1.0 if _sprite.flip_h else 1.0
 
 	# Resize hitbox — swap x/y when facing up or down so the box stays weapon-relative
@@ -321,7 +318,7 @@ func _start_attack() -> void:
 		var base_size : Vector2 = stats["hitbox"]
 		var swapped   : Vector2 = Vector2(base_size.y, base_size.x)
 		var hitbox    : Vector2 = swapped if attack_dir.y != 0.0 else base_size
-		(shape_node.shape as RectangleShape2D).size = hitbox * PlayerStats.SPRITE_SCALE
+		(shape_node.shape as RectangleShape2D).size = hitbox
 
 	# Set swing speed
 	for anim_name in ["attack", "attack_up", "attack_down"]:

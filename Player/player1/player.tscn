@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://bdsx8578jxv78"]
 
-[ext_resource type="Script" uid="uid://dmcyovicn8av8" path="res://Player/player2/player.gd" id="1_k53q1"]
+[ext_resource type="Script" uid="uid://dmcyovicn8av8" path="res://Player/player1/player.gd" id="1_k53q1"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_00tjw"]
+radius = 12.0
+height = 36.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_l8h54"]
 size = Vector2(30, 20)
