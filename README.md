@@ -1,70 +1,137 @@
-### Tools and Technologies
+# BARD — Behaviour-Adaptive Roguelite Dialogue
 
-| Layer | Tool / Technology |
+**Game name:** Erimentha  
+**Engine:** Godot 4.6 (GDScript)  
+**LLM backend:** Ollama — Gemma 4 E4B, running locally (no internet required)  
+**Pipeline:** Python 3
+
+---
+
+## What is this project?
+
+BARD is an action RPG demo built in Godot 4 where the NPCs remember what you did yesterday. Each night, a local AI model reads the day's events — how many monsters you killed, which contracts you completed, how much gold you earned — and rewrites the dialogue for every named NPC before the next morning begins. Play long enough and the innkeeper starts commenting on your reputation; the guild commander references specific bounties you turned in.
+
+The core research question is: *can a locally-run language model generate coherent, contextually-aware NPC dialogue fast enough to be invisible to a player?* The gameplay loop exists to feed that system meaningful context to work with.
+
+```
+Hunt slimes → complete bounties → sleep at the inn
+  → AI pipeline runs overnight → NPCs update their memory
+  → new day begins with dialogue that reflects what happened
+```
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
 |---|---|
-| Game Engine | Godot 4 (GDScript) |
-| LLM Serving | Ollama |
-| Active Model | Gemma 4 E4B (`gemma4:e4b`) |
-| LLM Pipeline | Python 3 scripts |
-| Data Interchange | JSON files (`game_state.json`, `dialogue_<npc>.json`) |
+| Game engine | Godot 4.6, GDScript |
+| AI runtime | Ollama — Gemma 4 E4B, local GPU inference |
+| Pipeline | Python 3 |
+| Data interchange | JSON |
 
-**System requirements:** Ollama requires a CUDA-capable GPU with sufficient VRAM to load the model. The Ollama service exposes the model at `http://localhost:11434` and must be running before the pipeline is executed.
-
----
-
-## Phase-by-Phase Roadmap
-
-### Phase 1 -- Environment Setup ✅
-- [x] Install and configure Ollama via official install script
-- [x] Confirm GPU-accelerated inference is active
-- [x] Pull and validate active model (currently Gemma 4 E4B)
-- [x] Enable Ollama as a background service
-- [x] Confirm model storage location and resolve any redundant downloads
-- [x] Build standalone local test UI to validate Ollama streaming API, persona switching, and tokens/sec throughput
-- [x] Confirm cross-origin access is configured to allow local tooling to connect to Ollama
-
-### Phase 2 -- Godot 4 Foundations ✅
-- [x] Install Godot 4 and configure project structure
-- [x] Build player movement and basic scene (town + field)
-- [x] Implement NPC placement and basic interaction triggers (proximity detection via Area2D, per-NPC dialogue JSON loading, name labels)
-- [x] Implement monster spawning in the field (slime1 type, capped pool with respawn on kill)
-- [x] Build basic combat system (directional attack animations, sword hitbox active on specific frames, kill signal pipeline to SceneManager)
-- [x] Implement day counter and scene-to-scene transitions via SceneManager autoload
-- [x] Build dialogue box UI with typewriter effect, branching response selection, and built-in scene-transition actions (ahead of Phase 6 schedule)
-
-### Phase 3 -- Game State Architecture ✅
-- [x] Define `game_state.json` schema (day number, monsters defeated per day, active bounties, NPC memory fields)
-- [x] Write GDScript logic to serialize and write `game_state.json` at the start of each new day
-- [x] Write GDScript logic to read `dialogue_<npc_name>.json` at scene load and store lines in memory
-- [x] Validate JSON round-trip between Godot and the filesystem independently of the LLM pipeline
-
-### Phase 4 -- LLM Pipeline Validation (Academic Core)
-- [x] Write Python script to read `game_state.json` and construct per-NPC prompts
-- [x] Implement per-NPC system prompts to enforce consistent personality across days
-- [x] Send requests to Ollama `/api/chat` endpoint
-- [x] Parse and validate LLM response structure
-- [x] Write output to `dialogue_<npc_name>.json` with a defined schema
-- [ ] Test pipeline in isolation with mocked game state inputs
-- [ ] Benchmark pipeline latency (target: completes before player interaction is possible)
-
-### Phase 5 -- Combat and Monsters
-- [ ] Polish combat feel (hit detection, feedback, enemy AI)
-- [x] Implement per-monster-type defeat tracking in game state
-- [x] Ensure monster population state correctly feeds into `game_state.json` for the LLM pipeline
-
-### Phase 6 -- Dialogue Delivery and Bounty Board UI
-- [x] Build NPC dialogue UI (speech bubble or dialogue box) that reads from pre-rendered JSON
-- [ ] Build bounty board UI that displays active bounties parsed from `dialogue_<npc_name>.json`
-- [x] Implement day-start trigger to run Python pipeline before player control is restored
-- [ ] Verify NPC memory continuity across multiple in-game days (end-to-end test)
-
-### Phase 7 -- Polish and Demo Prep
-- [ ] Conduct full offline end-to-end run (no internet, no API keys)
-- [ ] Stress test pipeline with edge cases (no monsters killed, all bounties fulfilled, repeated days)
-- [ ] Write and finalize project documentation
-- [ ] Prepare and rehearse live demo
-- [ ] Final review of scope, stability, and academic deliverables
+Everything runs offline. No API keys, no cloud services, no internet connection required during the demo.
 
 ---
 
-*This project is evaluated on technical depth, written documentation, and a live offline demo.*
+## Key Technical Systems
+
+### Dynamic NPC Dialogue via Local LLM
+
+The centrepiece of the project. Three named NPCs — an innkeeper, a blacksmith, and a guild commander — each receive fresh dialogue every night generated by a locally-running Gemma 4 model via Ollama.
+
+The pipeline works like this:
+1. At end-of-day, Godot writes the current game state to `game_state.json` (kills, bounties, flags, currencies)
+2. A Python script reads that file, builds a prompt for each NPC, and sends it to the local Ollama API
+3. The model returns a branching dialogue tree in structured JSON
+4. If the response is malformed, the pipeline attempts a second "repair" call before falling back to the previous day's dialogue
+5. Godot polls for a completion signal, then loads the new dialogue before the player regains control
+
+Each NPC also accumulates **recollection facts** — a short subjective memory sentence the model writes from that NPC's perspective each night. These facts are injected into future prompts, so NPCs develop a growing (if imperfect) narrative memory of the player's actions over time.
+
+### World Generation (One-Time Setup)
+
+Before the first session, `pipeline/world_gen.py` generates the world: it prompts the model to write lore for the town, create named personality variants for each NPC role (three variants per role, one randomly assigned per playthrough), and produce Day 1 dialogue. This means every new game has a different innkeeper name, backstory, and conversational style.
+
+### Chronicle System
+
+At any point in town, pressing Ctrl+R triggers `pipeline/chronicle.py`, which asks the model to write a narrative summary of the week's events and generate circulating rumours based on the player's deeds — some attributed by name, some anonymous. These rumours are injected into future NPC prompts.
+
+### Bounty System
+
+A full contract loop: bounties are posted at the guild board each morning (drawn from a static pool of 9 contracts across three difficulty tiers), the player accepts them, tracks progress in the field, turns them in at the guild for Scripts (the in-game currency), and the completed contracts feed directly into the next night's NPC context. The pipeline knows which contracts were accepted, completed, and turned in — and NPCs can reference them.
+
+### Combat and Enemy AI
+
+Three enemy types, each with distinct AI behaviour:
+- **Slime 1** — pack mentality: flees alone, but aggroing one alerts nearby Slime 1s and they all give chase together
+- **Slime 2** — passive until provoked: ignores the player until hit, then alerts the whole local pack
+- **Slime 3** — straightforward aggressor: chases on sight
+
+Each type has a boss variant that spawns after enough kills in that zone, with a telegraphed area-of-effect attack and a dedicated health bar.
+
+### Save / Load System
+
+Three save slots, accessible from both the main menu and the pause screen. The game saves all player state — day number, currencies, owned weapons, active bounties, and story flags — and returns the player to whichever scene they saved in. NPC memory (`game_state.json`) persists separately from save files so the AI context is never overwritten by a load.
+
+### Weapon Progression
+
+Two weapons: a sword (fast) and an axe (slower, higher knockback). The axe is purchased from the blacksmith using Scripts; both weapons can be upgraded using a combination of Scripts and Slime Goop dropped by bosses. Weapon stats (damage, swing speed, hitbox) live in dedicated data files so balance can be tuned without touching gameplay logic.
+
+---
+
+## Controls
+
+| Action | Keyboard | Controller |
+|---|---|---|
+| Move | WASD / Arrow keys | Left stick |
+| Attack | A | X button |
+| Dodge | Space | B button |
+| Swap weapon | Q | Y button |
+| Interact / Confirm | E | A button |
+| Pause / Cancel | Escape | B button |
+| Chronicle | Ctrl+R (in town) | — |
+
+---
+
+## Running the Project
+
+**Requirements:** A CUDA-capable GPU and [Ollama](https://ollama.ai) installed.
+
+```bash
+# 1. Pull the model
+ollama pull gemma4:e4b
+
+# 2. Generate the world (run once per new game)
+python pipeline/world_gen.py
+
+# 3. Open the project in Godot 4.6 and press Play
+```
+
+---
+
+## Project Documentation
+
+For technical depth beyond this overview:
+
+- [Project map](docs/project_map.md) — full directory structure, system APIs, and data schemas
+- [Game mechanics](docs/game_mechanics.md) — collision layers, damage flow, and AI rules
+- [Game systems](docs/game_systems.md) — end-to-end flow for every major system
+
+---
+
+## Development Status
+
+| Phase | Description | Status |
+|---|---|---|
+| 1 | Ollama setup, GPU validation, model serving | Complete |
+| 2 | Godot foundations — player, scenes, NPCs, combat | Complete |
+| 3 | Game state architecture and JSON pipeline | Complete |
+| 4 | LLM dialogue pipeline (academic core) | In Progress |
+| 5 | Combat, enemy types, and boss encounters | Mostly complete |
+| 6 | Bounty board, dialogue delivery, UI overlays | Mostly complete |
+| 7 | Polish and demo preparation | Pending |
+
+---
+
+*Capstone project — evaluated on technical depth, written documentation, and a live offline demo.*
