@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://bdsx8578jxv78"]
+
+[ext_resource type="Script" uid="uid://dmcyovicn8av8" path="res://Player/player2/player.gd" id="1_k53q1"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_00tjw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_l8h54"]
+size = Vector2(30, 20)
+
+[node name="Player" type="CharacterBody2D" unique_id=1012316895 groups=["Player"]]
+collision_layer = 2
+script = ExtResource("1_k53q1")
+metadata/_edit_group_ = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1274437165]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=410673213]
+shape = SubResource("CapsuleShape2D_00tjw")
+
+[node name="SwordHitbox" type="Area2D" parent="." unique_id=777001001]
+collision_layer = 0
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordHitbox" unique_id=777001002]
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_l8h54")
+
+[node name="HurtArea" type="Area2D" parent="." unique_id=888001001]
+collision_layer = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=888001002]
+shape = SubResource("CapsuleShape2D_00tjw")
+
+[connection signal="body_entered" from="HurtArea" to="." method="_on_body_entered"]

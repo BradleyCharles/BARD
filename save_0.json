@@ -1,15 +1,51 @@
 {
 	"active_bounties": [
 		{
-			"day_accepted": 1,
+			"day_accepted": 1.0,
 			"display_name": "Ash Crusher",
 			"flavor": "A great host of the apex slime variety holds the upper ridge. The guild has exhausted all other options. Bring skill and patience.",
 			"id": "slime3_zone_c_large",
-			"killed": 20,
+			"killed": 20.0,
 			"monster_type": "slime3",
 			"quantity": 20.0,
 			"reward_text": "80 gold upon verified completion.",
 			"status": "turned_in",
+			"zone": "zone_c"
+		},
+		{
+			"day_accepted": 1,
+			"display_name": "Verdant Ooze",
+			"flavor": "A small number of oozing creatures have been spotted near the outer trails. Travelers report slick residue on the stones.",
+			"id": "slime1_zone_a_small",
+			"killed": 0,
+			"monster_type": "slime1",
+			"quantity": 5.0,
+			"reward_text": "5 gold upon verified completion.",
+			"status": "active",
+			"zone": "zone_a"
+		},
+		{
+			"day_accepted": 1,
+			"display_name": "Azure Pack",
+			"flavor": "A handful of pack slimes has appeared in the fen. Each one alone is docile, but they have a habit of finding each other quickly.",
+			"id": "slime2_zone_b_small",
+			"killed": 0,
+			"monster_type": "slime2",
+			"quantity": 5.0,
+			"reward_text": "10 gold upon verified completion.",
+			"status": "active",
+			"zone": "zone_b"
+		},
+		{
+			"day_accepted": 1,
+			"display_name": "Rust Colossus",
+			"flavor": "The largest slimes have been spotted on the ridge approach. They are territorial and relentless. This posting is not for novices.",
+			"id": "slime3_zone_c_small",
+			"killed": 0,
+			"monster_type": "slime3",
+			"quantity": 5.0,
+			"reward_text": "18 gold upon verified completion.",
+			"status": "active",
 			"zone": "zone_c"
 		}
 	],
@@ -202,33 +238,6 @@
 			"quantity": 10.0,
 			"reward_text": "40 gold upon verified completion.",
 			"zone": "zone_b"
-		},
-		{
-			"display_name": "Rust Colossus",
-			"flavor": "The largest slimes have been spotted on the ridge approach. They are territorial and relentless. This posting is not for novices.",
-			"id": "slime3_zone_c_small",
-			"monster_type": "slime3",
-			"quantity": 5.0,
-			"reward_text": "18 gold upon verified completion.",
-			"zone": "zone_c"
-		},
-		{
-			"display_name": "Azure Pack",
-			"flavor": "A handful of pack slimes has appeared in the fen. Each one alone is docile, but they have a habit of finding each other quickly.",
-			"id": "slime2_zone_b_small",
-			"monster_type": "slime2",
-			"quantity": 5.0,
-			"reward_text": "10 gold upon verified completion.",
-			"zone": "zone_b"
-		},
-		{
-			"display_name": "Verdant Ooze",
-			"flavor": "A small number of oozing creatures have been spotted near the outer trails. Travelers report slick residue on the stones.",
-			"id": "slime1_zone_a_small",
-			"monster_type": "slime1",
-			"quantity": 5.0,
-			"reward_text": "5 gold upon verified completion.",
-			"zone": "zone_a"
 		}
 	],
 	"flags": {
@@ -244,7 +253,7 @@
 	},
 	"meta": {
 		"day": 1,
-		"scene_path": "res://world/field.tscn",
+		"scene_path": "res://world/town.tscn",
 		"schema_version": "1.0"
 	},
 	"owned_weapons": [
@@ -264,7 +273,7 @@
 			"slime1": 3.0,
 			"slime2": 3.0,
 			"slime3": 21.0,
-			"slime3_boss": 1
+			"slime3_boss": 1.0
 		}
 	}
 }

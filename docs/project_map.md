@@ -50,10 +50,9 @@ BARD/
 │   ├── Sword/                    # Sword attack animation: individual PNGs 1.png–8.png
 │   ├── Axe/                      # Axe attack animation: individual PNGs 1.png–10.png
 │   ├── Bounty_Board/             # Bounty board world object sprites
-│   └── Slime1/Without_shadow/    # All slime sprites — .aseprite per animation/direction
-│       ├── Slime1/               # slime1 and slime1_boss assets
-│       ├── Slime2/               # slime2 and slime2_boss assets
-│       └── Slime3/               # slime3 and slime3_boss assets
+│   ├── Slime1/                   # slime1 and slime1_boss assets (.aseprite per animation/direction)
+│   ├── Slime2/                   # slime2 and slime2_boss assets (.aseprite per animation/direction)
+│   └── Slime3/                   # slime3 and slime3_boss assets (.aseprite per animation/direction)
 ├── autoload/
 │   └── scene_manager.gd          # Global singleton: all game state + pipeline orchestration
 ├── data/
@@ -420,7 +419,7 @@ Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=
 - Wander: random direction, 1–3 s move / 1–4 s pause cycle.
 - AI (pack link system): When a slime1 enters aggro range with fewer than `PACK_COUNT_NEEDED=2` nearby mobs, it flees. When ≥2 mobs are within `PACK_TRIGGER_RADIUS=200px`, it calls `trigger_aggro()`, permanently switching to chase and cascading aggro to all slime1s within 200px. Aggro re-cascades every `LINK_SCAN_INTERVAL=0.5s`.
 - Once aggroed a slime1 never returns to wander or flee — it chases until death.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime1/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
 - Boundary clamping in `_integrate_forces()`.
 
 ---
@@ -432,7 +431,7 @@ Extends `mob_base`. `max_health=10`, `personality=BOSS`, `damage=3`, `knockback_
 - Always chases player.
 - **AOE attack:** When player is within `AOE_RADIUS=120px` and cooldown is ready, enters TELEGRAPH phase — renders an expanding red circle for `TELEGRAPH_DURATION=1.5s`, then fires AOE (`AOE_DAMAGE=3`, `AOE_KNOCKBACK=500`). `ATTACK_COOLDOWN=6s` after firing.
 - Invulnerable to hurt animation during TELEGRAPH/ATTACKING phases.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime1/` (includes Attack animation set).
+- Sprites: `.aseprite` per animation/direction from `assets/Slime1/` (includes Attack animation set).
 - Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime1 kills. Boundary clamping (`MOB_RADIUS=40`) in `_integrate_forces()`.
 
 ---
@@ -442,7 +441,7 @@ Extends `mob_base`. `max_health=10`, `personality=BOSS`, `damage=3`, `knockback_
 Extends `mob_base`. `max_health=6`, `personality=PACK_MENTALITY`, `aggro_radius=200`, `damage=2`, `knockback_force=350`. Speed 50–100 px/s.
 
 - AI: **Passive until attacked.** Wanders normally; ignores the player. When hit, permanently sets `_is_aggroed = true` and calls `_alert_nearby_pack()`, which aggroes all slime2s within `ALERT_RADIUS=200px`. Once aggroed, chases player indefinitely.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime2/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- Sprites: `.aseprite` per animation/direction from `assets/Slime2/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
 - Boundary clamping in `_integrate_forces()`.
 
 ---
@@ -454,7 +453,7 @@ Extends `mob_base`. `max_health=20`, `personality=BOSS`, `damage=4`, `knockback_
 - Always chases player.
 - **AOE attack:** Same telegraph system as Slime1 Boss. `AOE_RADIUS=150px`, `AOE_DAMAGE=5`, `AOE_KNOCKBACK=600`, `ATTACK_COOLDOWN=5s`, `TELEGRAPH_DURATION=1.5s`.
 - Extra player-separation push in `_integrate_forces()`.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime2/` (includes Attack animation set).
+- Sprites: `.aseprite` per animation/direction from `assets/Slime2/` (includes Attack animation set).
 - Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime2 kills.
 
 ---
@@ -465,7 +464,7 @@ Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius
 
 - Wander: random direction, 1–3 s move / 1–4 s pause cycle.
 - AI: Chases player on sight (within `aggro_radius`); returns to wander when player leaves range.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime3/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- Sprites: `.aseprite` per animation/direction from `assets/Slime3/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
 - Boundary clamping in `_integrate_forces()`.
 
 ---
@@ -477,7 +476,7 @@ Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_
 - Always chases player.
 - **AOE attack:** Same telegraph system as other bosses. `AOE_RADIUS=150px`, `AOE_DAMAGE=7`, `AOE_KNOCKBACK=700`, `ATTACK_COOLDOWN=5s`, `TELEGRAPH_DURATION=1.5s`.
 - Extra player-separation push in `_integrate_forces()`.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/Without_shadow/Slime3/` (includes Attack animation set).
+- Sprites: `.aseprite` per animation/direction from `assets/Slime3/` (includes Attack animation set).
 - Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime3 kills.
 
 ---

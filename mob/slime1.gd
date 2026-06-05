@@ -2,7 +2,7 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-const ASSET_BASE          := "res://assets/Slime1/Without_shadow/Slime1/"
+const ASSET_BASE          := "res://assets/Slime1/"
 const MOB_RADIUS          : float = 30.0
 ## contact_radius is computed in mob_base._ready() as body_radius + 20.0 (player radius)
 const PACK_TRIGGER_RADIUS : float = 200.0

@@ -2,7 +2,7 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-const ASSET_BASE         := "res://assets/Slime1/Without_shadow/Slime1/"
+const ASSET_BASE         := "res://assets/Slime1/"
 const MOB_RADIUS         : float = 40.0
 const BOSS_SPEED         : float = 50.0
 const AOE_DAMAGE         : int   = 3

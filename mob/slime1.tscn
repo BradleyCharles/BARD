@@ -13,6 +13,7 @@ lock_rotation = true
 script = ExtResource("1_slime1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1595696230]
+scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_default")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2103164943]
