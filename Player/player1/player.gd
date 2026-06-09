@@ -156,7 +156,8 @@ func _build_weapon_frames() -> void:
 
 
 func _on_weapon_anim_finished() -> void:
-	_weapon_sprite.visible = false
+	if not is_attacking:
+		_weapon_sprite.visible = false
 
 
 # ── Game loop ─────────────────────────────────────────────────────────────────
@@ -216,7 +217,7 @@ func _process(delta: float) -> void:
 			move_vel = Vector2.ZERO
 
 	if combat_enabled:
-		if Input.is_action_just_pressed(PlayerInput.ATTACK) \
+		if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
 				and not is_dodging and not is_rolling:
 			_start_attack()
 
@@ -341,7 +342,9 @@ func _start_attack() -> void:
 
 	_weapon_sprite.scale    = (stats["sprite_size"] as Vector2) / float(stats["native_size"])
 	_weapon_sprite.position = _sword.position
-	_weapon_sprite.sprite_frames.set_animation_speed(active_weapon, stats["swing_fps"])
+	var player_frames: int = _sprite.sprite_frames.get_frame_count(anim)
+	var weapon_fps: float = float(stats["frame_count"]) * float(stats["swing_fps"]) / float(player_frames)
+	_weapon_sprite.sprite_frames.set_animation_speed(active_weapon, weapon_fps)
 	_weapon_sprite.play(active_weapon)
 	_weapon_sprite.visible = true
 

@@ -2,7 +2,7 @@ class_name SwordData
 
 const ID             : String = "sword"
 const DAMAGE         : int    = 1
-const SWING_FPS      : float  = 40.0
+const SWING_FPS      : float  = 30.0
 const KNOCKBACK      : float  = 300.0
 const SPRITE_PATH    : String = "res://assets/Sword/"
 const FRAME_COUNT    : int    = 8
