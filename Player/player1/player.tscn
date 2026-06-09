@@ -17,6 +17,7 @@ metadata/_edit_group_ = true
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1274437165]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=410673213]
+scale = Vector2(2, 2)
 shape = SubResource("CapsuleShape2D_00tjw")
 
 [node name="SwordHitbox" type="Area2D" parent="." unique_id=777001001]
@@ -31,6 +32,7 @@ shape = SubResource("RectangleShape2D_l8h54")
 collision_layer = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=888001002]
+scale = Vector2(2, 2)
 shape = SubResource("CapsuleShape2D_00tjw")
 
 [connection signal="body_entered" from="HurtArea" to="." method="_on_body_entered"]

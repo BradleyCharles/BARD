@@ -10,5 +10,6 @@ const NATIVE_SIZE    : float  = 496.0
 const SPRITE_OFFSET  : float  = 0.0
 const HIT_FRAME_START: int    = 2
 const HIT_FRAME_END  : int    = 6
+
 # Vector2 cannot be a GDScript const — static var is required for object types
-static var hitbox: Vector2 = Vector2(50.0, 50.0)
+static var hitbox: Vector2 = Vector2(100.0, 50.0) # Width x Length
