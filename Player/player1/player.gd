@@ -57,6 +57,7 @@ func _ready() -> void:
 			"swing_fps":      SwordData.SWING_FPS,
 			"knockback":      SwordData.KNOCKBACK,
 			"hitbox":         SwordData.hitbox,
+			"sprite_size":    SwordData.sprite_size,
 			"sprite_path":    SwordData.SPRITE_PATH,
 			"frame_count":    SwordData.FRAME_COUNT,
 			"native_size":    SwordData.NATIVE_SIZE,
@@ -69,6 +70,7 @@ func _ready() -> void:
 			"swing_fps":      AxeData.SWING_FPS,
 			"knockback":      AxeData.KNOCKBACK,
 			"hitbox":         AxeData.hitbox,
+			"sprite_size":    AxeData.sprite_size,
 			"sprite_path":    AxeData.SPRITE_PATH,
 			"frame_count":    AxeData.FRAME_COUNT,
 			"native_size":    AxeData.NATIVE_SIZE,
@@ -214,7 +216,7 @@ func _process(delta: float) -> void:
 			move_vel = Vector2.ZERO
 
 	if combat_enabled:
-		if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
+		if Input.is_action_just_pressed(PlayerInput.ATTACK) \
 				and not is_dodging and not is_rolling:
 			_start_attack()
 
@@ -298,6 +300,7 @@ func _cycle_weapon() -> void:
 # ── Attack ────────────────────────────────────────────────────────────────────
 
 func _start_attack() -> void:
+	_sword.monitoring = false
 	is_attacking = true
 
 	var stats: Dictionary = _weapon_stats.get(active_weapon, _weapon_stats[SwordData.ID])
@@ -309,7 +312,7 @@ func _start_attack() -> void:
 	else:
 		attack_dir = Vector2(-1.0 if facing.x < 0.0 else 1.0, 0.0)
 
-	_sword.position = attack_dir * 10.0
+	_sword.position = attack_dir * 60.0
 	_sword.scale.x  = -1.0 if _sprite.flip_h else 1.0
 
 	# Resize hitbox — swap x/y when facing up or down so the box stays weapon-relative
@@ -336,8 +339,8 @@ func _start_attack() -> void:
 		_weapon_sprite.rotation_degrees = 0.0
 		_weapon_sprite.flip_h = attack_dir.x < 0.0
 
-	_weapon_sprite.scale    = (stats["hitbox"] as Vector2) / float(stats["native_size"])
-	_weapon_sprite.position = attack_dir * float(stats["sprite_offset"])
+	_weapon_sprite.scale    = (stats["sprite_size"] as Vector2) / float(stats["native_size"])
+	_weapon_sprite.position = _sword.position
 	_weapon_sprite.sprite_frames.set_animation_speed(active_weapon, stats["swing_fps"])
 	_weapon_sprite.play(active_weapon)
 	_weapon_sprite.visible = true

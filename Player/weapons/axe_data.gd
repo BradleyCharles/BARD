@@ -12,4 +12,5 @@ const HIT_FRAME_START: int    = 2
 const HIT_FRAME_END  : int    = 7
 
 # Vector2 cannot be a GDScript const — static var is required for object types
-static var hitbox: Vector2 = Vector2(50.0, 100.0) # Width x Length
+static var hitbox      : Vector2 = Vector2(75.0, 150.0)  # Width x Height (collision)
+static var sprite_size : Vector2 = Vector2(150.0, 100.0)  # Width x Height (animation)
