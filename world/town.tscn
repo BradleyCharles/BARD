@@ -2079,7 +2079,7 @@ position = Vector2(2347, 1394)
 is_wanderer = true
 
 [node name="BountyBoardObject" parent="." unique_id=937433113 instance=ExtResource("7_kmbyx")]
-position = Vector2(1204, 2176)
+position = Vector2(2427, 1692)
 
 [node name="FieldExit" type="Area2D" parent="." unique_id=1423619546]
 position = Vector2(2924, 1607)

@@ -1,46 +1,46 @@
 # BARD — Claude Code Instructions
 
-## Project Map
+## Documentation Rules (mandatory)
 
-**Read [`docs/project_map.md`](docs/project_map.md) at the start of every new task.**
+These rules are not optional. Failing to follow them wastes debugging time.
 
-It contains:
-- Full directory structure with file-level descriptions
-- All key systems and their public APIs
-- Bounty data flow diagram
-- Data format schemas
-- Technology stack and phase status
-- Implementation notes for non-obvious design decisions
+### Read before you act
 
-**Update `docs/project_map.md` whenever you:**
+| Working on... | Read first |
+|---|---|
+| Any new task | `docs/project_map.md` |
+| Combat, collision, AI, physics | `docs/game_mechanics.md` |
+| Bounty, dialogue, scene transitions, save/load, end-of-day, LLM pipeline, world gen, weapon shop, NPC behaviour, mob spawning, boss triggers, HUD/overlays | `docs/game_systems.md` |
+| Player stats, tuning constants, exports | `docs/project_map.md` § PlayerStats table |
+
+If a doc could answer the question or reveal the root cause, read it first — before grepping, before guessing.
+
+### Task list discipline
+
+For any task that reads a doc and uses that information, create a task list before starting work. The last item on the list must always be **Update docs**. This ensures the docs folder stays a live information center and doc updates are never skipped.
+
+Example task list shape:
+1. Read relevant doc(s)
+2. [implementation steps]
+3. Update docs
+
+### Update after you act
+
+Update the relevant doc **as the final step of the task**, matching what was actually changed — not later, not as a follow-up.
+
+**Update `docs/project_map.md` when you:**
 - Add, remove, or rename a script or scene
+- Add, remove, or change any constant/export in a `*_stats.gd` or `*_data.gd` file
 - Add a new feature or system
 - Change a key API (signals, exported functions, data schema fields)
 - Change the directory structure
 
-Keep the map accurate — it is the primary orientation document for this codebase.
-
----
-
-## Game Mechanics Reference
-
-**Read [`docs/game_mechanics.md`](docs/game_mechanics.md) before working on combat, collision, AI, or any physics interaction.**
-
-It contains:
-- Full collision layer map (which layer/mask values each entity uses and why)
-- Damage flow for player↔mob in both directions
-- Mob AI rules (contact radius, hurt-state bypass, pack logic)
-- Known anti-patterns and why they break things
-- Checklist for adding a new enemy type
-
-**Update `docs/game_mechanics.md` whenever you:**
+**Update `docs/game_mechanics.md` when you:**
 - Add or change collision layer/mask assignments on any entity
 - Add or modify a damage pathway (HurtArea, SwordHitbox, or new attack types)
 - Add, remove, or change mob AI behaviour (chase, flee, contact stop, knockback)
 - Add a new enemy or NPC type
 - Fix a combat or physics bug — document what was wrong and why
-
-Keep it current — it is the authoritative reference for how the physics and combat systems actually work.
 
 ---
 

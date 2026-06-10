@@ -1,6 +1,5 @@
 class_name PlayerStats
 
-const SPRITE_SCALE  : float = 3.0
 const MAX_HEALTH    : int   = 100
 const IFRAME_TIME   : float = 1.0
 const BASE_SPEED    : float = 300.0
