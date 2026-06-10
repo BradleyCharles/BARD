@@ -1,10 +1,11 @@
 [gd_scene format=3 uid="uid://bdsx8578jxv78"]
 
 [ext_resource type="Script" uid="uid://dmcyovicn8av8" path="res://Player/player1/player.gd" id="1_k53q1"]
+[ext_resource type="SpriteFrames" uid="uid://lp6ayse1iirv" path="res://assets/Swordsman_lvl3/Swordsman_lvl3_Idle/Swordsman_lvl3_Idle_back.aseprite" id="2_dk55q"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_00tjw"]
-radius = 12.0
-height = 36.0
+radius = 8.0
+height = 26.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_l8h54"]
 size = Vector2(30, 20)
@@ -15,6 +16,7 @@ script = ExtResource("1_k53q1")
 metadata/_edit_group_ = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1274437165]
+sprite_frames = ExtResource("2_dk55q")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=410673213]
 shape = SubResource("CapsuleShape2D_00tjw")
@@ -31,7 +33,6 @@ shape = SubResource("RectangleShape2D_l8h54")
 collision_layer = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=888001002]
-scale = Vector2(2, 2)
 shape = SubResource("CapsuleShape2D_00tjw")
 
 [connection signal="body_entered" from="HurtArea" to="." method="_on_body_entered"]
