@@ -9,7 +9,6 @@
 script = ExtResource("1_2xp5l")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1213829309]
-scale = Vector2(3, 3)
 
 [node name="DetectionArea" type="Area2D" parent="." unique_id=60119272]
 collision_layer = 0

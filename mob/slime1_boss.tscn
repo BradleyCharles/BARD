@@ -13,7 +13,7 @@ lock_rotation = true
 script = ExtResource("1_boss")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1011541461]
-scale = Vector2(5, 5)
+scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_default")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1151248779]

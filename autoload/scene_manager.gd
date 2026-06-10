@@ -55,8 +55,9 @@ signal day_updated
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
 
-const FIELD_SCENE := "res://world/field.tscn"
-const TOWN_SCENE  := "res://world/town.tscn"
+const FIELD_SCENE              := "res://world/field.tscn"
+const TOWN_SCENE               := "res://world/town.tscn"
+const GUILDHALL_INTERIOR_SCENE := "res://world/guildhall_interior.tscn"
 
 
 # ── Pipeline Config ───────────────────────────────────────────────────────────
@@ -182,6 +183,10 @@ func go_to_field() -> void:
 
 func go_to_town() -> void:
 	_transition_to(TOWN_SCENE)
+
+
+func go_to_guildhall_interior() -> void:
+	_transition_to(GUILDHALL_INTERIOR_SCENE)
 
 
 func record_kill(monster_type: String) -> void:
@@ -846,6 +851,8 @@ func _reload_all_dialogue() -> void:
 func _get_area_name(scene_path: String) -> String:
 	if scene_path == FIELD_SCENE:
 		return "The Ashfield"
+	if scene_path == GUILDHALL_INTERIOR_SCENE:
+		return "The Guildhall"
 	if scene_path == TOWN_SCENE:
 		var path := _project_path + "world_registry.json"
 		var file := FileAccess.open(path, FileAccess.READ)

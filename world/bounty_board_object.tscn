@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://bmxxf6ojmp2oj" path="res://world/bounty_board_object.gd" id="1_lppg8"]
 [ext_resource type="FontFile" uid="uid://ddwgglepq5c3y" path="res://fonts/almendra.regular.ttf" id="2_tubv7"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_quc7o"]
-radius = 120.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lppg8"]
+size = Vector2(80, 100)
 
 [node name="BountyBoardObject" type="Node2D" unique_id=937433113]
 script = ExtResource("1_lppg8")
@@ -41,4 +41,5 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=68744056]
-shape = SubResource("CircleShape2D_quc7o")
+position = Vector2(0, -50)
+shape = SubResource("RectangleShape2D_lppg8")

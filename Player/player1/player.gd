@@ -5,6 +5,10 @@ signal fly_caught
 signal weapon_changed(weapon_name: String)
 
 @export var speed: float = PlayerStats.BASE_SPEED
+@export var sprite_scale: float = 1.0:
+	set(v):
+		sprite_scale = v
+		scale = Vector2.ONE * v
 
 @onready var _sprite     : AnimatedSprite2D  = $AnimatedSprite2D
 @onready var _body_shape : CollisionShape2D  = $CollisionShape2D
@@ -81,7 +85,6 @@ func _ready() -> void:
 	}
 	add_to_group("player")
 	collision_mask = 1
-	_sprite.scale = Vector2.ONE * PlayerStats.SPRITE_SCALE
 	_player_radius = (_body_shape.shape as CapsuleShape2D).radius
 	_build_sprite_frames()
 	_sprite.frame_changed.connect(_on_frame_changed)

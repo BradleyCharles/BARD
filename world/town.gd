@@ -9,12 +9,12 @@ var _pause_menu : CanvasLayer = null
 
 
 func _ready() -> void:
-	var hv := Vector2(1920.0 / 1.5, 1080.0 / 1.5) * 0.5
+	var hv := Vector2(1920.0 / 3.5, 1080.0 / 3.5) * 0.5
 	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
 	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.80))
 
 	var cam: Camera2D = _player.get_node("Camera2D")
-	cam.zoom = Vector2(1.5, 1.5)
+	cam.zoom = Vector2(3.5, 3.5)
 
 	if not _field_exit.area_entered.is_connected(_on_field_exit_entered):
 		_field_exit.area_entered.connect(_on_field_exit_entered)

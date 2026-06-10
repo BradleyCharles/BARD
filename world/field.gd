@@ -59,12 +59,12 @@ var _pause_menu : CanvasLayer = null
 
 
 func _ready() -> void:
-	var hv := Vector2(1920.0 / 1.5, 1080.0 / 1.5) * 0.5
+	var hv := Vector2(1920.0 / 3.5, 1080.0 / 3.5) * 0.5
 	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
 	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.35), true)
 
 	var cam: Camera2D = _player.get_node("Camera2D")
-	cam.zoom = Vector2(1.5, 1.5)
+	cam.zoom = Vector2(3.5, 3.5)
 
 	_entrance.area_entered.connect(_on_entrance_entered)
 
@@ -124,7 +124,7 @@ func _start_bounty_zone(bounty: Dictionary) -> void:
 		return
 
 	var timer := Timer.new()
-	timer.wait_time = 3.0
+	timer.wait_time = 3.5
 	timer.one_shot  = false
 	add_child(timer)
 	_bounty_timers[zone] = timer
