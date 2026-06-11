@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://cy2douuig1w5f" path="res://assets/guildhall/Exterior.png" id="11_new06"]
 [ext_resource type="Texture2D" uid="uid://df20ugkcfxq1f" path="res://assets/guildhall/Windows_doors.png" id="12_loaj6"]
 [ext_resource type="Texture2D" uid="uid://bkpjdiq1f8pyk" path="res://assets/guildhall/Decorative_cracks.png" id="13_ybh1r"]
+[ext_resource type="Script" uid="uid://cq50ebm3yjy4m" path="res://world/building_door.gd" id="14_loaj6"]
 [ext_resource type="Texture2D" uid="uid://ccqgibrylm7ne" path="res://assets/Glassblower/Exterior_house.png" id="14_new06"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_spf7d"]
@@ -1994,7 +1995,7 @@ sources/3 = SubResource("TileSetAtlasSource_5v7a6")
 size = Vector2(60, 202)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spf7d"]
-size = Vector2(134, 50.6875)
+size = Vector2(134, 50.34375)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1mow7"]
 size = Vector2(82, 17)
@@ -2006,7 +2007,7 @@ size = Vector2(208, 59.5)
 size = Vector2(155, 44.6875)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_new06"]
-size = Vector2(44, 38)
+size = Vector2(43.5, 38)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ybh1r"]
 size = Vector2(33, 25)
@@ -2173,17 +2174,21 @@ offset_bottom = 2700.0
 color = Color(0, 0, 0, 0.05)
 
 [node name="Guildhall" type="StaticBody2D" parent="." unique_id=2135554177]
-position = Vector2(-51, 314)
+position = Vector2(2638, 1320)
+script = ExtResource("14_loaj6")
+target_scene = "res://world/guildhall_interior.tscn"
 
 [node name="Body" type="Sprite2D" parent="Guildhall" unique_id=1248276308]
-position = Vector2(2500, 1050)
+visible = false
+position = Vector2(-72, -59)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(8, 33, 144, 111)
 
 [node name="Body3" type="Sprite2D" parent="Guildhall" unique_id=1693545832]
-position = Vector2(2556, 1114)
+visible = false
+position = Vector2(-16, 5)
 texture = ExtResource("12_loaj6")
 centered = false
 offset = Vector2(0, -1)
@@ -2191,39 +2196,44 @@ region_enabled = true
 region_rect = Rect2(192, 240, 32, 48)
 
 [node name="Roof" type="Sprite2D" parent="Guildhall" unique_id=264183361]
-position = Vector2(2525, 1038)
+visible = false
+position = Vector2(-47, -71)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(161, 9, 95, 122)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Guildhall" unique_id=48915144]
-position = Vector2(2572, 1118.6563)
+visible = false
+position = Vector2(0, 9.828125)
 shape = SubResource("RectangleShape2D_spf7d")
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="Guildhall" unique_id=1099337612]
-position = Vector2(2572, 1152.5)
+visible = false
+position = Vector2(0, 43.5)
 shape = SubResource("RectangleShape2D_1mow7")
 
 [node name="Inn" type="StaticBody2D" parent="." unique_id=1248435352]
-position = Vector2(-408, 239)
+position = Vector2(2221, 1225)
+script = ExtResource("14_loaj6")
+target_scene = "res://world/inn_interior.tscn"
 
 [node name="BodyLeft" type="Sprite2D" parent="Inn" unique_id=1577586388]
-position = Vector2(2547, 1077)
+position = Vector2(-117, -29)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(311, 63, 79, 81)
 
 [node name="BodyRight" type="Sprite2D" parent="Inn" unique_id=1817720278]
-position = Vector2(2626, 1077)
+position = Vector2(-38, -29)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(314, 63, 79, 81)
 
 [node name="OpenDoor" type="Sprite2D" parent="Inn" unique_id=1872572127]
-position = Vector2(2648, 1111)
+position = Vector2(-16, 5)
 texture = ExtResource("12_loaj6")
 centered = false
 offset = Vector2(0, -1)
@@ -2231,49 +2241,51 @@ region_enabled = true
 region_rect = Rect2(192, 240, 32, 48)
 
 [node name="SideLeft" type="Sprite2D" parent="Inn" unique_id=21533815]
-position = Vector2(2517, 1066)
+position = Vector2(-147, -40)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(264, 52, 34, 91)
 
 [node name="SideRight" type="Sprite2D" parent="Inn" unique_id=3248105]
-position = Vector2(2701, 1066)
+position = Vector2(37, -40)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(406, 52, 34, 91)
 
 [node name="RoofLeft" type="Sprite2D" parent="Inn" unique_id=549659362]
-position = Vector2(2548, 1064)
+position = Vector2(-116, -42)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(161, 9, 78, 47)
 
 [node name="RoofRight" type="Sprite2D" parent="Inn" unique_id=955349091]
-position = Vector2(2626, 1064)
+position = Vector2(-38, -42)
 texture = ExtResource("11_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(178, 9, 78, 47)
 
 [node name="RoofPeak" type="Sprite2D" parent="Inn" unique_id=499384177]
-position = Vector2(2596, 1042)
+position = Vector2(-68, -64)
 texture = ExtResource("14_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(154, 24, 61, 50)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Inn" unique_id=499311289]
-position = Vector2(2626, 1128.25)
+position = Vector2(-38, 21)
 shape = SubResource("RectangleShape2D_p48rf")
 
 [node name="Blacksmith2" type="StaticBody2D" parent="." unique_id=1354907331]
-position = Vector2(-51, 314)
+position = Vector2(2173, 1529)
+script = ExtResource("14_loaj6")
+target_scene = "res://world/inn_interior.tscn"
 
 [node name="Decoration1" type="Sprite2D" parent="Blacksmith2" unique_id=1566731943]
-position = Vector2(2314, 1310)
+position = Vector2(56, 9)
 texture = ExtResource("14_new06")
 centered = false
 offset = Vector2(0, -1)
@@ -2281,7 +2293,7 @@ region_enabled = true
 region_rect = Rect2(338, 13, 41, 42)
 
 [node name="Decoration2" type="Sprite2D" parent="Blacksmith2" unique_id=1015962912]
-position = Vector2(2164, 1289)
+position = Vector2(-94, -12)
 texture = ExtResource("14_new06")
 centered = false
 offset = Vector2(0, -1)
@@ -2289,7 +2301,7 @@ region_enabled = true
 region_rect = Rect2(174, 177, 40, 29)
 
 [node name="Decoration3" type="Sprite2D" parent="Blacksmith2" unique_id=499267631]
-position = Vector2(2154, 1311)
+position = Vector2(-104, 10)
 texture = ExtResource("14_new06")
 centered = false
 offset = Vector2(0, -1)
@@ -2297,7 +2309,7 @@ region_enabled = true
 region_rect = Rect2(117, 163, 33, 32)
 
 [node name="Canopy2" type="Sprite2D" parent="Blacksmith2" unique_id=1166879781]
-position = Vector2(2159, 1255)
+position = Vector2(-99, -46)
 texture = ExtResource("14_new06")
 centered = false
 flip_h = true
@@ -2305,29 +2317,29 @@ region_enabled = true
 region_rect = Rect2(267, 15, 49, 62)
 
 [node name="Canopy3" type="Sprite2D" parent="Blacksmith2" unique_id=1143891426]
-position = Vector2(2311, 1287)
+position = Vector2(53, -14)
 texture = ExtResource("14_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(267, 15, 49, 62)
 
 [node name="Body" type="Sprite2D" parent="Blacksmith2" unique_id=874511411]
-position = Vector2(2188, 1202)
+position = Vector2(-70, -99)
 texture = ExtResource("14_new06")
 centered = false
 region_enabled = true
 region_rect = Rect2(1, 10, 136, 149)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Blacksmith2" unique_id=822856783]
-position = Vector2(2281.5, 1328.5625)
+position = Vector2(23.5, 27.5625)
 shape = SubResource("RectangleShape2D_loaj6")
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="Blacksmith2" unique_id=1213564495]
-position = Vector2(2182, 1298)
+position = Vector2(-76.25, -3)
 shape = SubResource("RectangleShape2D_new06")
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="Blacksmith2" unique_id=560860039]
-position = Vector2(2170.5, 1329.5)
+position = Vector2(-87.5, 28.5)
 shape = SubResource("RectangleShape2D_ybh1r")
 
 [connection signal="area_entered" from="FieldExit" to="." method="_on_field_exit_entered"]
