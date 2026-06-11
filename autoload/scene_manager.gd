@@ -561,8 +561,8 @@ func _launch_pipeline(mode: String) -> void:
 
 # ── Flag file helpers ─────────────────────────────────────────────────────────
 
-func _flag_path(name: String) -> String:
-	return _project_path + name
+func _flag_path(flag_name: String) -> String:
+	return _project_path + flag_name
 
 
 func _clear_flags(mode: String) -> void:
@@ -583,8 +583,8 @@ func _check_flags() -> void:
 		_on_pipeline_result("crashed", _read_flag(names.get("crashed", "")))
 
 
-func _read_flag(name: String) -> String:
-	var f := FileAccess.open(_flag_path(name), FileAccess.READ)
+func _read_flag(flag_name: String) -> String:
+	var f := FileAccess.open(_flag_path(flag_name), FileAccess.READ)
 	if f:
 		var text := f.get_as_text()
 		f.close()

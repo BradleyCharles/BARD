@@ -1,38 +1,42 @@
-extends Node2D
+extends StaticBody2D
 
-@export var detection_radius : float = 140.0
+@export var detection_radius: float = 60.0
+@export var prompt_offset: Vector2 = Vector2(0.0, -60.0)
 
 const _BOARD_SCENE := "res://ui/bounty_board.tscn"
 const _FONT_PATH   := "res://fonts/almendra.regular.ttf"
 
-@onready var _detection  : Area2D = $DetectionArea
-@onready var _prompt_lbl : Label  = $PromptLabel
-
-var _player_in_range : bool = false
-var _board_instance  : Node = null
+var _player_in_range: bool = false
+var _board_instance: Node = null
+var _prompt_lbl: Label
 
 
 func _ready() -> void:
 	add_to_group("bounty_board")
 
-	_detection.area_entered.connect(_on_area_entered)
-	_detection.area_exited.connect(_on_area_exited)
+	var area := Area2D.new()
+	area.collision_layer = 0
+	area.collision_mask = 2
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = detection_radius
+	shape.shape = circle
+	area.add_child(shape)
+	area.body_entered.connect(_on_body_entered)
+	area.body_exited.connect(_on_body_exited)
+	add_child(area)
 
-	var shape := _detection.get_node("CollisionShape2D")
-	if shape and shape.shape is CircleShape2D:
-		(shape.shape as CircleShape2D).radius = detection_radius
-
-	_prompt_lbl.text                 = "[A]  Bounty Board"
+	_prompt_lbl = Label.new()
+	_prompt_lbl.text = "[A] Bounty Board"
+	_prompt_lbl.position = prompt_offset
 	_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt_lbl.visible              = false
+	_prompt_lbl.visible = false
 	if ResourceLoader.exists(_FONT_PATH):
 		_prompt_lbl.add_theme_font_override("font", load(_FONT_PATH))
 	_prompt_lbl.add_theme_font_size_override("font_size", 16)
-	_prompt_lbl.add_theme_color_override(
-		"font_color", Color(0.88, 0.73, 0.38, 1.0))
+	_prompt_lbl.add_theme_color_override("font_color", Color(0.88, 0.73, 0.38, 1.0))
+	add_child(_prompt_lbl)
 
-
-# ── Input ─────────────────────────────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _player_in_range or _board_instance != null:
@@ -42,32 +46,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		_open_board()
 
 
-# ── Proximity detection ───────────────────────────────────────────────────────
-
-func _on_area_entered(area: Area2D) -> void:
-	if not _is_player_area(area):
-		return
-	_player_in_range    = true
-	_prompt_lbl.visible = true
+func _on_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		_player_in_range = true
+		_prompt_lbl.visible = true
 
 
-func _on_area_exited(area: Area2D) -> void:
-	if not _is_player_area(area):
-		return
-	_player_in_range    = false
-	_prompt_lbl.visible = false
+func _on_body_exited(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		_player_in_range = false
+		_prompt_lbl.visible = false
 
-
-func _is_player_area(area: Area2D) -> bool:
-	return area.is_in_group("player") or area.get_parent().is_in_group("player")
-
-
-# ── Board lifecycle ───────────────────────────────────────────────────────────
 
 func _open_board() -> void:
 	var packed := load(_BOARD_SCENE) as PackedScene
 	if packed == null:
-		push_error("BountyBoardObject: could not load %s" % _BOARD_SCENE)
+		push_error("BountyBoard: could not load %s" % _BOARD_SCENE)
 		return
 	_board_instance = packed.instantiate()
 	get_tree().root.add_child(_board_instance)
