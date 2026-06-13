@@ -61,7 +61,7 @@ var _pause_menu : CanvasLayer = null
 func _ready() -> void:
 	var hv := Vector2(1920.0 / 3.5, 1080.0 / 3.5) * 0.5
 	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
-	_player.start(Vector2(world_size.x * 0.5, world_size.y * 0.35), true)
+	_player.start(Vector2(800.0, 1500.0), true)
 
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.zoom = Vector2(3.5, 3.5)
