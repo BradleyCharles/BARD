@@ -266,10 +266,10 @@ Centralizes all input action name strings. Use `PlayerInput.ATTACK` etc. everywh
 
 Each weapon is a GDScript file with `class_name` and typed constants. Use `sword_data.gd` as the template when adding a new weapon.
 
-| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX |
-|------|----|--------|-----------|-----------|--------|
-| `sword_data.gd` | `"sword"` | 1 | 40.0 | 200.0 | 40×20 px |
-| `axe_data.gd` | `"axe"` | 2 | 24.0 | 400.0 | 16×28 px |
+| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX | HITBOX_OFFSET |
+|------|----|--------|-----------|-----------|--------|---------------|
+| `sword_data.gd` | `"sword"` | 1 | 30.0 | 300.0 | 60×40 px | 60.0 px |
+| `axe_data.gd` | `"axe"` | 2 | 15.0 | 600.0 | 35×70 px | 60.0 px |
 
 ---
 

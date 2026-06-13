@@ -7,7 +7,7 @@ const KNOCKBACK      : float  = 600.0
 const SPRITE_PATH    : String = "res://assets/Axe/"
 const FRAME_COUNT    : int    = 10
 const NATIVE_SIZE    : float  = 496.0
-const SPRITE_OFFSET  : float  = 0.0
+const HITBOX_OFFSET  : float  = 45.0
 const HIT_FRAME_START: int    = 2
 const HIT_FRAME_END  : int    = 7
 

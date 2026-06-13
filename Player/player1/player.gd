@@ -15,8 +15,6 @@ signal weapon_changed(weapon_name: String)
 @onready var _sword      : Area2D            = $SwordHitbox
 @onready var _hurt_area  : Area2D            = $HurtArea
 
-var _world_bounds: Rect2 = Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0))
-
 var facing       : Vector2 = Vector2.RIGHT
 var is_attacking : bool    = false
 var is_dying     : bool    = false
@@ -65,9 +63,9 @@ func _ready() -> void:
 			"sprite_path":    SwordData.SPRITE_PATH,
 			"frame_count":    SwordData.FRAME_COUNT,
 			"native_size":    SwordData.NATIVE_SIZE,
-			"sprite_offset":  SwordData.SPRITE_OFFSET,
 			"hit_frame_start":SwordData.HIT_FRAME_START,
 			"hit_frame_end":  SwordData.HIT_FRAME_END,
+			"hitbox_offset":  SwordData.HITBOX_OFFSET,
 		},
 		AxeData.ID: {
 			"damage":         AxeData.DAMAGE,
@@ -78,9 +76,9 @@ func _ready() -> void:
 			"sprite_path":    AxeData.SPRITE_PATH,
 			"frame_count":    AxeData.FRAME_COUNT,
 			"native_size":    AxeData.NATIVE_SIZE,
-			"sprite_offset":  AxeData.SPRITE_OFFSET,
 			"hit_frame_start":AxeData.HIT_FRAME_START,
 			"hit_frame_end":  AxeData.HIT_FRAME_END,
+			"hitbox_offset":  AxeData.HITBOX_OFFSET,
 		},
 	}
 	add_to_group("player")
@@ -99,12 +97,6 @@ func _ready() -> void:
 	_build_weapon_frames()
 	_weapon_sprite.animation_finished.connect(_on_weapon_anim_finished)
 	hide()
-
-
-# ── World bounds ──────────────────────────────────────────────────────────────
-
-func set_world_bounds(bounds: Rect2) -> void:
-	_world_bounds = bounds
 
 
 # ── Sprite setup ──────────────────────────────────────────────────────────────
@@ -241,7 +233,6 @@ func _process(delta: float) -> void:
 
 	velocity = _block_mob_movement(move_vel)
 	move_and_slide()
-	position = position.clamp(_world_bounds.position, _world_bounds.end)
 
 	if not is_attacking and not _is_hurt and not is_dodging and not is_rolling:
 		_update_animation(move_vel if not is_dodging else Vector2.ZERO)
@@ -316,7 +307,7 @@ func _start_attack() -> void:
 	else:
 		attack_dir = Vector2(-1.0 if facing.x < 0.0 else 1.0, 0.0)
 
-	_sword.position = attack_dir * 60.0
+	_sword.position = attack_dir * float(stats["hitbox_offset"])
 	_sword.scale.x  = -1.0 if _sprite.flip_h else 1.0
 
 	# Resize hitbox — swap x/y when facing up or down so the box stays weapon-relative

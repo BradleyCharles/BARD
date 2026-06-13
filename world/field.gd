@@ -59,8 +59,6 @@ var _pause_menu : CanvasLayer = null
 
 
 func _ready() -> void:
-	var hv := Vector2(1920.0 / 3.5, 1080.0 / 3.5) * 0.5
-	_player.set_world_bounds(Rect2(hv, world_size - 2.0 * hv))
 	_player.start(Vector2(800.0, 1500.0), true)
 
 	var cam: Camera2D = _player.get_node("Camera2D")
@@ -162,7 +160,7 @@ func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
 	)
 	_mob_container.add_child(mob)
 	if mob.has_method("set_playable_rect"):
-		mob.set_playable_rect(_playable_rect)
+		mob.set_playable_rect(zone_rect)
 	elif mob.has_method("set_world_size"):
 		mob.set_world_size(world_size)
 

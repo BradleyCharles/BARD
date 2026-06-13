@@ -24,12 +24,13 @@ const LINK_SCAN_INTERVAL  : float = 0.5
 var wander_speed     : float  = 0.0
 var wander_timer     : Timer
 var is_moving        : bool   = false
-var viewport_rect    : Rect2
+var _home_zone    : Rect2
 var facing           : String = "down"
 var _is_dying        : bool   = false
 var _is_hurt         : bool   = false
 var _is_aggroed      : bool   = false
-var _link_scan_timer : float  = 0.0
+var _link_scan_timer  : float  = 0.0
+var _returning_to_zone: bool   = false
 
 
 func _ready() -> void:
@@ -42,7 +43,7 @@ func _ready() -> void:
 	super._ready()
 
 	set_meta("monster_type", "slime1")
-	viewport_rect = Rect2(Vector2.ZERO, world_size)
+	_home_zone = Rect2(Vector2.ZERO, world_size)
 	wander_speed  = randf_range(min_speed, max_speed)
 
 	_build_sprite_frames()
@@ -58,11 +59,11 @@ func _ready() -> void:
 
 func set_world_size(size: Vector2) -> void:
 	world_size    = size
-	viewport_rect = Rect2(Vector2.ZERO, world_size)
+	_home_zone = Rect2(Vector2.ZERO, world_size)
 
 
 func set_playable_rect(rect: Rect2) -> void:
-	viewport_rect = rect
+	_home_zone = rect
 
 
 # ── Sprite setup ──────────────────────────────────────────────────────────────
@@ -173,12 +174,28 @@ func _count_nearby_mobs() -> int:
 
 # ── AI / Physics ──────────────────────────────────────────────────────────────
 
+func _is_outside_leash() -> bool:
+	return not _home_zone.grow(30.0).has_point(global_position)
+
+
 func _physics_process(delta: float) -> void:
 	if _is_dying:
 		return
 	super._physics_process(delta)
 
 	if _is_hurt:
+		return
+
+	if _returning_to_zone:
+		if _home_zone.has_point(global_position):
+			_returning_to_zone = false
+			_begin_move()
+		else:
+			var target := _home_zone.get_center()
+			linear_velocity = (target - global_position).normalized() * wander_speed
+			_update_facing(linear_velocity)
+			_play_walk()
+		linear_velocity += _calc_separation()
 		return
 
 	var dist     := _distance_to_player()
@@ -189,18 +206,23 @@ func _physics_process(delta: float) -> void:
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
-		if _player_ref != null and is_instance_valid(_player_ref):
-			if dist > contact_radius:
-				linear_velocity = _direction_to_player_with_noise(max_speed)
-				_update_facing(linear_velocity)
-				_play_run()
-			else:
-				linear_velocity = Vector2.ZERO
-				_play_idle()
-		_link_scan_timer -= delta
-		if _link_scan_timer <= 0.0:
-			_link_pack()
-			_link_scan_timer = LINK_SCAN_INTERVAL
+		if _is_outside_leash():
+			_is_aggroed = false
+			_returning_to_zone = true
+			ai_state = AIState.WANDER_STATE
+		else:
+			if _player_ref != null and is_instance_valid(_player_ref):
+				if dist > contact_radius:
+					linear_velocity = _direction_to_player_with_noise(max_speed)
+					_update_facing(linear_velocity)
+					_play_run()
+				else:
+					linear_velocity = Vector2.ZERO
+					_play_idle()
+			_link_scan_timer -= delta
+			if _link_scan_timer <= 0.0:
+				_link_pack()
+				_link_scan_timer = LINK_SCAN_INTERVAL
 	elif in_aggro:
 		# Not yet linked — check if pack condition is met to trigger.
 		if _count_nearby_mobs() >= PACK_COUNT_NEEDED:
@@ -266,13 +288,16 @@ func _on_wander_timeout() -> void:
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if _is_dying:
 		return
+	if ai_state != AIState.WANDER_STATE:
+		return
+
 	var pos      := state.transform.origin
 	var hit_wall := false
 
-	var x_min := viewport_rect.position.x + MOB_RADIUS
-	var x_max := viewport_rect.end.x - MOB_RADIUS
-	var y_min := viewport_rect.position.y + MOB_RADIUS
-	var y_max := viewport_rect.end.y - MOB_RADIUS
+	var x_min := _home_zone.position.x + MOB_RADIUS
+	var x_max := _home_zone.end.x - MOB_RADIUS
+	var y_min := _home_zone.position.y + MOB_RADIUS
+	var y_max := _home_zone.end.y - MOB_RADIUS
 
 	if pos.x < x_min:
 		pos.x = x_min
@@ -296,7 +321,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		var t := state.transform
 		t.origin = pos
 		state.transform = t
-		if is_moving and ai_state == AIState.WANDER_STATE:
+		if is_moving:
 			call_deferred("_begin_pause")
 
 

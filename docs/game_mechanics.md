@@ -103,10 +103,10 @@ SwordHitbox Area2D (mask 8) is monitoring only on animation frames 2–6
 
 **Weapon stats (tuning knobs):**
 
-| Weapon | DAMAGE | KNOCKBACK | SWING_FPS | Hitbox |
-|--------|--------|-----------|-----------|--------|
-| Sword | 1 | 200.0 | 40.0 | 40×20 px |
-| Axe | 2 | 400.0 | 24.0 | 16×28 px |
+| Weapon | DAMAGE | KNOCKBACK | SWING_FPS | Hitbox | HITBOX_OFFSET |
+|--------|--------|-----------|-----------|--------|---------------|
+| Sword | 1 | 300.0 | 30.0 | 60×40 px | 60.0 px |
+| Axe | 2 | 600.0 | 15.0 | 35×70 px | 60.0 px |
 
 Defined in `Player/weapons/sword_data.gd` and `axe_data.gd`.
 
