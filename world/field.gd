@@ -56,6 +56,7 @@ var _slime3_boss_spawned : bool = false
 @onready var _terrain_se    : ColorRect = $TerrainSE
 
 var _pause_menu : CanvasLayer = null
+var _minimap    : CanvasLayer = null
 
 
 func _ready() -> void:
@@ -78,6 +79,12 @@ func _ready() -> void:
 	_pause_menu = CanvasLayer.new()
 	_pause_menu.set_script(pm_script)
 	add_child(_pause_menu)
+
+	var mm_script : GDScript = load("res://ui/minimap.gd")
+	_minimap = CanvasLayer.new()
+	_minimap.set_script(mm_script)
+	add_child(_minimap)
+	(_minimap as Object).call("init", _playable_rect, _zone_rects, _build_minimap_tile_layers())
 
 	_start_bounty_spawning()
 	SceneManager.bounties_updated.connect(_on_bounties_updated)
@@ -250,3 +257,21 @@ func _on_entrance_entered(area: Area2D) -> void:
 
 func _is_player(area: Area2D) -> bool:
 	return area.is_in_group("player") or area.get_parent().is_in_group("player")
+
+
+func _build_minimap_tile_layers() -> Array:
+	var layers : Array = []
+	var overpass : TileMapLayer = get_node_or_null("FieldTileMap/OverPass") as TileMapLayer
+	if overpass:
+		layers.append({"node": overpass, "color": Color(0.28, 0.52, 0.20, 1.0)})
+	var barrier_color := Color(0.42, 0.30, 0.18, 1.0)
+	for bname in ["Barrier0", "Barrier1", "Barrier2"]:
+		var b : TileMapLayer = get_node_or_null("FieldBarrier/" + bname) as TileMapLayer
+		if b:
+			layers.append({"node": b, "color": barrier_color})
+	var exit_color := Color(0.75, 0.65, 0.30, 1.0)
+	for ename in ["ExitPath", "ExitPillars"]:
+		var e : TileMapLayer = get_node_or_null("FieldExit/" + ename) as TileMapLayer
+		if e:
+			layers.append({"node": e, "color": exit_color})
+	return layers

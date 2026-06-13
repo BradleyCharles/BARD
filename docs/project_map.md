@@ -125,10 +125,11 @@ BARD/
 │   ├── health_bar.tscn
 │   ├── scripts_hud.gd            # Top-right Scripts + Slime Goop counter
 │   ├── scripts_hud.tscn
-│   ├── weapon_hud.gd             # Bottom-center weapon slots (active/locked states)
+│   ├── weapon_hud.gd             # Top-center weapon slots (active/locked states)
 │   ├── weapon_hud.tscn
 │   ├── boss_health_bar.gd        # Top-center boss HP bar (shown when boss is alive)
 │   ├── boss_health_bar.tscn
+│   ├── minimap.gd                # Bottom-right minimap (field scene only; instantiated by field.gd)
 │   ├── loading_screen.gd         # Overlay shown while pipeline runs
 │   └── loading_screen.tscn
 ├── world/                        # World/scene scripts
@@ -218,6 +219,8 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 
 **Dodge:** Space / gamepad East (B) button. Duration/speed/cooldown defined in `PlayerStats`. Full iframes during dash. Player is semi-transparent while dodging.
 
+**Run:** Hold the Run button (mapped to the `roll` input action). Multiplies movement speed by `PlayerStats.RUN_SPEED_MULTIPLIER` (1.25×) while held. No cooldown or timer — active only when button is held and player is not attacking or dodging.
+
 **Weapon system:**
 - Weapon data lives in `Player/weapons/sword_data.gd` and `axe_data.gd`. `player.gd` builds `_weapon_stats` from these in `_ready()`.
 - `active_weapon`: default `SwordData.ID`. Q key / gamepad North (Y) button cycles owned weapons.
@@ -243,6 +246,7 @@ All player balance constants in one file. Edit here for tuning.
 | `DODGE_SPEED` | 900.0 px/s | Velocity during a dodge |
 | `DODGE_DURATION` | 0.15 s | How long a single dodge lasts |
 | `DODGE_COOLDOWN` | 0.5 s | Minimum time between dodges |
+| `RUN_SPEED_MULTIPLIER` | 1.25 | Speed multiplier applied while Run is held |
 
 ---
 
@@ -255,6 +259,7 @@ Centralizes all input action name strings. Use `PlayerInput.ATTACK` etc. everywh
 | `MOVE_UP/DOWN/LEFT/RIGHT` | Arrow keys / left stick |
 | `ATTACK` | A / West button |
 | `DODGE` | Space / East button |
+| `RUN` | Roll button (held) |
 | `INTERACT` | E / South button |
 | `WEAPON_SWAP` | Q / North button |
 | `MENU_UP/DOWN` | Arrow keys / D-pad |
@@ -334,7 +339,7 @@ Fixed-size (1000×292 px) bottom-center overlay (layer 10). Added to group `dial
 
 ### 6. Bounty Tracker — `ui/bounty_tracker.gd`
 
-Passive bottom-right HUD overlay (layer 15). Shows active/complete bounties with flavor text and kill counter. Hides when no active bounties. Rebuilds instantly on `bounties_updated`.
+Passive top-right HUD overlay (layer 15). Shows active/complete bounties with flavor text and kill counter. Hides when no active bounties. Rebuilds instantly on `bounties_updated`.
 
 ---
 
@@ -352,7 +357,7 @@ Top-left CanvasLayer HUD. Displays `HP N / 100`. Bar fills red, turns orange bel
 
 ### 9. Scripts HUD — `ui/scripts_hud.gd`
 
-Top-right CanvasLayer HUD. Displays `Scripts: N` (27 pt). When `SceneManager.slime_goop > 0`, also shows a purple `Goop: N` label (20 pt) below. Updates on both `scripts_updated` and `inventory_updated` signals.
+Top-left CanvasLayer HUD, below the health bar (offset_top 90). Displays `Scripts: N` (27 pt). When `SceneManager.slime_goop > 0`, also shows a purple `Goop: N` label (20 pt) below. Updates on both `scripts_updated` and `inventory_updated` signals.
 
 ---
 
@@ -483,7 +488,7 @@ Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_
 
 ### 19. Weapon HUD — `ui/weapon_hud.gd`
 
-Bottom-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
+Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
 - **Active**: gold border (3 px) + gold label text.
 - **Owned inactive**: normal border + gold text.
@@ -492,7 +497,19 @@ Bottom-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in co
 
 ---
 
-### 20. Boss Health Bar — `ui/boss_health_bar.gd`
+### 20. Minimap — `ui/minimap.gd`
+
+Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field.gd._ready()`.
+
+- 500×500 px panel anchored to the bottom-right corner (16 px margin).
+- Map content letterboxes the 3840×2160 world into a 476×268 px area (16:9 preserved), centred vertically within the panel.
+- **North is always up**; the map does not rotate.
+- **Player** drawn as a filled gold circle (5.5 px) with a directional triangle pointing toward `player.facing`.
+- **Enemies** drawn as 3.5 px red dots (group `"ground_mobs"`); bosses drawn in orange.
+- Redraws every frame via `_process → queue_redraw`.
+- All drawing is done via the `draw` signal on an inner Control node.
+
+### 21. Boss Health Bar — `ui/boss_health_bar.gd`
 
 Top-center CanvasLayer (layer 20). Shown only while boss is alive.
 

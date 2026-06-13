@@ -37,7 +37,7 @@ func _build_ui(font: Font) -> void:
 	panel.grow_horizontal = Control.GROW_DIRECTION_END
 	panel.grow_vertical   = Control.GROW_DIRECTION_END
 	panel.offset_left = 10.0
-	panel.offset_top  = 88.0
+	panel.offset_top  = 170.0
 
 	var style := StyleBoxFlat.new()
 	style.bg_color     = _C_BG

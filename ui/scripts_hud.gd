@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## Scripts currency HUD — top-right corner. Rebuilds on scripts_updated / inventory_updated signals.
+## Scripts currency HUD — top-left corner, below health bar. Rebuilds on scripts_updated / inventory_updated signals.
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
@@ -32,14 +32,14 @@ func _build_ui() -> void:
 	add_child(ref)
 
 	var panel := PanelContainer.new()
-	panel.anchor_left    = 1.0
+	panel.anchor_left    = 0.0
 	panel.anchor_top     = 0.0
-	panel.anchor_right   = 1.0
+	panel.anchor_right   = 0.0
 	panel.anchor_bottom  = 0.0
-	panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	panel.grow_horizontal = Control.GROW_DIRECTION_END
 	panel.grow_vertical   = Control.GROW_DIRECTION_END
-	panel.offset_left  = -10.0
-	panel.offset_top   = 10.0
+	panel.offset_left  = 10.0
+	panel.offset_top   = 90.0
 
 	var style := StyleBoxFlat.new()
 	style.bg_color     = _C_BG

@@ -32,12 +32,6 @@ var _dodge_timer    : float   = 0.0
 var _cooldown_timer : float   = 0.0
 var _last_move_dir  : Vector2 = Vector2.RIGHT
 
-# ── Roll ──────────────────────────────────────────────────────────────────────
-
-var is_rolling           : bool  = false
-var _roll_timer          : float = 0.0
-var _roll_cooldown_timer : float = 0.0
-
 # ── Knockback ─────────────────────────────────────────────────────────────────
 
 var _knockback_vel : Vector2 = Vector2.ZERO
@@ -114,6 +108,10 @@ func _build_sprite_frames() -> void:
 	_copy_anim(sf, "walk_up",     B + "Walk/Swordsman_lvl3_Walk_back.aseprite",          8.0, true)
 	_copy_anim(sf, "walk_down",   B + "Walk/Swordsman_lvl3_Walk_front.aseprite",         8.0, true)
 
+	_copy_anim(sf, "run",         B + "Run/Swordsman_lvl3_Run_side_right.aseprite",    12.0, true)
+	_copy_anim(sf, "run_up",      B + "Run/Swordsman_lvl3_Run_back.aseprite",           12.0, true)
+	_copy_anim(sf, "run_down",    B + "Run/Swordsman_lvl3_Run_front.aseprite",          12.0, true)
+
 	_copy_anim(sf, "attack",      B + "Attack/Swordsman_lvl3_attack_side_right.aseprite", 20.0, false)
 	_copy_anim(sf, "attack_up",   B + "Attack/Swordsman_lvl3_attack_back.aseprite",       20.0, false)
 	_copy_anim(sf, "attack_down", B + "Attack/Swordsman_lvl3_attack_front.aseprite",      20.0, false)
@@ -172,15 +170,6 @@ func _process(delta: float) -> void:
 	if _cooldown_timer > 0.0:
 		_cooldown_timer -= delta
 
-	# Roll timers
-	if _roll_timer > 0.0:
-		_roll_timer -= delta
-		if _roll_timer <= 0.0:
-			is_rolling = false
-			modulate = Color.WHITE
-	if _roll_cooldown_timer > 0.0:
-		_roll_cooldown_timer -= delta
-
 	# Knockback timer
 	if _knockback_time > 0.0:
 		_knockback_time -= delta
@@ -195,52 +184,49 @@ func _process(delta: float) -> void:
 		facing = move_input.normalized()
 		_last_move_dir = facing
 
+	var is_running: bool = Input.is_action_pressed(PlayerInput.RUN) \
+			and not is_attacking and not is_dodging
+
 	var move_vel: Vector2
 
 	if is_attacking:
 		move_vel = Vector2.ZERO
 	elif is_dodging:
 		move_vel = -facing.normalized() * PlayerStats.DODGE_SPEED
-	elif is_rolling:
-		move_vel = facing.normalized() * PlayerStats.ROLL_SPEED
 	elif _knockback_time > 0.0:
 		move_vel = _knockback_vel
 	else:
 		if move_input.length() > 0:
-			move_vel = facing * speed
+			var current_speed: float = speed * (PlayerStats.RUN_SPEED_MULTIPLIER if is_running else 1.0)
+			move_vel = facing * current_speed
 		else:
 			move_vel = Vector2.ZERO
 
 	if combat_enabled:
 		if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
-				and not is_dodging and not is_rolling:
+				and not is_dodging:
 			_start_attack()
 
 		if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
-				and not is_dying and _cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
+				and not is_dying and _cooldown_timer <= 0.0 and not is_dodging:
 			_start_dodge()
 			move_vel = -facing.normalized() * PlayerStats.DODGE_SPEED
 
-		if Input.is_action_just_pressed(PlayerInput.ROLL) \
-				and not is_attacking and not is_dying \
-				and _roll_cooldown_timer <= 0.0 and not is_dodging and not is_rolling:
-			_start_roll()
-			move_vel = facing.normalized() * PlayerStats.ROLL_SPEED
-
-	var can_swap: bool = not is_attacking and not is_dodging and not is_rolling
+	var can_swap: bool = not is_attacking and not is_dodging
 	if Input.is_action_just_pressed(PlayerInput.WEAPON_SWAP) and can_swap:
 		_cycle_weapon()
 
 	velocity = _block_mob_movement(move_vel)
 	move_and_slide()
 
-	if not is_attacking and not _is_hurt and not is_dodging and not is_rolling:
+	if not is_attacking and not _is_hurt and not is_dodging:
 		_update_animation(move_vel if not is_dodging else Vector2.ZERO)
 
 
 func _update_animation(move_dir: Vector2) -> void:
 	var anim: String
 	var flip := false
+	var running: bool = Input.is_action_pressed(PlayerInput.RUN) and move_dir.length() > 0
 
 	if move_dir.length() == 0:
 		if abs(facing.y) > abs(facing.x):
@@ -250,9 +236,10 @@ func _update_animation(move_dir: Vector2) -> void:
 			flip = facing.x < 0
 	else:
 		if abs(move_dir.y) > abs(move_dir.x):
-			anim = "walk_up" if move_dir.y < 0 else "walk_down"
+			anim = ("run_up" if move_dir.y < 0 else "run_down") if running \
+					else ("walk_up" if move_dir.y < 0 else "walk_down")
 		else:
-			anim = "walk"
+			anim = "run" if running else "walk"
 			flip = move_dir.x < 0
 
 	_sprite.flip_h = flip
@@ -270,15 +257,6 @@ func _start_dodge() -> void:
 	_dodge_timer    = PlayerStats.DODGE_DURATION
 	_cooldown_timer = PlayerStats.DODGE_COOLDOWN
 	modulate        = Color(1.0, 1.0, 1.0, 0.5)
-
-
-# ── Roll ──────────────────────────────────────────────────────────────────────
-
-func _start_roll() -> void:
-	is_rolling           = true
-	_roll_timer          = PlayerStats.ROLL_DURATION
-	_roll_cooldown_timer = PlayerStats.ROLL_COOLDOWN
-	modulate             = Color(1.0, 1.0, 1.0, 0.6)
 
 
 # ── Weapon system ─────────────────────────────────────────────────────────────
@@ -474,13 +452,10 @@ func start(pos: Vector2, combat: bool = false) -> void:
 	is_dying     = false
 	is_attacking = false
 	is_dodging   = false
-	is_rolling   = false
 	combat_enabled = combat
-	_death_signal        = ""
-	_dodge_timer         = 0.0
-	_cooldown_timer      = 0.0
-	_roll_timer          = 0.0
-	_roll_cooldown_timer = 0.0
+	_death_signal   = ""
+	_dodge_timer    = 0.0
+	_cooldown_timer = 0.0
 	_knockback_vel       = Vector2.ZERO
 	_knockback_time      = 0.0
 	facing          = Vector2.RIGHT

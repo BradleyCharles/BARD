@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## Passive HUD overlay — bottom-right corner — showing the player's active bounties.
+## Passive HUD overlay — top-right corner — showing the player's active bounties.
 ## Built entirely in code; attach this script to a CanvasLayer node (layer = 15
 ## sits above the game world but below dialogue and the bounty board).
 ##
@@ -38,16 +38,16 @@ func _build_ui() -> void:
 	add_child(ref)
 
 	_panel = PanelContainer.new()
-	# Anchor all four corners to the bottom-right of the viewport
+	# Anchor all four corners to the top-right of the viewport
 	_panel.anchor_left   = 1.0
-	_panel.anchor_top    = 1.0
+	_panel.anchor_top    = 0.0
 	_panel.anchor_right  = 1.0
-	_panel.anchor_bottom = 1.0
-	# Grow inward (left and up) from that anchor point
-	_panel.grow_horizontal        = Control.GROW_DIRECTION_BEGIN
-	_panel.grow_vertical          = Control.GROW_DIRECTION_BEGIN
-	_panel.offset_right           = -16.0
-	_panel.offset_bottom          = -16.0
+	_panel.anchor_bottom = 0.0
+	# Grow inward (left) and downward from that anchor point
+	_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_panel.grow_vertical   = Control.GROW_DIRECTION_END
+	_panel.offset_right    = -16.0
+	_panel.offset_top      = 16.0
 	_panel.custom_minimum_size    = Vector2(264.0, 0.0)
 	_panel.add_theme_stylebox_override("panel", _panel_style())
 	ref.add_child(_panel)

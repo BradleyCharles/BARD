@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## Weapon slot HUD — bottom-center.
+## Weapon slot HUD — top-center.
 ## Shows sword and axe slots; highlights the active weapon,
 ## dims locked (unowned) weapons.
 
@@ -47,12 +47,12 @@ func _build_ui() -> void:
 
 	var hbox := HBoxContainer.new()
 	hbox.anchor_left    = 0.5
-	hbox.anchor_top     = 1.0
+	hbox.anchor_top     = 0.0
 	hbox.anchor_right   = 0.5
-	hbox.anchor_bottom  = 1.0
+	hbox.anchor_bottom  = 0.0
 	hbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	hbox.grow_vertical   = Control.GROW_DIRECTION_BEGIN
-	hbox.offset_bottom   = -16.0
+	hbox.grow_vertical   = Control.GROW_DIRECTION_END
+	hbox.offset_top      = 16.0
 	hbox.add_theme_constant_override("separation", 8)
 	ref.add_child(hbox)
 
