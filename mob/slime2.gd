@@ -5,11 +5,11 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE    := "res://assets/mobs/Slime2/"
 const MOB_RADIUS    : float = 30.0
-const ALERT_RADIUS  : float = 200.0
+const ALERT_RADIUS  : float = MobStats.SLIME2_ALERT_RADIUS
 ## contact_radius is computed in mob_base._ready() as body_radius + 20.0 (player radius)
 
-@export var min_speed : float   = 50.0
-@export var max_speed : float   = 100.0
+@export var min_speed : float   = MobStats.SLIME2_SPEED_MIN
+@export var max_speed : float   = MobStats.SLIME2_SPEED_MAX
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -25,14 +25,14 @@ var _returning_to_zone: bool  = false
 
 
 func _ready() -> void:
-	max_health      = 6
+	max_health      = MobStats.SLIME2_MAX_HEALTH
 	personality     = Personality.PACK_MENTALITY
-	aggro_radius    = 200.0
-	damage          = 2
-	knockback_force = 350.0
+	aggro_radius    = MobStats.SLIME2_AGGRO_RADIUS
+	damage          = MobStats.SLIME2_DAMAGE
+	knockback_force = MobStats.SLIME2_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_SLIME2)
+	_apply_hitbox(MobStats.SLIME2_HITBOX_RADIUS)
 
 	set_meta("monster_type", "slime2")
 	_home_zone = Rect2(Vector2.ZERO, world_size)

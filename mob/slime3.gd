@@ -8,8 +8,8 @@ const MOB_RADIUS    : float = 30.0
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var min_speed : float   = 60.0
-@export var max_speed : float   = 110.0
+@export var min_speed : float   = MobStats.SLIME3_SPEED_MIN
+@export var max_speed : float   = MobStats.SLIME3_SPEED_MAX
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
@@ -29,14 +29,14 @@ var _returning_to_zone: bool  = false
 
 
 func _ready() -> void:
-	max_health      = 8
+	max_health      = MobStats.SLIME3_MAX_HEALTH
 	personality     = Personality.WEAK_AGGRESSIVE
-	aggro_radius    = 200.0
-	damage          = 2
-	knockback_force = 250.0
+	aggro_radius    = MobStats.SLIME3_AGGRO_RADIUS
+	damage          = MobStats.SLIME3_DAMAGE
+	knockback_force = MobStats.SLIME3_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_SLIME3)
+	_apply_hitbox(MobStats.SLIME3_HITBOX_RADIUS)
 
 	set_meta("monster_type", "slime3")
 	_home_zone = Rect2(Vector2.ZERO, world_size)

@@ -4,15 +4,15 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE             : String = "res://assets/mobs/Plant3/"
 const MOB_RADIUS             : float  = 40.0
-const BOSS_CREEP_SPEED       : float  = 30.0
-const BEAM_REACH             : float  = 400.0
-const BEAM_HALF_WIDTH        : float  = 20.0
-const BEAM_HALF_WIDTH_RADIANS: float  = 0.35
-const AOE_DAMAGE             : int    = 7
-const AOE_KNOCKBACK          : float  = 500.0
-const ATTACK_COOLDOWN        : float  = 6.0
-const TELEGRAPH_DURATION     : float  = 2.0
-const ATTACK_TRIGGER_RADIUS  : float  = 400.0
+const BOSS_CREEP_SPEED        : float = MobStats.PLANT3_BOSS_CREEP_SPEED
+const BEAM_REACH              : float = MobStats.PLANT3_BOSS_BEAM_REACH
+const BEAM_HALF_WIDTH         : float = MobStats.PLANT3_BOSS_BEAM_HALF_WIDTH
+const BEAM_HALF_WIDTH_RADIANS : float = MobStats.PLANT3_BOSS_BEAM_HALF_WIDTH_RAD
+const AOE_DAMAGE              : int   = MobStats.PLANT3_BOSS_AOE_DAMAGE
+const AOE_KNOCKBACK           : float = MobStats.PLANT3_BOSS_AOE_KNOCKBACK
+const ATTACK_COOLDOWN         : float = MobStats.PLANT3_BOSS_ATTACK_COOLDOWN
+const TELEGRAPH_DURATION      : float = MobStats.PLANT3_BOSS_TELEGRAPH_DURATION
+const ATTACK_TRIGGER_RADIUS   : float = MobStats.PLANT3_BOSS_ATTACK_TRIGGER_RADIUS
 
 # ── AI phase ──────────────────────────────────────────────────────────────────
 
@@ -39,13 +39,13 @@ var _attack_cooldown   : float         = 0.0
 
 
 func _ready() -> void:
-	max_health      = 50
+	max_health      = MobStats.PLANT3_BOSS_MAX_HEALTH
 	personality     = Personality.BOSS
-	damage          = 7
-	knockback_force = 500.0
+	damage          = MobStats.PLANT3_BOSS_DAMAGE
+	knockback_force = MobStats.PLANT3_BOSS_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_PLANT3)
+	_apply_hitbox(MobStats.PLANT3_BOSS_HITBOX_RADIUS)
 
 	set_meta("monster_type", "plant3_boss")
 	viewport_rect = Rect2(Vector2.ZERO, world_size)
@@ -132,7 +132,7 @@ func _on_died() -> void:
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
 	queue_redraw()
-	SceneManager.earn_slime_goop(15)
+	SceneManager.earn_slime_goop(MobStats.PLANT3_BOSS_GOOP_DROP)
 	_sprite.flip_h = false
 	match facing:
 		"down":  _sprite.play("death_front")

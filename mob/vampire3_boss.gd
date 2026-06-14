@@ -4,14 +4,14 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE         : String = "res://assets/mobs/Vampires3/"
 const MOB_RADIUS         : float  = 40.0
-const ORBIT_RADIUS       : float  = 200.0
-const ORBIT_SPEED        : float  = 130.0
-const DASH_SPEED         : float  = 500.0
-const DASH_DURATION      : float  = 0.35
-const RECOVER_DURATION   : float  = 0.6
-const DASH_INTERVAL_MIN  : float  = 2.0
-const DASH_INTERVAL_MAX  : float  = 3.5
-const DRAIN_HEAL_AMOUNT  : int    = 4
+const ORBIT_RADIUS      : float = MobStats.VAMPIRE3_BOSS_ORBIT_RADIUS
+const ORBIT_SPEED       : float = MobStats.VAMPIRE3_BOSS_ORBIT_SPEED
+const DASH_SPEED        : float = MobStats.VAMPIRE3_BOSS_DASH_SPEED
+const DASH_DURATION     : float = MobStats.VAMPIRE3_BOSS_DASH_DURATION
+const RECOVER_DURATION  : float = MobStats.VAMPIRE3_BOSS_RECOVER_DURATION
+const DASH_INTERVAL_MIN : float = MobStats.VAMPIRE3_BOSS_DASH_INTERVAL_MIN
+const DASH_INTERVAL_MAX : float = MobStats.VAMPIRE3_BOSS_DASH_INTERVAL_MAX
+const DRAIN_HEAL_AMOUNT : int   = MobStats.VAMPIRE3_BOSS_DRAIN_HEAL
 
 # ── AI phase ──────────────────────────────────────────────────────────────────
 
@@ -40,14 +40,14 @@ var _healed_this_dash  : bool             = false
 
 
 func _ready() -> void:
-	max_health      = 40
+	max_health      = MobStats.VAMPIRE3_BOSS_MAX_HEALTH
 	personality     = Personality.BOSS
-	damage          = 5
-	knockback_force = 400.0
+	damage          = MobStats.VAMPIRE3_BOSS_DAMAGE
+	knockback_force = MobStats.VAMPIRE3_BOSS_KNOCKBACK
 
 	super._ready()
 	collision_mask = 0
-	_apply_hitbox(HITBOX_VAMPIRE3)
+	_apply_hitbox(MobStats.VAMPIRE3_BOSS_HITBOX_RADIUS)
 	z_index = 4
 
 	set_meta("monster_type", "vampire3_boss")
@@ -135,7 +135,7 @@ func _on_died() -> void:
 	_is_attacking = false
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
-	SceneManager.earn_slime_goop(15)
+	SceneManager.earn_slime_goop(MobStats.VAMPIRE3_BOSS_GOOP_DROP)
 	_sprite.flip_h = false
 	match facing:
 		"down":  _sprite.play("death_front")

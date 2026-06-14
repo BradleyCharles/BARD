@@ -8,21 +8,6 @@ signal died(mob: Node)
 enum Personality { WANDER = 0, WEAK_AGGRESSIVE = 1, PACK_MENTALITY = 2, BOSS = 3 }
 enum AIState     { WANDER_STATE = 0, CHASE_STATE = 1, FLEE_STATE = 2 }
 
-## ── Hitbox radii ─────────────────────────────────────────────────────────────
-## Tune these to tighten or loosen per-mob collision detection.
-## Call _apply_hitbox(HITBOX_X) in the subclass _ready() after super._ready().
-const HITBOX_SLIME1   : float = 10.0
-const HITBOX_SLIME2   : float = 10.0
-const HITBOX_SLIME3   : float = 10.0
-const HITBOX_ORC1     : float = 18.0
-const HITBOX_ORC2     : float = 20.0
-const HITBOX_ORC3     : float = 22.0
-const HITBOX_PLANT1   : float = 16.0
-const HITBOX_PLANT2   : float = 18.0
-const HITBOX_PLANT3   : float = 20.0
-const HITBOX_VAMPIRE1 : float = 14.0
-const HITBOX_VAMPIRE2 : float = 16.0
-const HITBOX_VAMPIRE3 : float = 18.0
 
 @export var max_health    : int   = 1
 @export var personality   : int   = Personality.WANDER

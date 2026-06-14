@@ -4,10 +4,10 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE       : String = "res://assets/mobs/Orc3/"
 const MOB_RADIUS       : float  = 30.0
-const CHARGE_SPEED     : float  = 360.0
-const CHARGE_DURATION  : float  = 1.2
-const CHARGE_TRIGGER_RADIUS : float = 140.0
-const RECOVER_DURATION : float  = 0.8
+const CHARGE_SPEED          : float = MobStats.ORC3_CHARGE_SPEED
+const CHARGE_DURATION       : float = MobStats.ORC3_CHARGE_DURATION
+const CHARGE_TRIGGER_RADIUS : float = MobStats.ORC3_CHARGE_TRIGGER_RADIUS
+const RECOVER_DURATION      : float = MobStats.ORC3_RECOVER_DURATION
 
 # ── AI phase ──────────────────────────────────────────────────────────────────
 
@@ -15,8 +15,8 @@ enum OrcPhase { WANDER, CHARGE, RECOVER }
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var wander_min_speed : float = 50.0
-@export var wander_max_speed : float = 50.0
+@export var wander_min_speed : float = MobStats.ORC3_WANDER_SPEED
+@export var wander_max_speed : float = MobStats.ORC3_WANDER_SPEED
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
 
@@ -38,14 +38,14 @@ var _phase_timer  : float    = 0.0
 
 
 func _ready() -> void:
-	max_health      = 22
+	max_health      = MobStats.ORC3_MAX_HEALTH
 	personality     = Personality.WANDER
-	aggro_radius    = 200.0
-	damage          = 4
-	knockback_force = 450.0
+	aggro_radius    = MobStats.ORC3_AGGRO_RADIUS
+	damage          = MobStats.ORC3_DAMAGE
+	knockback_force = MobStats.ORC3_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_ORC3)
+	_apply_hitbox(MobStats.ORC3_HITBOX_RADIUS)
 
 	set_meta("monster_type", "orc3")
 	_home_zone   = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))

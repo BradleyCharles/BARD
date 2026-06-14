@@ -5,14 +5,14 @@ extends "res://mob/mob_base.gd"
 const ASSET_BASE          := "res://assets/mobs/Slime1/"
 const MOB_RADIUS          : float = 30.0
 ## contact_radius is computed in mob_base._ready() as body_radius + 20.0 (player radius)
-const PACK_TRIGGER_RADIUS : float = 200.0
-const PACK_COUNT_NEEDED   : int   = 2
-const LINK_SCAN_INTERVAL  : float = 0.5
+const PACK_TRIGGER_RADIUS : float = MobStats.SLIME1_PACK_TRIGGER_RADIUS
+const PACK_COUNT_NEEDED   : int   = MobStats.SLIME1_PACK_COUNT_NEEDED
+const LINK_SCAN_INTERVAL  : float = MobStats.SLIME1_LINK_SCAN_INTERVAL
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var min_speed : float   = 40.0
-@export var max_speed : float   = 70.0
+@export var min_speed : float   = MobStats.SLIME1_SPEED_MIN
+@export var max_speed : float   = MobStats.SLIME1_SPEED_MAX
 @export var world_size: Vector2 = Vector2(3840.0, 2160.0)
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
@@ -33,14 +33,14 @@ var _returning_to_zone: bool   = false
 
 
 func _ready() -> void:
-	max_health      = 3
+	max_health      = MobStats.SLIME1_MAX_HEALTH
 	personality     = Personality.PACK_MENTALITY
-	aggro_radius    = 200.0
-	damage          = 1
-	knockback_force = 100.0
+	aggro_radius    = MobStats.SLIME1_AGGRO_RADIUS
+	damage          = MobStats.SLIME1_DAMAGE
+	knockback_force = MobStats.SLIME1_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_SLIME1)
+	_apply_hitbox(MobStats.SLIME1_HITBOX_RADIUS)
 
 	set_meta("monster_type", "slime1")
 	_home_zone = Rect2(Vector2.ZERO, world_size)

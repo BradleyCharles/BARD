@@ -4,13 +4,13 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE             : String = "res://assets/mobs/Orc3/"
 const MOB_RADIUS             : float  = 40.0
-const BOSS_SPEED             : float  = 70.0
-const CHARGE_SPEED           : float  = 500.0
-const CHARGE_DURATION        : float  = 1.0
-const TELEGRAPH_DURATION     : float  = 1.5
-const RECOVER_DURATION       : float  = 1.0
-const ATTACK_COOLDOWN        : float  = 5.0
-const CHARGE_TRIGGER_RADIUS  : float  = 350.0
+const BOSS_SPEED            : float = MobStats.ORC3_BOSS_SPEED
+const CHARGE_SPEED          : float = MobStats.ORC3_BOSS_CHARGE_SPEED
+const CHARGE_DURATION       : float = MobStats.ORC3_BOSS_CHARGE_DURATION
+const TELEGRAPH_DURATION    : float = MobStats.ORC3_BOSS_TELEGRAPH_DURATION
+const RECOVER_DURATION      : float = MobStats.ORC3_BOSS_RECOVER_DURATION
+const ATTACK_COOLDOWN       : float = MobStats.ORC3_BOSS_ATTACK_COOLDOWN
+const CHARGE_TRIGGER_RADIUS : float = MobStats.ORC3_BOSS_CHARGE_TRIGGER_RADIUS
 
 # ── AI phase ──────────────────────────────────────────────────────────────────
 
@@ -38,13 +38,13 @@ var _attack_cooldown   : float        = 0.0
 
 
 func _ready() -> void:
-	max_health      = 60
+	max_health      = MobStats.ORC3_BOSS_MAX_HEALTH
 	personality     = Personality.BOSS
-	damage          = 6
-	knockback_force = 600.0
+	damage          = MobStats.ORC3_BOSS_DAMAGE
+	knockback_force = MobStats.ORC3_BOSS_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_ORC3)
+	_apply_hitbox(MobStats.ORC3_BOSS_HITBOX_RADIUS)
 
 	set_meta("monster_type", "orc3_boss")
 	viewport_rect = Rect2(Vector2.ZERO, world_size)
@@ -131,7 +131,7 @@ func _on_died() -> void:
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
 	queue_redraw()
-	SceneManager.earn_slime_goop(15)
+	SceneManager.earn_slime_goop(MobStats.ORC3_BOSS_GOOP_DROP)
 	_sprite.flip_h = false
 	match facing:
 		"down":  _sprite.play("death_front")

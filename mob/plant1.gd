@@ -4,9 +4,9 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE    : String = "res://assets/mobs/Plant1/"
 const MOB_RADIUS    : float  = 30.0
-const STRIKE_RADIUS : float  = 90.0
-const WANDER_SPEED  : float  = 20.0
-const AGGRO_SPEED   : float  = 35.0
+const STRIKE_RADIUS : float = MobStats.PLANT1_STRIKE_RADIUS
+const WANDER_SPEED  : float = MobStats.PLANT1_WANDER_SPEED
+const AGGRO_SPEED   : float = MobStats.PLANT1_AGGRO_SPEED
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
 
@@ -24,14 +24,14 @@ var _is_attacking : bool   = false
 
 
 func _ready() -> void:
-	max_health      = 10
+	max_health      = MobStats.PLANT1_MAX_HEALTH
 	personality     = Personality.WANDER
-	aggro_radius    = 200.0
-	damage          = 2
-	knockback_force = 200.0
+	aggro_radius    = MobStats.PLANT1_AGGRO_RADIUS
+	damage          = MobStats.PLANT1_DAMAGE
+	knockback_force = MobStats.PLANT1_KNOCKBACK
 
 	super._ready()
-	_apply_hitbox(HITBOX_PLANT1)
+	_apply_hitbox(MobStats.PLANT1_HITBOX_RADIUS)
 
 	set_meta("monster_type", "plant1")
 	_home_zone = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))

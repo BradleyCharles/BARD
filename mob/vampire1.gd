@@ -4,13 +4,13 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE         : String = "res://assets/mobs/Vampires1/"
 const MOB_RADIUS         : float  = 30.0
-const ORBIT_RADIUS       : float  = 200.0
-const ORBIT_SPEED        : float  = 90.0
-const DASH_SPEED         : float  = 350.0
-const DASH_DURATION      : float  = 0.4
-const RECOVER_DURATION   : float  = 0.6
-const DASH_INTERVAL_MIN  : float  = 3.0
-const DASH_INTERVAL_MAX  : float  = 5.0
+const ORBIT_RADIUS      : float = MobStats.VAMPIRE1_ORBIT_RADIUS
+const ORBIT_SPEED       : float = MobStats.VAMPIRE1_ORBIT_SPEED
+const DASH_SPEED        : float = MobStats.VAMPIRE1_DASH_SPEED
+const DASH_DURATION     : float = MobStats.VAMPIRE1_DASH_DURATION
+const RECOVER_DURATION  : float = MobStats.VAMPIRE1_RECOVER_DURATION
+const DASH_INTERVAL_MIN : float = MobStats.VAMPIRE1_DASH_INTERVAL_MIN
+const DASH_INTERVAL_MAX : float = MobStats.VAMPIRE1_DASH_INTERVAL_MAX
 
 # ── AI phase ──────────────────────────────────────────────────────────────────
 
@@ -34,15 +34,15 @@ var _dash_cooldown   : float        = 0.0
 
 
 func _ready() -> void:
-	max_health      = 6
+	max_health      = MobStats.VAMPIRE1_MAX_HEALTH
 	personality     = Personality.WANDER
-	aggro_radius    = 200.0
-	damage          = 1
-	knockback_force = 200.0
+	aggro_radius    = MobStats.VAMPIRE1_AGGRO_RADIUS
+	damage          = MobStats.VAMPIRE1_DAMAGE
+	knockback_force = MobStats.VAMPIRE1_KNOCKBACK
 
 	super._ready()
 	collision_mask = 0
-	_apply_hitbox(HITBOX_VAMPIRE1)
+	_apply_hitbox(MobStats.VAMPIRE1_HITBOX_RADIUS)
 	z_index = 4
 
 	set_meta("monster_type", "vampire1")

@@ -78,6 +78,7 @@ BARD/
 │   ├── main.gd
 │   └── main.tscn
 ├── mob/                          # Enemy definitions
+│   ├── mob_stats.gd              # All mob tuning constants (HP, dmg, speed, hitbox, AI radii) — grouped by family, bosses last
 │   ├── mob_base.gd               # Shared base (extends RigidBody2D): health, take_damage, died signal, AI state machine
 │   ├── slime1.gd / .tscn         # Slime1: PACK_MENTALITY, HP=3, zone_c, flees alone, links pack on 2+ nearby
 │   ├── slime2.gd / .tscn         # Slime2: PACK_MENTALITY, HP=6, zone_c, passive until hit
@@ -422,7 +423,20 @@ Top-left CanvasLayer HUD, below the health bar (offset_top 90). Displays `Script
 
 ---
 
-### 12. Mob Base — `mob/mob_base.gd`
+### 12. MobStats — `mob/mob_stats.gd`
+
+All mob balance constants in one file. Edit here to tune any enemy without touching logic scripts. Grouped by family (Slimes → Orcs → Plants → Vampires), then Bosses. Each mob's section covers:
+
+- `MAX_HEALTH`, `DAMAGE`, `KNOCKBACK`, `AGGRO_RADIUS`, `HITBOX_RADIUS`
+- Speed constants (SPEED_MIN/MAX for slimes; WANDER_SPEED/AGGRO_SPEED for plants; WANDER_SPEED/CHARGE_SPEED for orcs; ORBIT_SPEED/DASH_SPEED for vampires)
+- AI behaviour radii and timers (PACK_TRIGGER_RADIUS, CHARGE_TRIGGER_RADIUS, ORBIT_RADIUS, STRIKE_RADIUS, DASH_DURATION, RECOVER_DURATION, etc.)
+- Boss section adds: AOE/beam attack constants, ATTACK_COOLDOWN, TELEGRAPH_DURATION, GOOP_DROP
+
+Previously the hitbox constants lived on `mob_base.gd`; they now live here. All mob scripts reference `MobStats.X` — their local behavior constants are re-exported from this file via `const FOO = MobStats.X`.
+
+---
+
+### 13. Mob Base — `mob/mob_base.gd`
 
 Base class (extends `RigidBody2D`) for all enemy types.
 
@@ -445,7 +459,7 @@ Base class (extends `RigidBody2D`) for all enemy types.
 
 ---
 
-### 13. Slime1 — `mob/slime1.gd`
+### 14. Slime1 — `mob/slime1.gd`
 
 Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=300`, `damage=1`, `knockback_force=200`. Speed 40–70 px/s. Zone: zone_c.
 
@@ -457,7 +471,7 @@ Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=
 
 ---
 
-### 14. Slime2 — `mob/slime2.gd`
+### 15. Slime2 — `mob/slime2.gd`
 
 Extends `mob_base`. `max_health=6`, `personality=PACK_MENTALITY`, `aggro_radius=200`, `damage=2`, `knockback_force=350`. Speed 50–100 px/s. Zone: zone_c.
 
@@ -467,7 +481,7 @@ Extends `mob_base`. `max_health=6`, `personality=PACK_MENTALITY`, `aggro_radius=
 
 ---
 
-### 15. Slime3 — `mob/slime3.gd`
+### 16. Slime3 — `mob/slime3.gd`
 
 Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius=250`, `damage=2`, `knockback_force=250`. Speed 60–110 px/s. Zone: zone_c.
 
@@ -477,7 +491,7 @@ Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius
 
 ---
 
-### 16. Slime3 Boss — `mob/slime3_boss.gd`
+### 17. Slime3 Boss — `mob/slime3_boss.gd`
 
 Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_force=600`. Drops 20 Slime Goop. Spawns after 10 **combined** slime kills.
 
@@ -486,49 +500,49 @@ Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_
 
 ---
 
-### 17. Orc1/2/3 — `mob/orc1.gd`, `mob/orc2.gd`, `mob/orc3.gd`
+### 18. Orc1/2/3 — `mob/orc1.gd`, `mob/orc2.gd`, `mob/orc3.gd`
 
 Charger AI. Zone: zone_a. HP 8/14/22, dmg 2/3/4, knockback 250/350/450, charge speed 280/320/360.
 `_is_attacking=true` during CHARGE phase only. See `docs/game_mechanics.md` for AI detail.
 
 ---
 
-### 18. Orc3 Boss — `mob/orc3_boss.gd`
+### 19. Orc3 Boss — `mob/orc3_boss.gd`
 
 HP=60, dmg=6, kb=600. Drops 15 Goop. Spawns after 10 combined orc kills.
 Telegraphed charge (1.5 s orange indicator via `_draw()`), then 500 px/s charge for 1.0 s.
 
 ---
 
-### 19. Plant1/2/3 — `mob/plant1.gd`, `mob/plant2.gd`, `mob/plant3.gd`
+### 20. Plant1/2/3 — `mob/plant1.gd`, `mob/plant2.gd`, `mob/plant3.gd`
 
 Creeper AI. Zone: zone_a. HP 10/18/28, dmg 2/3/5, knockback 200/300/400.
 `_is_attacking=true` while within `STRIKE_RADIUS=90 px` and playing walk_attack. See `docs/game_mechanics.md`.
 
 ---
 
-### 20. Plant3 Boss — `mob/plant3_boss.gd`
+### 21. Plant3 Boss — `mob/plant3_boss.gd`
 
 HP=50, dmg=7, kb=500. Drops 15 Goop. Spawns after 10 combined plant kills.
 Starburst AOE: 5 beams drawn via `_draw()`, 2.0 s telegraph, angular hit check (±0.35 rad per beam, reach=400 px).
 
 ---
 
-### 21. Vampire1/2/3 — `mob/vampire1.gd`, `mob/vampire2.gd`, `mob/vampire3.gd`
+### 22. Vampire1/2/3 — `mob/vampire1.gd`, `mob/vampire2.gd`, `mob/vampire3.gd`
 
 Stalker AI. Zone: zone_b. HP 6/10/16, dmg 1/2/3, knockback 200/300/400.
 Orbits at 200 px, dashes at player on timer (`_is_attacking=true` during dash). See `docs/game_mechanics.md`.
 
 ---
 
-### 22. Vampire3 Boss — `mob/vampire3_boss.gd`
+### 23. Vampire3 Boss — `mob/vampire3_boss.gd`
 
 HP=40, dmg=5, kb=400. Drops 15 Goop. Spawns after 20 combined vampire kills.
 Faster orbit/dash; life drain: heals 4 HP when dash connects.
 
 ---
 
-### 23. Weapon HUD — `ui/weapon_hud.gd`
+### 24. Weapon HUD — `ui/weapon_hud.gd`
 
 Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
@@ -539,7 +553,7 @@ Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
 ---
 
-### 24. Minimap — `ui/minimap.gd`
+### 25. Minimap — `ui/minimap.gd`
 
 Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field.gd._ready()`.
 
@@ -551,7 +565,7 @@ Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field
 - Redraws every frame via `_process → queue_redraw`.
 - All drawing is done via the `draw` signal on an inner Control node.
 
-### 25. Boss Health Bar — `ui/boss_health_bar.gd`
+### 26. Boss Health Bar — `ui/boss_health_bar.gd`
 
 Top-center CanvasLayer (layer 20). Shown only while boss is alive.
 

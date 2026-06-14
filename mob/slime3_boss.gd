@@ -4,12 +4,12 @@ extends "res://mob/mob_base.gd"
 
 const ASSET_BASE         := "res://assets/mobs/Slime3/"
 const MOB_RADIUS         : float = 40.0
-const BOSS_SPEED         : float = 60.0
-const AOE_DAMAGE         : int   = 7
-const AOE_KNOCKBACK      : float = 700.0
-const AOE_RADIUS         : float = 150.0
-const ATTACK_COOLDOWN    : float = 5.0
-const TELEGRAPH_DURATION : float = 1.5
+const BOSS_SPEED         : float = MobStats.SLIME3_BOSS_SPEED
+const AOE_DAMAGE         : int   = MobStats.SLIME3_BOSS_AOE_DAMAGE
+const AOE_KNOCKBACK      : float = MobStats.SLIME3_BOSS_AOE_KNOCKBACK
+const AOE_RADIUS         : float = MobStats.SLIME3_BOSS_AOE_RADIUS
+const ATTACK_COOLDOWN    : float = MobStats.SLIME3_BOSS_ATTACK_COOLDOWN
+const TELEGRAPH_DURATION : float = MobStats.SLIME3_BOSS_TELEGRAPH_DURATION
 
 # ── Boss phase ────────────────────────────────────────────────────────────────
 
@@ -36,10 +36,10 @@ var _telegraph_radius : float     = 0.0
 
 
 func _ready() -> void:
-	max_health      = 30
+	max_health      = MobStats.SLIME3_BOSS_MAX_HEALTH
 	personality     = Personality.BOSS
-	damage          = 5
-	knockback_force = 600.0
+	damage          = MobStats.SLIME3_BOSS_DAMAGE
+	knockback_force = MobStats.SLIME3_BOSS_KNOCKBACK
 
 	super._ready()
 
@@ -167,7 +167,7 @@ func _on_died() -> void:
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
 	queue_redraw()
-	SceneManager.earn_slime_goop(20)
+	SceneManager.earn_slime_goop(MobStats.SLIME3_BOSS_GOOP_DROP)
 	_sprite.flip_h = false
 	match facing:
 		"down":  _sprite.play("death_front")
