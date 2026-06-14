@@ -6,5 +6,5 @@ const BASE_SPEED    : float = 150.0
 const DODGE_SPEED   : float = 900.0
 const DODGE_DURATION: float = 0.15
 const DODGE_COOLDOWN: float = 0.5
-const RUN_SPEED_MULTIPLIER: float = 1.50
+const RUN_SPEED_MULTIPLIER: float = 10
 const KNOCKBACK_DURATION: float = 0.30
