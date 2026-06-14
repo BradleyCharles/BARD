@@ -3,7 +3,7 @@ extends "res://mob/mob_base.gd"
 ## Slime2 — passive until attacked.
 ## Wanders normally. When hit, turns aggressive and alerts nearby slime2s.
 
-const ASSET_BASE    := "res://assets/Slime2/"
+const ASSET_BASE    := "res://assets/mobs/Slime2/"
 const MOB_RADIUS    : float = 30.0
 const ALERT_RADIUS  : float = 200.0
 ## contact_radius is computed in mob_base._ready() as body_radius + 20.0 (player radius)
@@ -189,7 +189,7 @@ func _physics_process(delta: float) -> void:
 			ai_state = AIState.WANDER_STATE
 		else:
 			var dist: float = _distance_to_player()
-			if dist > contact_radius and not _player_is_invincible():
+			if dist > contact_radius:
 				linear_velocity = _direction_to_player_with_noise(max_speed)
 				_update_facing(linear_velocity)
 				_play_run()

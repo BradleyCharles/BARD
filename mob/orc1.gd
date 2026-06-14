@@ -1,23 +1,21 @@
 extends "res://mob/mob_base.gd"
 
-# ── Constants ────────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 
-const ASSET_BASE         := "res://assets/Slime1/"
-const MOB_RADIUS         : float = 40.0
-const BOSS_SPEED         : float = 50.0
-const AOE_DAMAGE         : int   = 3
-const AOE_KNOCKBACK      : float = 500.0
-const AOE_RADIUS         : float = 120.0
-const ATTACK_COOLDOWN    : float = 6.0
-const TELEGRAPH_DURATION : float = 1.5
+const ASSET_BASE       : String = "res://assets/mobs/Orc1/"
+const MOB_RADIUS       : float  = 30.0
+const CHARGE_SPEED     : float  = 280.0
+const CHARGE_DURATION  : float  = 1.2
+const RECOVER_DURATION : float  = 0.8
 
-# ── Boss phase ────────────────────────────────────────────────────────────────
+# ── AI phase ──────────────────────────────────────────────────────────────────
 
-enum BossPhase { NORMAL, TELEGRAPH, ATTACKING }
+enum OrcPhase { WANDER, CHARGE, RECOVER }
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var world_size: Vector2 = Vector2(3840.0, 2160.0)
+@export var wander_min_speed : float = 40.0
+@export var wander_max_speed : float = 40.0
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
 
@@ -25,42 +23,49 @@ enum BossPhase { NORMAL, TELEGRAPH, ATTACKING }
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
-var viewport_rect     : Rect2
-var facing            : String    = "down"
-var _is_dying         : bool      = false
-var _is_hurt          : bool      = false
-var _boss_phase       : BossPhase = BossPhase.NORMAL
-var _aoe_cooldown     : float     = 0.0
-var _telegraph_timer  : float     = 0.0
-var _telegraph_radius : float     = 0.0
+var wander_speed  : float    = 0.0
+var wander_timer  : Timer
+var is_moving     : bool     = false
+var _home_zone    : Rect2
+var facing        : String   = "down"
+var _is_dying     : bool     = false
+var _is_hurt      : bool     = false
+var _is_attacking : bool     = false
+var _orc_phase    : OrcPhase = OrcPhase.WANDER
+var _charge_dir   : Vector2  = Vector2.ZERO
+var _phase_timer  : float    = 0.0
 
 
 func _ready() -> void:
-	max_health      = 10
-	personality     = Personality.BOSS
-	damage          = 3
-	knockback_force = 400.0
+	max_health      = 8
+	personality     = Personality.WANDER
+	aggro_radius    = 250.0
+	damage          = 2
+	knockback_force = 250.0
 
 	super._ready()
 
-	set_meta("monster_type", "slime1_boss")
-	viewport_rect = Rect2(Vector2.ZERO, world_size)
+	set_meta("monster_type", "orc1")
+	_home_zone   = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
+	wander_speed = randf_range(wander_min_speed, wander_max_speed)
 
 	_build_sprite_frames()
 	_sprite.animation_finished.connect(_on_animation_finished)
 
+	wander_timer          = Timer.new()
+	wander_timer.one_shot = true
+	wander_timer.timeout.connect(_on_wander_timeout)
+	add_child(wander_timer)
 
-func set_world_size(size: Vector2) -> void:
-	world_size    = size
-	viewport_rect = Rect2(Vector2.ZERO, world_size)
+	_begin_move()
 
 
 func set_playable_rect(rect: Rect2) -> void:
-	viewport_rect = rect
+	_home_zone = rect
 
 
-func _reset_modulate() -> void:
-	modulate = Color.WHITE
+func set_world_size(size: Vector2) -> void:
+	_home_zone = Rect2(Vector2.ZERO, size)
 
 
 # ── Sprite setup ──────────────────────────────────────────────────────────────
@@ -68,21 +73,19 @@ func _reset_modulate() -> void:
 func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim: String in ["Idle", "Walk", "Run", "Hurt", "Death", "Attack"]:
+	for anim: String in ["Idle", "Walk", "Run_attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
-			var path := "%s%s/Slime1_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
+			var path := "%s%s/Orc1_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
 			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 
 
 func _merge_anim(sf: SpriteFrames, anim_name: String, path: String) -> void:
 	var src: SpriteFrames = load(path) as SpriteFrames
-	var one_shot := anim_name.begins_with("hurt") or anim_name.begins_with("death") \
-		or anim_name.begins_with("attack")
-	var loop: bool = not one_shot
+	var one_shot: bool = anim_name.begins_with("hurt") or anim_name.begins_with("death")
 	sf.add_animation(anim_name)
-	sf.set_animation_loop(anim_name, loop)
+	sf.set_animation_loop(anim_name, not one_shot)
 	sf.set_animation_speed(anim_name, src.get_animation_speed("default"))
 	for i: int in src.get_frame_count("default"):
 		sf.add_frame(anim_name, src.get_frame_texture("default", i))
@@ -101,45 +104,9 @@ func _play_anim(prefix: String) -> void:
 		"left":  _sprite.play(prefix + "_left")
 
 
-func _play_run() -> void:
-	_play_anim("run")
-
-
-func _play_attack() -> void:
-	_sprite.flip_h = false
-	match facing:
-		"down":  _sprite.play("attack_front")
-		"up":    _sprite.play("attack_back")
-		"right": _sprite.play("attack_right")
-		"left":  _sprite.play("attack_left")
-
-
-# ── AOE Telegraph / Attack ────────────────────────────────────────────────────
-
-func _start_telegraph() -> void:
-	_boss_phase       = BossPhase.TELEGRAPH
-	_telegraph_timer  = 0.0
-	_telegraph_radius = 0.0
-
-
-func _fire_aoe() -> void:
-	_boss_phase       = BossPhase.ATTACKING
-	_telegraph_radius = 0.0
-	queue_redraw()
-	_play_attack()
-	if _distance_to_player() <= AOE_RADIUS \
-			and _player_ref != null and is_instance_valid(_player_ref):
-		var kb_dir: Vector2 = \
-			(_player_ref.global_position - global_position).normalized()
-		_player_ref.call_deferred("take_damage", AOE_DAMAGE, kb_dir * AOE_KNOCKBACK)
-
-
-func _draw() -> void:
-	if _telegraph_radius > 0.0:
-		var alpha: float = _telegraph_timer / TELEGRAPH_DURATION
-		var r: float = _telegraph_radius
-		draw_circle(Vector2.ZERO, r, Color(1.0, 0.0, 0.0, 0.25 * alpha))
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(1.0, 0.0, 0.0, 0.9), 2.0)
+func _play_idle()       -> void: _play_anim("idle")
+func _play_walk()       -> void: _play_anim("walk")
+func _play_run_attack() -> void: _play_anim("run_attack")
 
 
 # ── Damage / Death overrides ──────────────────────────────────────────────────
@@ -147,8 +114,6 @@ func _draw() -> void:
 func take_damage(amount: int, knockback_vec: Vector2) -> void:
 	super.take_damage(amount, knockback_vec)
 	if health <= 0:
-		return
-	if _boss_phase != BossPhase.NORMAL:
 		return
 	_is_hurt = true
 	_sprite.flip_h = false
@@ -160,15 +125,12 @@ func take_damage(amount: int, knockback_vec: Vector2) -> void:
 
 
 func _on_died() -> void:
-	_is_dying         = true
-	_is_hurt          = false
-	_boss_phase       = BossPhase.NORMAL
-	_telegraph_radius = 0.0
+	_is_dying     = true
+	_is_hurt      = false
+	_is_attacking = false
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
-	queue_redraw()
-	SceneManager.earn_slime_goop(5)
-	_sprite.flip_h = false
+	_sprite.flip_h  = false
 	match facing:
 		"down":  _sprite.play("death_front")
 		"up":    _sprite.play("death_back")
@@ -182,26 +144,60 @@ func _physics_process(delta: float) -> void:
 	if _is_dying:
 		return
 	super._physics_process(delta)
+	if _is_hurt:
+		return
 
-	_aoe_cooldown = max(0.0, _aoe_cooldown - delta)
+	match _orc_phase:
+		OrcPhase.WANDER:
+			if _distance_to_player() < aggro_radius and _player_ref != null:
+				_charge_dir  = global_position.direction_to(_player_ref.global_position)
+				_update_facing(_charge_dir)
+				_orc_phase   = OrcPhase.CHARGE
+				_phase_timer = 0.0
+				wander_timer.stop()
+			else:
+				pass  # movement driven by wander_timer callbacks
+		OrcPhase.CHARGE:
+			_phase_timer    += delta
+			_is_attacking    = true
+			linear_velocity  = _charge_dir * CHARGE_SPEED
+			_update_facing(_charge_dir)
+			_play_run_attack()
+			if _phase_timer >= CHARGE_DURATION:
+				_orc_phase    = OrcPhase.RECOVER
+				_phase_timer  = 0.0
+				_is_attacking = false
+				linear_velocity = Vector2.ZERO
+				_play_idle()
+		OrcPhase.RECOVER:
+			_phase_timer    += delta
+			linear_velocity  = Vector2.ZERO
+			if _phase_timer >= RECOVER_DURATION:
+				_orc_phase = OrcPhase.WANDER
+				_begin_move()
 
-	match _boss_phase:
-		BossPhase.NORMAL:
-			if _player_ref != null and is_instance_valid(_player_ref):
-				linear_velocity = _direction_to_player_with_noise(BOSS_SPEED)
-				_update_facing(linear_velocity)
-				_play_run()
-			if _aoe_cooldown <= 0.0 and _distance_to_player() <= AOE_RADIUS:
-				_start_telegraph()
-		BossPhase.TELEGRAPH:
-			linear_velocity   = Vector2.ZERO
-			_telegraph_timer  += delta
-			_telegraph_radius  = (AOE_RADIUS / scale.x) * (_telegraph_timer / TELEGRAPH_DURATION)
-			queue_redraw()
-			if _telegraph_timer >= TELEGRAPH_DURATION:
-				_fire_aoe()
-		BossPhase.ATTACKING:
-			linear_velocity = Vector2.ZERO
+	linear_velocity += _calc_separation()
+
+
+# ── Wander ────────────────────────────────────────────────────────────────────
+
+func _begin_pause() -> void:
+	is_moving       = false
+	linear_velocity = Vector2.ZERO
+	_play_idle()
+	wander_timer.wait_time = randf_range(1.0, 4.0)
+	wander_timer.start()
+
+
+func _begin_move() -> void:
+	is_moving = true
+	var angle := randf() * TAU
+	var vel   := Vector2(cos(angle), sin(angle)) * wander_speed
+	linear_velocity = vel
+	_update_facing(vel)
+	wander_timer.wait_time = randf_range(1.0, 3.0)
+	wander_timer.start()
+	_play_walk()
 
 
 func _update_facing(vel: Vector2) -> void:
@@ -213,19 +209,28 @@ func _update_facing(vel: Vector2) -> void:
 		facing = "down" if vel.y >= 0.0 else "up"
 
 
+func _on_wander_timeout() -> void:
+	if _orc_phase != OrcPhase.WANDER:
+		return
+	if is_moving:
+		_begin_pause()
+	else:
+		_begin_move()
+
+
 # ── Boundary enforcement ──────────────────────────────────────────────────────
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if _is_dying:
 		return
+	if _orc_phase != OrcPhase.WANDER:
+		return
 	var pos      := state.transform.origin
 	var hit_wall := false
-
-	var x_min := viewport_rect.position.x + MOB_RADIUS
-	var x_max := viewport_rect.end.x - MOB_RADIUS
-	var y_min := viewport_rect.position.y + MOB_RADIUS
-	var y_max := viewport_rect.end.y - MOB_RADIUS
-
+	var x_min    := _home_zone.position.x + MOB_RADIUS
+	var x_max    := _home_zone.end.x - MOB_RADIUS
+	var y_min    := _home_zone.position.y + MOB_RADIUS
+	var y_max    := _home_zone.end.y - MOB_RADIUS
 	if pos.x < x_min:
 		pos.x = x_min
 		state.linear_velocity.x = 0.0
@@ -234,7 +239,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		pos.x = x_max
 		state.linear_velocity.x = 0.0
 		hit_wall = true
-
 	if pos.y < y_min:
 		pos.y = y_min
 		state.linear_velocity.y = 0.0
@@ -243,11 +247,12 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		pos.y = y_max
 		state.linear_velocity.y = 0.0
 		hit_wall = true
-
 	if hit_wall:
 		var t := state.transform
 		t.origin = pos
 		state.transform = t
+		if is_moving:
+			call_deferred("_begin_pause")
 
 
 # ── Animation callbacks ───────────────────────────────────────────────────────
@@ -258,9 +263,7 @@ func _on_animation_finished() -> void:
 		return
 	if _is_hurt:
 		_is_hurt = false
-		_play_run()
-		return
-	if _boss_phase == BossPhase.ATTACKING:
-		_boss_phase   = BossPhase.NORMAL
-		_aoe_cooldown = ATTACK_COOLDOWN
-		_play_run()
+		match _orc_phase:
+			OrcPhase.CHARGE:   _play_run_attack()
+			OrcPhase.RECOVER:  _play_idle()
+			_:                 _play_idle()

@@ -1,16 +1,21 @@
 extends "res://mob/mob_base.gd"
 
-# ── Constants ────────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 
-const ASSET_BASE    := "res://assets/mobs/Slime3/"
-const MOB_RADIUS    : float = 30.0
-## contact_radius is computed in mob_base._ready() as body_radius + 20.0 (player radius)
+const ASSET_BASE       : String = "res://assets/mobs/Orc3/"
+const MOB_RADIUS       : float  = 30.0
+const CHARGE_SPEED     : float  = 360.0
+const CHARGE_DURATION  : float  = 1.2
+const RECOVER_DURATION : float  = 0.8
+
+# ── AI phase ──────────────────────────────────────────────────────────────────
+
+enum OrcPhase { WANDER, CHARGE, RECOVER }
 
 # ── Exports ───────────────────────────────────────────────────────────────────
 
-@export var min_speed : float   = 60.0
-@export var max_speed : float   = 110.0
-@export var world_size: Vector2 = Vector2(3840.0, 2160.0)
+@export var wander_min_speed : float = 50.0
+@export var wander_max_speed : float = 50.0
 
 # ── Node refs ─────────────────────────────────────────────────────────────────
 
@@ -18,28 +23,31 @@ const MOB_RADIUS    : float = 30.0
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
-var wander_speed : float  = 0.0
-var wander_timer : Timer
-var is_moving    : bool   = false
-var _home_zone: Rect2
-var facing       : String = "down"
-var _is_dying    : bool   = false
-var _is_hurt          : bool  = false
-var _returning_to_zone: bool  = false
+var wander_speed  : float    = 0.0
+var wander_timer  : Timer
+var is_moving     : bool     = false
+var _home_zone    : Rect2
+var facing        : String   = "down"
+var _is_dying     : bool     = false
+var _is_hurt      : bool     = false
+var _is_attacking : bool     = false
+var _orc_phase    : OrcPhase = OrcPhase.WANDER
+var _charge_dir   : Vector2  = Vector2.ZERO
+var _phase_timer  : float    = 0.0
 
 
 func _ready() -> void:
-	max_health      = 8
-	personality     = Personality.WEAK_AGGRESSIVE
-	aggro_radius    = 250.0
-	damage          = 2
-	knockback_force = 250.0
+	max_health      = 22
+	personality     = Personality.WANDER
+	aggro_radius    = 300.0
+	damage          = 4
+	knockback_force = 450.0
 
 	super._ready()
 
-	set_meta("monster_type", "slime3")
-	_home_zone = Rect2(Vector2.ZERO, world_size)
-	wander_speed  = randf_range(min_speed, max_speed)
+	set_meta("monster_type", "orc3")
+	_home_zone   = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
+	wander_speed = randf_range(wander_min_speed, wander_max_speed)
 
 	_build_sprite_frames()
 	_sprite.animation_finished.connect(_on_animation_finished)
@@ -52,13 +60,12 @@ func _ready() -> void:
 	_begin_move()
 
 
-func set_world_size(size: Vector2) -> void:
-	world_size    = size
-	_home_zone = Rect2(Vector2.ZERO, world_size)
-
-
 func set_playable_rect(rect: Rect2) -> void:
 	_home_zone = rect
+
+
+func set_world_size(size: Vector2) -> void:
+	_home_zone = Rect2(Vector2.ZERO, size)
 
 
 # ── Sprite setup ──────────────────────────────────────────────────────────────
@@ -66,20 +73,19 @@ func set_playable_rect(rect: Rect2) -> void:
 func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim: String in ["Idle", "Walk", "Run", "Hurt", "Death"]:
+	for anim: String in ["Idle", "Walk", "Run_attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
-			var path := "%s%s/Slime3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
+			var path := "%s%s/Orc3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
 			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 
 
 func _merge_anim(sf: SpriteFrames, anim_name: String, path: String) -> void:
 	var src: SpriteFrames = load(path) as SpriteFrames
-	var one_shot := anim_name.begins_with("hurt") or anim_name.begins_with("death")
-	var loop: bool = not one_shot
+	var one_shot: bool = anim_name.begins_with("hurt") or anim_name.begins_with("death")
 	sf.add_animation(anim_name)
-	sf.set_animation_loop(anim_name, loop)
+	sf.set_animation_loop(anim_name, not one_shot)
 	sf.set_animation_speed(anim_name, src.get_animation_speed("default"))
 	for i: int in src.get_frame_count("default"):
 		sf.add_frame(anim_name, src.get_frame_texture("default", i))
@@ -98,16 +104,9 @@ func _play_anim(prefix: String) -> void:
 		"left":  _sprite.play(prefix + "_left")
 
 
-func _play_idle() -> void:
-	_play_anim("idle")
-
-
-func _play_walk() -> void:
-	_play_anim("walk")
-
-
-func _play_run() -> void:
-	_play_anim("run")
+func _play_idle()       -> void: _play_anim("idle")
+func _play_walk()       -> void: _play_anim("walk")
+func _play_run_attack() -> void: _play_anim("run_attack")
 
 
 # ── Damage / Death overrides ──────────────────────────────────────────────────
@@ -126,8 +125,9 @@ func take_damage(amount: int, knockback_vec: Vector2) -> void:
 
 
 func _on_died() -> void:
-	_is_dying = true
-	_is_hurt  = false
+	_is_dying     = true
+	_is_hurt      = false
+	_is_attacking = false
 	died.emit(self)
 	linear_velocity = Vector2.ZERO
 	_sprite.flip_h  = false
@@ -140,48 +140,41 @@ func _on_died() -> void:
 
 # ── AI / Physics ──────────────────────────────────────────────────────────────
 
-func _is_outside_leash() -> bool:
-	return not _home_zone.grow(30.0).has_point(global_position)
-
-
 func _physics_process(delta: float) -> void:
 	if _is_dying:
 		return
 	super._physics_process(delta)
-
 	if _is_hurt:
 		return
 
-	if _returning_to_zone:
-		if _home_zone.has_point(global_position):
-			_returning_to_zone = false
-			_begin_move()
-		else:
-			var target := _home_zone.get_center()
-			linear_velocity = (target - global_position).normalized() * wander_speed
-			_update_facing(linear_velocity)
-			_play_walk()
-		linear_velocity += _calc_separation()
-		return
-
-	var dist := _distance_to_player()
-	if dist < aggro_radius:
-		if ai_state != AIState.CHASE_STATE:
-			ai_state = AIState.CHASE_STATE
-			wander_timer.stop()
-		if _is_outside_leash():
-			_returning_to_zone = true
-			ai_state = AIState.WANDER_STATE
-		elif dist > contact_radius:
-			linear_velocity = _direction_to_player_with_noise(max_speed)
-			_update_facing(linear_velocity)
-			_play_run()
-		else:
-			linear_velocity = Vector2.ZERO
-			_play_idle()
-	elif ai_state == AIState.CHASE_STATE:
-		ai_state = AIState.WANDER_STATE
-		_begin_move()
+	match _orc_phase:
+		OrcPhase.WANDER:
+			if _distance_to_player() < aggro_radius and _player_ref != null:
+				_charge_dir  = global_position.direction_to(_player_ref.global_position)
+				_update_facing(_charge_dir)
+				_orc_phase   = OrcPhase.CHARGE
+				_phase_timer = 0.0
+				wander_timer.stop()
+			else:
+				pass
+		OrcPhase.CHARGE:
+			_phase_timer    += delta
+			_is_attacking    = true
+			linear_velocity  = _charge_dir * CHARGE_SPEED
+			_update_facing(_charge_dir)
+			_play_run_attack()
+			if _phase_timer >= CHARGE_DURATION:
+				_orc_phase    = OrcPhase.RECOVER
+				_phase_timer  = 0.0
+				_is_attacking = false
+				linear_velocity = Vector2.ZERO
+				_play_idle()
+		OrcPhase.RECOVER:
+			_phase_timer    += delta
+			linear_velocity  = Vector2.ZERO
+			if _phase_timer >= RECOVER_DURATION:
+				_orc_phase = OrcPhase.WANDER
+				_begin_move()
 
 	linear_velocity += _calc_separation()
 
@@ -199,8 +192,9 @@ func _begin_pause() -> void:
 func _begin_move() -> void:
 	is_moving = true
 	var angle := randf() * TAU
-	linear_velocity = Vector2(cos(angle), sin(angle)) * wander_speed
-	_update_facing(linear_velocity)
+	var vel   := Vector2(cos(angle), sin(angle)) * wander_speed
+	linear_velocity = vel
+	_update_facing(vel)
 	wander_timer.wait_time = randf_range(1.0, 3.0)
 	wander_timer.start()
 	_play_walk()
@@ -216,7 +210,7 @@ func _update_facing(vel: Vector2) -> void:
 
 
 func _on_wander_timeout() -> void:
-	if ai_state == AIState.CHASE_STATE:
+	if _orc_phase != OrcPhase.WANDER:
 		return
 	if is_moving:
 		_begin_pause()
@@ -229,17 +223,14 @@ func _on_wander_timeout() -> void:
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if _is_dying:
 		return
-	if ai_state != AIState.WANDER_STATE:
+	if _orc_phase != OrcPhase.WANDER:
 		return
-
 	var pos      := state.transform.origin
 	var hit_wall := false
-
-	var x_min := _home_zone.position.x + MOB_RADIUS
-	var x_max := _home_zone.end.x - MOB_RADIUS
-	var y_min := _home_zone.position.y + MOB_RADIUS
-	var y_max := _home_zone.end.y - MOB_RADIUS
-
+	var x_min    := _home_zone.position.x + MOB_RADIUS
+	var x_max    := _home_zone.end.x - MOB_RADIUS
+	var y_min    := _home_zone.position.y + MOB_RADIUS
+	var y_max    := _home_zone.end.y - MOB_RADIUS
 	if pos.x < x_min:
 		pos.x = x_min
 		state.linear_velocity.x = 0.0
@@ -248,7 +239,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		pos.x = x_max
 		state.linear_velocity.x = 0.0
 		hit_wall = true
-
 	if pos.y < y_min:
 		pos.y = y_min
 		state.linear_velocity.y = 0.0
@@ -257,7 +247,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		pos.y = y_max
 		state.linear_velocity.y = 0.0
 		hit_wall = true
-
 	if hit_wall:
 		var t := state.transform
 		t.origin = pos
@@ -274,9 +263,6 @@ func _on_animation_finished() -> void:
 		return
 	if _is_hurt:
 		_is_hurt = false
-		if ai_state == AIState.CHASE_STATE:
-			_play_run()
-		elif is_moving:
-			_play_walk()
-		else:
-			_play_idle()
+		match _orc_phase:
+			OrcPhase.CHARGE:   _play_run_attack()
+			_:                 _play_idle()

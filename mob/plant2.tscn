@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://c8rkplnt2tscn2"]
+
+[ext_resource type="Script" uid="uid://d9rkplnt2scrp2" path="res://mob/plant2.gd" id="1_plant2"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_default"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_plant2"]
+radius = 26.0
+
+[node name="Plant2" type="RigidBody2D" groups=["mobs"]]
+gravity_scale = 0.0
+lock_rotation = true
+script = ExtResource("1_plant2")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_default")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_plant2")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]

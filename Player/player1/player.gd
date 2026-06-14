@@ -388,6 +388,11 @@ func _on_body_entered(body: Node2D) -> void:
 	if is_dying:
 		return
 	if body.is_in_group("flying_mobs") or body.is_in_group("ground_mobs"):
+		# New mobs expose _is_attacking; only deal contact damage when true.
+		# Slimes have no _is_attacking var — null means always damage (backward compatible).
+		var mob_attacking: Variant = body.get("_is_attacking")
+		if mob_attacking != null and mob_attacking == false:
+			return
 		var mob_damage: int = 1
 		var mob_kb_force: float = 150.0
 		if "damage" in body:
