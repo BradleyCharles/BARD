@@ -149,6 +149,10 @@ func _on_died() -> void:
 func trigger_aggro() -> void:
 	if _is_aggroed or _is_dying:
 		return
+	if _count_nearby_mobs() < PACK_COUNT_NEEDED:
+		return
+	if _distance_to_player() >= aggro_radius:
+		return
 	_is_aggroed = true
 	_link_pack()
 

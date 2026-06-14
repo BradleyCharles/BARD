@@ -130,9 +130,9 @@ All mobs extend `RigidBody2D`. Movement is set via `linear_velocity` directly ea
 
 ### Slime1 — `mob/slime1.gd`
 
-- **Personality:** PACK_MENTALITY. Flees alone; chases when ≥ 2 nearby slime1 within 200 px.
-- **Health:** 3. **Aggro radius:** 300 px.
-- **Pack link:** on aggro, calls `trigger_aggro()` on nearby slime1s (chain reaction). Re-scans every 0.5 s.
+- **Personality:** PACK_MENTALITY. Flees alone; chases when ≥ 2 nearby slimes (any type) within 200 px AND player also within 200 px.
+- **Health:** 3. **Aggro radius:** 200 px.
+- **Pack link:** on aggro, calls `trigger_aggro()` on nearby slime1s (chain reaction). Re-scans every 0.5 s. Each chain-linked slime verifies both conditions itself before aggroing — isolated slimes or those out of player range are skipped, preventing spurious permanent aggro.
 - **Contact stop:** when in CHASE_STATE and within `CONTACT_RADIUS = 44.0` px of player, sets `linear_velocity = Vector2.ZERO` and plays idle. Prevents mob from driving through player.
 - **Hurt bypass:** `_physics_process` returns early when `_is_hurt == true` — allows knockback impulse to work.
 
@@ -149,8 +149,10 @@ All mobs extend `RigidBody2D`. Movement is set via `linear_velocity` directly ea
 `contact_radius` is a `var` on `mob_base.gd`, computed automatically in `_ready()` as:
 
 ```
-contact_radius = body_radius + 20.0   # 20 px = player capsule effective radius at scale 2
+contact_radius = body_radius + 8.0   # 8 px = player CapsuleShape2D radius
 ```
+
+The player's `HurtArea` uses the same `CapsuleShape2D` as the player body (radius 8 px). `body_entered` on `HurtArea` fires when a mob's `CircleShape2D` overlaps it — i.e. when center-to-center distance drops below `body_radius + 8`. `contact_radius` is set to that same threshold so the mob's soft-stop lands exactly at the edge of the damage zone, ensuring `body_entered` fires before the mob halts.
 
 Because `body_radius` is derived from `CircleShape2D.radius × scale.x`, `contact_radius` automatically adjusts when a mob's tscn scale changes — no manual constant to update. All slime subclasses use `contact_radius` (not a local const) so the value is always in sync with the actual collision geometry.
 
