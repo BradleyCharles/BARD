@@ -76,7 +76,7 @@ func _build_sprite_frames() -> void:
 	for anim: String in ["Idle", "Walk", "Run_attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
-			var path := "%s%s/Orc1_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
+			var path := "%sOrc1_%s/orc1_%s_%s.aseprite" % [ASSET_BASE, anim.to_lower(), dir, anim.to_lower()]
 			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 

@@ -2,7 +2,7 @@ extends "res://mob/mob_base.gd"
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-const ASSET_BASE         : String = "res://assets/mobs/Vampire3/"
+const ASSET_BASE         : String = "res://assets/mobs/Vampires3/"
 const MOB_RADIUS         : float  = 40.0
 const ORBIT_RADIUS       : float  = 200.0
 const ORBIT_SPEED        : float  = 130.0
@@ -73,10 +73,10 @@ func _reset_modulate() -> void:
 func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim: String in ["Idle", "Run", "Run_attack", "Hurt", "Death"]:
+	for anim: String in ["Idle", "Run", "Attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
-			var path := "%s%s/Vampire3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
+			var path := "%s%s/Vampires3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
 			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 
@@ -106,7 +106,7 @@ func _play_anim(prefix: String) -> void:
 
 func _play_idle()       -> void: _play_anim("idle")
 func _play_run()        -> void: _play_anim("run")
-func _play_run_attack() -> void: _play_anim("run_attack")
+func _play_attack() -> void: _play_anim("attack")
 
 
 # ── Damage / Death overrides ──────────────────────────────────────────────────
@@ -174,7 +174,7 @@ func _physics_process(delta: float) -> void:
 			_phase_timer    += delta
 			linear_velocity  = _dash_dir * DASH_SPEED
 			_update_facing(_dash_dir)
-			_play_run_attack()
+			_play_attack()
 			if _is_attacking and not _healed_this_dash \
 					and _distance_to_player() <= contact_radius:
 				_healed_this_dash = true

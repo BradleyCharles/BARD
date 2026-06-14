@@ -105,7 +105,6 @@ func _build_ui() -> void:
 	_root.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.layout_mode = 2
 	margin.add_theme_constant_override("margin_left",   20)
 	margin.add_theme_constant_override("margin_top",    20)
 	margin.add_theme_constant_override("margin_right",  20)
@@ -113,7 +112,6 @@ func _build_ui() -> void:
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.layout_mode = 2
 	vbox.add_theme_constant_override("separation", 10)
 	margin.add_child(vbox)
 
@@ -128,7 +126,6 @@ func _build_ui() -> void:
 	vbox.add_child(_sep())
 
 	_list = VBoxContainer.new()
-	_list.layout_mode = 2
 	_list.add_theme_constant_override("separation", 6)
 	vbox.add_child(_list)
 
@@ -163,12 +160,10 @@ func _refresh() -> void:
 
 func _bounty_row(bounty: Dictionary, idx: int) -> VBoxContainer:
 	var col := VBoxContainer.new()
-	col.layout_mode = 2
 	col.add_theme_constant_override("separation", 0)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var hbox := HBoxContainer.new()
-	hbox.layout_mode = 2
 	hbox.add_theme_constant_override("separation", 14)
 	col.add_child(hbox)
 
@@ -209,7 +204,6 @@ func _update_cursor() -> void:
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var lbl := Label.new()
-	lbl.layout_mode = 2
 	lbl.text = text
 	if _font:
 		lbl.add_theme_font_override("font", _font)
@@ -220,7 +214,6 @@ func _label(text: String, size: int, color: Color) -> Label:
 
 func _sep() -> HSeparator:
 	var s := HSeparator.new()
-	s.layout_mode = 2
 	var style := StyleBoxFlat.new()
 	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.55)
 	style.content_margin_top    = 1.0

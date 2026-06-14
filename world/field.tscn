@@ -7,17 +7,29 @@
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player1/player.tscn" id="4_mdjat"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="5_mdjat"]
 [ext_resource type="PackedScene" uid="uid://dxanquw7xely2" path="res://mob/slime3.tscn" id="5_slime3"]
+[ext_resource type="PackedScene" uid="uid://bax2fu5a32wb5" path="res://mob/orc1.tscn" id="6_0cyb4"]
 [ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="6_sh"]
 [ext_resource type="PackedScene" path="res://ui/health_bar.tscn" id="7_hb"]
+[ext_resource type="PackedScene" uid="uid://bax2fu6a32wb6" path="res://mob/orc2.tscn" id="7_n0vgs"]
+[ext_resource type="PackedScene" uid="uid://bax2fu7a32wb7" path="res://mob/orc3.tscn" id="8_nedtn"]
 [ext_resource type="PackedScene" uid="uid://cg14fo7aceah4" path="res://mob/slime3_boss.tscn" id="8_s3boss"]
 [ext_resource type="PackedScene" path="res://ui/weapon_hud.tscn" id="8_wh"]
+[ext_resource type="PackedScene" uid="uid://bax2fu6q0j2b5" path="res://mob/orc3_boss.tscn" id="9_htnaw"]
 [ext_resource type="Texture2D" uid="uid://dkejobacf6vql" path="res://assets/World_decorations/crystals/Assets_texture_shadow_source.png" id="10_hhmmf"]
+[ext_resource type="PackedScene" uid="uid://bax286xh5jkx5" path="res://mob/plant1.tscn" id="10_qtmo8"]
+[ext_resource type="PackedScene" uid="uid://bax286xi5jkx6" path="res://mob/plant2.tscn" id="11_hsjgd"]
 [ext_resource type="Texture2D" uid="uid://b83f2a6rk87l5" path="res://assets/World_decorations/plants-for-farm/Plants.png" id="11_l6emf"]
+[ext_resource type="PackedScene" uid="uid://bax286xj5jkx7" path="res://mob/plant3.tscn" id="12_3wm67"]
 [ext_resource type="Texture2D" uid="uid://iuv0ifuv2qe1" path="res://assets/World_decorations/plants-for-farm/Supplies.png" id="12_c3brv"]
+[ext_resource type="PackedScene" uid="uid://bax286xjmf135" path="res://mob/plant3_boss.tscn" id="13_xrfr5"]
+[ext_resource type="PackedScene" uid="uid://bax8w5th5jkx5" path="res://mob/vampire1.tscn" id="14_5h2rv"]
 [ext_resource type="Texture2D" uid="uid://dxal6j8ia14w6" path="res://assets/guildhall/Walls_street.png" id="14_cduxm"]
+[ext_resource type="PackedScene" uid="uid://bax8w5ti5jkx6" path="res://mob/vampire2.tscn" id="15_2gi4i"]
 [ext_resource type="Texture2D" uid="uid://cy2douuig1w5f" path="res://assets/guildhall/Exterior.png" id="15_q4dhh"]
 [ext_resource type="Texture2D" uid="uid://cl50xvlnnng5" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark4.png" id="16_jrseg"]
+[ext_resource type="PackedScene" uid="uid://bax8w5tj5jkx7" path="res://mob/vampire3.tscn" id="16_x6cfc"]
 [ext_resource type="Texture2D" uid="uid://df20ugkcfxq1f" path="res://assets/guildhall/Windows_doors.png" id="17_hhmmf"]
+[ext_resource type="PackedScene" uid="uid://bax8w5tjmf135" path="res://mob/vampire3_boss.tscn" id="17_p8dbp"]
 [ext_resource type="Texture2D" uid="uid://bkpjdiq1f8pyk" path="res://assets/guildhall/Decorative_cracks.png" id="18_l6emf"]
 [ext_resource type="Texture2D" uid="uid://cqb13ds8yk37w" path="res://assets/World_decorations/trees/Trees_shadow_source.png" id="19_c3brv"]
 [ext_resource type="Texture2D" uid="uid://bad5qkc71dy3f" path="res://assets/World_decorations/rocks/Rock5_1.png" id="19_qwqv3"]
@@ -9255,9 +9267,19 @@ script = ExtResource("1_d8wuf")
 slime1_scene = ExtResource("2_r2512")
 slime2_scene = ExtResource("4_55kw1")
 slime3_scene = ExtResource("5_slime3")
-slime1_boss_scene = ExtResource("6_s1boss")
-slime2_boss_scene = ExtResource("7_s2boss")
 slime3_boss_scene = ExtResource("8_s3boss")
+orc1_scene = ExtResource("6_0cyb4")
+orc2_scene = ExtResource("7_n0vgs")
+orc3_scene = ExtResource("8_nedtn")
+orc3_boss_scene = ExtResource("9_htnaw")
+plant1_scene = ExtResource("10_qtmo8")
+plant2_scene = ExtResource("11_hsjgd")
+plant3_scene = ExtResource("12_3wm67")
+plant3_boss_scene = ExtResource("13_xrfr5")
+vampire1_scene = ExtResource("14_5h2rv")
+vampire2_scene = ExtResource("15_2gi4i")
+vampire3_scene = ExtResource("16_x6cfc")
+vampire3_boss_scene = ExtResource("17_p8dbp")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1468043752]
 anchors_preset = 15

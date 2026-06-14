@@ -53,7 +53,6 @@ func _build_ui() -> void:
 	ref.add_child(_panel)
 
 	var margin := MarginContainer.new()
-	margin.layout_mode = 2
 	margin.add_theme_constant_override("margin_left",   10)
 	margin.add_theme_constant_override("margin_top",     8)
 	margin.add_theme_constant_override("margin_right",  10)
@@ -61,12 +60,10 @@ func _build_ui() -> void:
 	_panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.layout_mode = 2
 	vbox.add_theme_constant_override("separation", 5)
 	margin.add_child(vbox)
 
 	var header := Label.new()
-	header.layout_mode = 2
 	header.text = "BOUNTIES"
 	if _font:
 		header.add_theme_font_override("font", _font)
@@ -75,7 +72,6 @@ func _build_ui() -> void:
 	vbox.add_child(header)
 
 	var sep       := HSeparator.new()
-	sep.layout_mode = 2
 	var sep_style := StyleBoxFlat.new()
 	sep_style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.5)
 	sep_style.content_margin_top    = 1.0
@@ -84,7 +80,6 @@ func _build_ui() -> void:
 	vbox.add_child(sep)
 
 	_list = VBoxContainer.new()
-	_list.layout_mode = 2
 	_list.add_theme_constant_override("separation", 4)
 	vbox.add_child(_list)
 
@@ -115,10 +110,10 @@ func _make_entry(bounty: Dictionary) -> Control:
 	var quantity    : int        = bounty.get("quantity", 0)
 	var killed      : int        = bounty.get("killed", 0)
 	var status      : String     = bounty.get("status", "active")
-	var short_text  : String     = "%s — %d / %d slimes" % [zone, killed, quantity]
+	var monster_type: String     = bounty.get("monster_type", "")
+	var short_text  : String     = "%s — %d / %d %s" % [zone, killed, quantity, monster_type]
 
 	var lbl := Label.new()
-	lbl.layout_mode = 2
 	lbl.text = short_text
 	if _font:
 		lbl.add_theme_font_override("font", _font)

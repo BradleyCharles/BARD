@@ -41,11 +41,11 @@ All masks are set **in code** in `player.gd:_ready()`, overriding `.tscn` defaul
 | Property | Value | Reason |
 |----------|-------|--------|
 | `collision_layer` | **8** | Visible on entity layer; detectable by player's HurtArea and SwordHitbox |
-| `collision_mask` | **0** | Detects nothing — generates zero physics constraint forces; cannot push player or other mobs |
+| `collision_mask` | **1** | Detects world geometry (rocks, trees, static obstacles) — blocked by the same layer as the player |
 
-Set unconditionally in `mob_base._ready()`, inherited by all mob subclasses (slime1, slime2, slime3, elite, boss variants).
+Set unconditionally in `mob_base._ready()`, inherited by all mob subclasses.
 
-**Key rule:** `collision_mask = 0` is what prevents mobs from pushing. Even though the player's CharacterBody2D detects mob bodies (player mask 9 ⊃ layer 8), the physics engine only applies mutual constraint forces when **both** bodies detect each other. Mob mask = 0 breaks that mutuality — mobs are solid walls to the player but exert no force.
+**Key rule:** mask=1 (world geometry only) blocks mobs on rocks and trees without introducing mob-player or mob-mob pushing. Those are on layers 2 and 8 respectively — not in the mask — so mutual constraint forces never apply between mobs and the player.
 
 ### NPCs — `npc/npc_base.gd` (`_add_physics_body()`)
 
@@ -221,7 +221,7 @@ This lets each mob control its own damage window precisely without any central c
 
 | Anti-pattern | Problem |
 |---|---|
-| Setting mob `collision_mask` to detect player or other mobs | Mobs generate physics forces against whatever they detect; with `mask ≠ 0` they push the player and each other |
+| Setting mob `collision_mask` to include player (2) or entity (8) layers | Mobs generate physics forces against whatever they detect on their mask; including player/mob layers causes continuous pushing |
 | Player `collision_mask` not including layer 8 | Player passes through mob and NPC bodies; oscillation occurs as mob AI reacts to player inside its contact zone |
 | Player-separation code inside `_integrate_forces` on mobs | Keeps mob permanently away from player; `HurtArea.body_entered` never fires; mob deals no damage |
 | Setting `linear_velocity` every frame without an `_is_hurt` guard | Overrides `apply_central_impulse` knockback in the same frame it's applied; knockback appears to do nothing |

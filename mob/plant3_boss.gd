@@ -71,7 +71,7 @@ func _reset_modulate() -> void:
 func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim: String in ["Idle", "Walk", "Walk_attack", "Hurt", "Death"]:
+	for anim: String in ["Idle", "Walk", "Attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
 			var path := "%s%s/Plant3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
@@ -82,7 +82,7 @@ func _build_sprite_frames() -> void:
 func _merge_anim(sf: SpriteFrames, anim_name: String, path: String) -> void:
 	var src: SpriteFrames = load(path) as SpriteFrames
 	var one_shot: bool = anim_name.begins_with("hurt") or anim_name.begins_with("death") \
-		or anim_name.begins_with("walk_attack")
+		or anim_name.begins_with("attack")
 	sf.add_animation(anim_name)
 	sf.set_animation_loop(anim_name, not one_shot)
 	sf.set_animation_speed(anim_name, src.get_animation_speed("default"))
@@ -105,7 +105,7 @@ func _play_anim(prefix: String) -> void:
 
 func _play_walk()        -> void: _play_anim("walk")
 func _play_idle()        -> void: _play_anim("idle")
-func _play_walk_attack() -> void: _play_anim("walk_attack")
+func _play_attack() -> void: _play_anim("attack")
 
 
 # ── Damage / Death overrides ──────────────────────────────────────────────────
@@ -207,7 +207,7 @@ func _physics_process(delta: float) -> void:
 			linear_velocity = Vector2.ZERO
 			_check_starburst_hit()
 			queue_redraw()
-			_play_walk_attack()
+			_play_attack()
 			_boss_phase      = PlantBossPhase.CREEP
 			_attack_cooldown = ATTACK_COOLDOWN
 

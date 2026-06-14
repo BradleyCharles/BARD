@@ -108,7 +108,6 @@ func _show_responses() -> void:
 
 	for r in list:
 		var row := VBoxContainer.new()
-		row.layout_mode = 2
 		row.add_theme_constant_override("separation", 0)
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 

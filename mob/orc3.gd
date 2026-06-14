@@ -39,7 +39,7 @@ var _phase_timer  : float    = 0.0
 func _ready() -> void:
 	max_health      = 22
 	personality     = Personality.WANDER
-	aggro_radius    = 300.0
+	aggro_radius    = 250.0
 	damage          = 4
 	knockback_force = 450.0
 
@@ -76,7 +76,7 @@ func _build_sprite_frames() -> void:
 	for anim: String in ["Idle", "Walk", "Run_attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
-			var path := "%s%s/Orc3_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
+			var path := "%sOrc3_%s/orc3_%s_%s.aseprite" % [ASSET_BASE, anim.to_lower(), dir, anim.to_lower()]
 			_merge_anim(sf, anim_name, path)
 	_sprite.sprite_frames = sf
 

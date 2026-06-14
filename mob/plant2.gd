@@ -59,7 +59,7 @@ func set_world_size(size: Vector2) -> void:
 func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim: String in ["Idle", "Walk", "Walk_attack", "Hurt", "Death"]:
+	for anim: String in ["Idle", "Walk", "Attack", "Hurt", "Death"]:
 		for dir: String in ["front", "back", "left", "right"]:
 			var anim_name := anim.to_lower() + "_" + dir
 			var path := "%s%s/Plant2_%s_%s.aseprite" % [ASSET_BASE, anim, anim, dir]
@@ -92,7 +92,7 @@ func _play_anim(prefix: String) -> void:
 
 func _play_idle()        -> void: _play_anim("idle")
 func _play_walk()        -> void: _play_anim("walk")
-func _play_walk_attack() -> void: _play_anim("walk_attack")
+func _play_attack() -> void: _play_anim("attack")
 
 
 # ── Damage / Death overrides ──────────────────────────────────────────────────
@@ -145,7 +145,7 @@ func _physics_process(delta: float) -> void:
 			_is_attacking = true
 			linear_velocity = dir
 			_update_facing(dir)
-			_play_walk_attack()
+			_play_attack()
 		else:
 			_is_attacking = false
 			linear_velocity = dir
