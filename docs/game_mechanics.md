@@ -197,7 +197,7 @@ var tangent := Vector2(-to_player.y, to_player.x).normalized()
 var radial  := to_player.normalized() * (dist - ORBIT_RADIUS) * 0.05
 linear_velocity = (tangent * ORBIT_SPEED) + radial
 ```
-Damage fires via `_is_attacking` gate in `player.gd`. Vampires orbit immediately on spawn (no aggro_radius check needed — they always have player_ref). `z_index = 4` so they render above the Decor0 layer (z_index 3), appearing to fly over trees and rocks. `collision_mask = 0` (set after `super._ready()` in each vampire script) so they pass through world geometry (crystals, rocks) rather than being blocked by it.
+Damage fires via `_is_attacking` gate in `player.gd`. **Aggro gate:** vampires idle in place until the player enters `aggro_radius` (200 px), then set `_is_aggroed = true` and begin orbiting permanently (never drop aggro). `z_index = 4` so they render above the Decor0 layer (z_index 3), appearing to fly over trees and rocks. `collision_mask = 0` (set after `super._ready()` in each vampire script) so they pass through world geometry (crystals, rocks) rather than being blocked by it.
 
 Stats: V1 HP=6 dmg=1 kb=200 orbit=90 dash=350 interval=3.0–5.0 s; V2 HP=10 dmg=2 kb=300 orbit=100 dash=400 interval=2.5–4.0 s; V3 HP=16 dmg=3 kb=400 orbit=110 dash=450 interval=2.0–3.5 s.
 
@@ -215,6 +215,61 @@ if mob_attacking != null and mob_attacking == false:
 - New mobs: null means never returned; false = not attacking, no damage; true = damage fires.
 
 This lets each mob control its own damage window precisely without any central coordination.
+
+---
+
+## Player State Machine
+
+`player.gd` now has a formal `PlayerState` enum: `IDLE`, `MOVE`, `ATTACK`, `HURT`, `DODGE`, `DEAD`. The helper `_set_state(new_state)` transitions the enum and keeps the legacy booleans (`is_attacking`, `_is_hurt`, `is_dodging`) in sync for backward-compat reads from other nodes. Movement velocity and animation gating are driven by `_state` via a `match` block in `_process`.
+
+---
+
+## Attack System
+
+### 8-direction attacks
+`_start_attack()` now snaps `facing` to the nearest of 8 directions (every 45°) using:
+```gdscript
+var snapped_angle: float = round(facing.angle() / (PI / 4.0)) * (PI / 4.0)
+var attack_dir: Vector2  = Vector2.from_angle(snapped_angle)
+```
+The `SwordHitbox` Area2D is repositioned at `attack_dir * hitbox_offset` and its **rotation** is set to `snapped_angle`. This replaces the old x/y rectangle size swap; rotation handles all 8 directions uniformly.
+
+The weapon overlay sprite uses the same angle. For left-half directions (`attack_dir.x < 0`) `flip_h = true` is combined with a mirrored angle (`Vector2(-attack_dir.x, attack_dir.y).angle()`) so the swing arc appears as a mirror of the right-facing frames rather than a 180° rotation.
+
+### Input Buffer
+A 0.15-second window caches an attack press while the player is mid-swing. Stored in `_attack_buffer: float`. When `_on_animation_finished` fires for an attack animation, a buffered attack re-enters `_start_attack()` immediately before the state can transition back to IDLE.
+
+### Weapon movement during attack
+Each weapon data file defines `MOVE_MODIFIER`:
+- Sword: `0.4` — player moves at 40% speed while swinging
+- Axe: `0.0` — player is fully stopped while swinging
+
+Applied in `_process` during `PlayerState.ATTACK` using `move_input.normalized() * speed * modifier`.
+
+### Hit Stop (frame freeze)
+`_apply_hitstop(duration)` in `player.gd` sets `Engine.time_scale = 0.0` then restores it after `duration` seconds of **real time** using `get_tree().create_timer(duration, true, false, true)` (ignore_time_scale = true). A `_hitstop_active` guard prevents stacking. Durations are defined per weapon:
+- Sword: `HITSTOP = 0.05 s`
+- Axe: `HITSTOP = 0.12 s`
+
+Hit stop triggers in `_on_sword_hit` after dealing damage.
+
+### Camera Shake
+`field.gd` connects to the player's `attack_connected(weapon_id, hit_point, attack_dir)` signal. On hit it calls `_start_shake(intensity, duration, frequency)` which drives `camera.offset` in `_process` using a decaying sine wave:
+- Sword: intensity 3.0, duration 0.12 s, frequency 200 rad/s (fast micro-shake)
+- Axe: intensity 8.0, duration 0.22 s, frequency 80 rad/s (heavy dramatic shake)
+
+### Impact Particles
+`_spawn_hit_particles(hit_pos, dir)` in `player.gd` instantiates a `CPUParticles2D` at the contact midpoint, oriented in the knockback direction. One-shot burst of 10 gold particles (lifetime 0.35 s). The node auto-frees via `finished` signal.
+
+---
+
+## Mob Pathfinding (NavigationAgent2D)
+
+`mob_base._ready()` creates a `NavigationAgent2D` child with `path_desired_distance = 8.0` and `target_desired_distance = 16.0`. The helper `_nav_move(speed)` sets `target_position = player.global_position` each frame, then returns a velocity toward `get_next_path_position()` with the same noise rotation as `_direction_to_player_with_noise`. Falls back to direct noise-direction in two cases: (1) the agent reports navigation finished (no valid path), or (2) `get_next_path_position()` returns the agent's own position (direction is zero — happens when no `NavigationRegion2D` is baked).
+
+**Mobs updated to use `_nav_move`:** slime1, slime2, slime3 (chase phase).
+
+**To activate pathfinding for terrain avoidance:** add a `NavigationRegion2D` node to `field.tscn` covering the walkable area, bake its `NavigationPolygon` in the Godot editor, and ensure collision obstacles (rocks, trees) are included as obstacle polygons. Once baked, `_nav_move` will automatically path around them.
 
 ---
 
@@ -263,6 +318,8 @@ Demo mobs are tagged `is_testing_mob = true` so `_stop_testing_spawning()` clean
 | Changing only mob `collision_mask` (without moving mob to a new layer) | Player's CharacterBody2D uses *its own* mask, not the mob's. Player mask=1 still detects mob layer=1 regardless of mob mask |
 | Adding mob layer (8) back to player `collision_mask` | `move_and_slide()` recovery pushes the player out of ANY overlapping shape on its mask every frame — even stationary mobs will shove the player continuously |
 | Moving StaticBody2D in player's collision mask | Godot 4 computes apparent velocity from transform delta on static bodies; CharacterBody2D `move_and_slide()` uses it to push the player — this is why wandering NPCs have no physics body |
+| Calling `_nav_move()` without a zero-direction fallback | Without a baked `NavigationRegion2D`, `get_next_path_position()` returns the agent's own position; direction is `Vector2.ZERO`; mob freezes |
+| Omitting an `aggro_radius` gate on vampires | Vampires orbit immediately on spawn regardless of player distance, making them aggro from across the entire map |
 
 ---
 

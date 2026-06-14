@@ -694,11 +694,14 @@ Four independent boss triggers — one per mob family (zone_c slimes, zone_a orc
 - `BOSS_KILL_THRESHOLD = 10` — combined kills of that family required
 - Per-family kill counters: `_zone_c_slime_killed`, `_zone_a_orc_killed`, `_zone_a_plant_killed`, `_zone_b_vampire_killed`
 - Per-boss spawn flags: `_slime3_boss_spawned`, `_orc3_boss_spawned`, `_plant3_boss_spawned`, `_vampire3_boss_spawned` (prevent double-spawn)
+- Per-boss alive flags: `_slime3_boss_alive`, `_orc3_boss_alive`, `_plant3_boss_alive`, `_vampire3_boss_alive` — set true when boss spawns, cleared in `_on_mob_died` when the boss type dies
+
+**Spawn suppression during boss:** `_spawn_bounty_mob()` calls `_is_boss_alive_in_zone(zone)` before spawning. If a boss is alive in that zone (zone_c → slime boss; zone_a → orc or plant boss; zone_b → vampire boss), the spawn is skipped entirely until the boss is killed.
 
 `_check_boss_triggers()` is called on every mob kill (testing mobs excluded). On threshold reached:
 1. `call_deferred("_spawn_boss", scene)` — deferred to avoid spawning mid-physics step
 2. Boss instantiated at the center of its home zone rect (`_zone_rects[zone].get_center()`)
-3. `boss_health_bar.tscn` instantiated, `init(boss)` called — connects to `boss.died` signal, shows top-center HP bar
+3. `boss_health_bar.tscn` instantiated as a **child of the field scene** (`add_child(bar)`), `init(boss)` called — connects to `boss.died` signal, shows top-center HP bar. Adding it to the field scene (not `get_tree().root`) ensures it is freed when the field reloads after player death.
 4. Boss drops 15 Slime Goop on death (handled in the boss script's `_on_died()`)
 
 | Boss | Kill family | Scene |

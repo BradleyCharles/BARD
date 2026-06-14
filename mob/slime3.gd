@@ -175,7 +175,7 @@ func _physics_process(delta: float) -> void:
 			_returning_to_zone = true
 			ai_state = AIState.WANDER_STATE
 		elif dist > contact_radius:
-			linear_velocity = _direction_to_player_with_noise(max_speed)
+			linear_velocity = _nav_move(max_speed)
 			_update_facing(linear_velocity)
 			_play_run()
 		else:

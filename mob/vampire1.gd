@@ -145,19 +145,26 @@ func _physics_process(delta: float) -> void:
 
 	match _phase:
 		VampirePhase.ORBIT:
-			_dash_cooldown -= delta
 			var to_player  := _player_ref.global_position - global_position
 			var dist       := to_player.length()
-			var tangent    := Vector2(-to_player.y, to_player.x).normalized()
-			var radial     := to_player.normalized() * (dist - ORBIT_RADIUS) * 0.05
-			linear_velocity = (tangent * ORBIT_SPEED) + radial
-			_update_facing(linear_velocity)
-			_play_run()
-			if _dash_cooldown <= 0.0:
-				_dash_dir    = to_player.normalized()
-				_phase       = VampirePhase.DASH
-				_phase_timer = 0.0
-				_is_attacking = true
+			if not _is_aggroed:
+				if dist <= aggro_radius:
+					_is_aggroed = true
+				else:
+					linear_velocity = Vector2.ZERO
+					_play_idle()
+			if _is_aggroed:
+				_dash_cooldown -= delta
+				var tangent    := Vector2(-to_player.y, to_player.x).normalized()
+				var radial     := to_player.normalized() * (dist - ORBIT_RADIUS) * 0.05
+				linear_velocity = (tangent * ORBIT_SPEED) + radial
+				_update_facing(linear_velocity)
+				_play_run()
+				if _dash_cooldown <= 0.0:
+					_dash_dir    = to_player.normalized()
+					_phase       = VampirePhase.DASH
+					_phase_timer = 0.0
+					_is_attacking = true
 
 		VampirePhase.DASH:
 			_phase_timer    += delta

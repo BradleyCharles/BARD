@@ -227,12 +227,19 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 
 **Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, run / run_up / run_down, attack / attack_up / attack_down, hurt, death. Source: `assets/Swordsman_lvl3/` (.aseprite files, one per direction: front/back/side_left/side_right), loaded at runtime via `_build_sprite_frames()`. Weapon swing overlays come from `assets/Sword/` (1–8 PNGs) and `assets/Axe/` (1–10 PNGs).
 
+**State machine:** `PlayerState` enum — `IDLE`, `MOVE`, `ATTACK`, `HURT`, `DODGE`, `DEAD`. Transitioned via `_set_state()` which keeps legacy booleans (`is_attacking`, `_is_hurt`, `is_dodging`) in sync.
+
 **Combat:**
-- Attack: `A` key / gamepad West (X) button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
-- On hit: calls `body.take_damage(damage, knockback_vec)` on the mob directly.
-- Damage: `take_damage(amount)` called on mob collision; 1-second invincibility frames after hit.
+- Attack: `A` key / gamepad West (X) button. Direction snapped to 8 directions (every 45°). SwordHitbox rotated to match attack direction; active on frames 2–6.
+- Input Buffer: 0.15 s window (`_attack_buffer`) queues a second attack during a swing; fires at the end of the current animation.
+- Movement during attack: Sword 40% speed (`MOVE_MODIFIER = 0.4`), Axe full stop (`MOVE_MODIFIER = 0.0`).
+- On hit: `body.take_damage(damage, knockback_vec)`, then impact particles spawned, `attack_connected` signal emitted, hitstop applied.
+- Hit Stop: `Engine.time_scale = 0` for Sword 0.05 s / Axe 0.12 s using unscaled timer.
+- Damage: `take_damage(amount)` → `PlayerState.HURT`; 1-second invincibility frames.
 - Health: defined in `PlayerStats.MAX_HEALTH`; syncs to `SceneManager.set_player_health()` on change.
 - Death: plays hurt → death animation, then emits `hit` (or `fly_caught`) to scene.
+
+**New signal:** `attack_connected(weapon_id: String, hit_point: Vector2, attack_dir: Vector2)` — emitted on every successful hit; `field.gd` connects to it for camera shake.
 
 **Dodge:** Space / gamepad East (B) button. Duration/speed/cooldown defined in `PlayerStats`. Full iframes during dash. Player is semi-transparent while dodging.
 
@@ -290,10 +297,10 @@ Centralizes all input action name strings. Use `PlayerInput.ATTACK` etc. everywh
 
 Each weapon is a GDScript file with `class_name` and typed constants. Use `sword_data.gd` as the template when adding a new weapon.
 
-| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX | HITBOX_OFFSET |
-|------|----|--------|-----------|-----------|--------|---------------|
-| `sword_data.gd` | `"sword"` | 1 | 30.0 | 300.0 | 60×40 px | 30.0 px |
-| `axe_data.gd` | `"axe"` | 2 | 15.0 | 600.0 | 35×70 px | 45.0 px |
+| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX | HITBOX_OFFSET | MOVE_MODIFIER | HITSTOP | SHAKE_INTENSITY | SHAKE_DURATION | SHAKE_FREQUENCY |
+|------|----|--------|-----------|-----------|--------|---------------|---------------|---------|-----------------|----------------|-----------------|
+| `sword_data.gd` | `"sword"` | 3 | 30.0 | 100.0 | 60×40 px | 30.0 px | 0.4 (40%) | 0.05 s | 3.0 | 0.12 s | 200.0 |
+| `axe_data.gd` | `"axe"` | 6 | 15.0 | 200.0 | 35×70 px | 45.0 px | 0.0 (stop) | 0.12 s | 8.0 | 0.22 s | 80.0 |
 
 ---
 
@@ -429,6 +436,7 @@ Base class (extends `RigidBody2D`) for all enemy types.
 - `take_damage(amount, knockback_vec)`: decrement health, apply impulse, flash red for 0.15 s, call `_on_died()` if health ≤ 0
 - `_on_died()`: emit `died(self)`, call `queue_free()`
 - `_direction_to_player_with_noise(speed)`: normalized direction to player with ±15° sine noise × speed
+- `_nav_move(speed)`: like `_direction_to_player_with_noise` but paths via `NavigationAgent2D` when a baked `NavigationRegion2D` is present; falls back to direct movement if no nav map exists
 - `_distance_to_player()`: returns INF if no player ref found
 
 **Signal:** `died(mob: Node)` — connected by `field.gd` at spawn time.

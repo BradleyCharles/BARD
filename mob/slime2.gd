@@ -190,7 +190,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			var dist: float = _distance_to_player()
 			if dist > contact_radius:
-				linear_velocity = _direction_to_player_with_noise(max_speed)
+				linear_velocity = _nav_move(max_speed)
 				_update_facing(linear_velocity)
 				_play_run()
 			else:

@@ -63,16 +63,20 @@ const DEMO_ROW_SPACING     : float = 120.0
 # Zone C — combined slime kill counter
 var _zone_c_slime_killed   : int  = 0
 var _slime3_boss_spawned   : bool = false
+var _slime3_boss_alive     : bool = false
 
 # Zone A — independent orc and plant counters
 var _zone_a_orc_killed     : int  = 0
 var _zone_a_plant_killed   : int  = 0
 var _orc3_boss_spawned     : bool = false
 var _plant3_boss_spawned   : bool = false
+var _orc3_boss_alive       : bool = false
+var _plant3_boss_alive     : bool = false
 
 # Zone B — combined vampire kill counter
 var _zone_b_vampire_killed : int  = 0
 var _vampire3_boss_spawned : bool = false
+var _vampire3_boss_alive   : bool = false
 
 # ── Spawn state ───────────────────────────────────────────────────────────────
 
@@ -94,12 +98,22 @@ var _minimap       : CanvasLayer = null
 var _teleport_menu : CanvasLayer = null
 var _boss_tracker  : CanvasLayer = null
 
+# ── Camera shake ──────────────────────────────────────────────────────────────
+
+var _camera          : Camera2D  = null
+var _shake_intensity : float     = 0.0
+var _shake_duration  : float     = 0.0
+var _shake_frequency : float     = 0.0
+var _shake_elapsed   : float     = 0.0
+var _shake_origin    : Vector2   = Vector2.ZERO
+
 
 func _ready() -> void:
 	_player.start(Vector2(800.0, 1500.0), true)
 
-	var cam: Camera2D = _player.get_node("Camera2D")
-	cam.zoom = Vector2(3.5, 3.5)
+	_camera = _player.get_node("Camera2D") as Camera2D
+	_camera.zoom = Vector2(3.5, 3.5)
+	_shake_origin = _camera.offset
 
 	_entrance.area_entered.connect(_on_entrance_entered)
 
@@ -129,10 +143,39 @@ func _ready() -> void:
 	(_boss_tracker as Object).call("init", BOSS_KILL_THRESHOLD)
 
 	_player.hit.connect(_on_player_died)
+	_player.attack_connected.connect(_on_attack_connected)
 
 	_start_bounty_spawning()
 	SceneManager.bounties_updated.connect(_on_bounties_updated)
 	SceneManager.testing_mode_changed.connect(_on_testing_mode_changed)
+
+
+func _process(delta: float) -> void:
+	if _shake_duration <= 0.0 or _camera == null:
+		return
+	_shake_elapsed += delta
+	var remaining: float = _shake_duration - _shake_elapsed
+	if remaining <= 0.0:
+		_shake_duration = 0.0
+		_camera.offset  = _shake_origin
+		return
+	var decay: float = remaining / _shake_duration
+	var wave: float  = sin(_shake_elapsed * _shake_frequency)
+	_camera.offset   = _shake_origin + Vector2(wave, -wave * 0.5) * _shake_intensity * decay
+
+
+func _start_shake(intensity: float, duration: float, frequency: float) -> void:
+	_shake_intensity = intensity
+	_shake_duration  = duration
+	_shake_frequency = frequency
+	_shake_elapsed   = 0.0
+
+
+func _on_attack_connected(weapon_id: String, _hit_point: Vector2, _dir: Vector2) -> void:
+	if weapon_id == SwordData.ID:
+		_start_shake(SwordData.SHAKE_INTENSITY, SwordData.SHAKE_DURATION, SwordData.SHAKE_FREQUENCY)
+	else:
+		_start_shake(AxeData.SHAKE_INTENSITY, AxeData.SHAKE_DURATION, AxeData.SHAKE_FREQUENCY)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -199,7 +242,17 @@ func _count_zone_mobs(zone: String) -> int:
 	return count
 
 
+func _is_boss_alive_in_zone(zone: String) -> bool:
+	match zone:
+		"zone_c": return _slime3_boss_alive
+		"zone_a": return _orc3_boss_alive or _plant3_boss_alive
+		"zone_b": return _vampire3_boss_alive
+	return false
+
+
 func _spawn_bounty_mob(monster_type: String, zone: String) -> void:
+	if _is_boss_alive_in_zone(zone):
+		return
 	if _count_zone_mobs(zone) >= MAX_MOBS_PER_ZONE:
 		return
 
@@ -389,18 +442,22 @@ func _on_teleport_closed() -> void:
 func _check_boss_triggers() -> void:
 	if not _slime3_boss_spawned and _zone_c_slime_killed >= BOSS_KILL_THRESHOLD:
 		_slime3_boss_spawned = true
+		_slime3_boss_alive   = true
 		call_deferred("_spawn_boss", slime3_boss_scene, "zone_c")
 
 	if not _orc3_boss_spawned and _zone_a_orc_killed >= BOSS_KILL_THRESHOLD:
 		_orc3_boss_spawned = true
+		_orc3_boss_alive   = true
 		call_deferred("_spawn_boss", orc3_boss_scene, "zone_a")
 
 	if not _plant3_boss_spawned and _zone_a_plant_killed >= BOSS_KILL_THRESHOLD:
 		_plant3_boss_spawned = true
+		_plant3_boss_alive   = true
 		call_deferred("_spawn_boss", plant3_boss_scene, "zone_a")
 
 	if not _vampire3_boss_spawned and _zone_b_vampire_killed >= BOSS_KILL_THRESHOLD:
 		_vampire3_boss_spawned = true
+		_vampire3_boss_alive   = true
 		call_deferred("_spawn_boss", vampire3_boss_scene, "zone_b")
 
 
@@ -423,7 +480,7 @@ func _spawn_boss(scene: PackedScene, zone: String) -> void:
 	var bar_scene: PackedScene = load("res://ui/boss_health_bar.tscn")
 	if bar_scene:
 		var bar = bar_scene.instantiate()
-		get_tree().root.add_child(bar)
+		add_child(bar)
 		bar.init(boss)
 
 
@@ -448,6 +505,14 @@ func _on_mob_died(mob_body: Node) -> void:
 			_zone_a_plant_killed += 1
 		"vampire1", "vampire2", "vampire3":
 			_zone_b_vampire_killed += 1
+		"slime3_boss":
+			_slime3_boss_alive = false
+		"orc3_boss":
+			_orc3_boss_alive = false
+		"plant3_boss":
+			_plant3_boss_alive = false
+		"vampire3_boss":
+			_vampire3_boss_alive = false
 	_check_boss_triggers()
 	_update_boss_tracker()
 
