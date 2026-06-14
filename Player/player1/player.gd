@@ -44,7 +44,13 @@ var active_weapon:  String           = SwordData.ID
 var _weapon_sprite: AnimatedSprite2D = null
 
 var _player_radius: float = 0.0
+var _post_unpause_grace: float = 0.0
 
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_UNPAUSED:
+		_post_unpause_grace = 0.15
 
 func _ready() -> void:
 	_weapon_stats = {
@@ -160,6 +166,8 @@ func _process(delta: float) -> void:
 		return
 	if _iframes > 0.0:
 		_iframes -= delta
+	if _post_unpause_grace > 0.0:
+		_post_unpause_grace -= delta
 
 	# Dodge timers
 	if _dodge_timer > 0.0:
@@ -204,11 +212,12 @@ func _process(delta: float) -> void:
 
 	if combat_enabled:
 		if Input.is_action_just_pressed(PlayerInput.ATTACK) and not is_attacking \
-				and not is_dodging:
+				and not is_dodging and not _is_hurt:
 			_start_attack()
 
 		if Input.is_action_just_pressed(PlayerInput.DODGE) and not is_attacking \
-				and not is_dying and _cooldown_timer <= 0.0 and not is_dodging:
+				and not is_dying and _cooldown_timer <= 0.0 and not is_dodging \
+				and _post_unpause_grace <= 0.0:
 			_start_dodge()
 			move_vel = -facing.normalized() * PlayerStats.DODGE_SPEED
 

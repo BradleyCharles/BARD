@@ -41,6 +41,8 @@ func _ready() -> void:
 	knockback_force = 200.0
 
 	super._ready()
+	_apply_hitbox(HITBOX_VAMPIRE1)
+	z_index = 4
 
 	set_meta("monster_type", "vampire1")
 	_home_zone    = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))

@@ -45,6 +45,7 @@ func _ready() -> void:
 	knockback_force = 500.0
 
 	super._ready()
+	_apply_hitbox(HITBOX_PLANT3)
 
 	set_meta("monster_type", "plant3_boss")
 	viewport_rect = Rect2(Vector2.ZERO, world_size)

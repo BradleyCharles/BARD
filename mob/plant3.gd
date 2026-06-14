@@ -31,6 +31,7 @@ func _ready() -> void:
 	knockback_force = 400.0
 
 	super._ready()
+	_apply_hitbox(HITBOX_PLANT3)
 
 	set_meta("monster_type", "plant3")
 	_home_zone = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
@@ -135,7 +136,8 @@ func _physics_process(delta: float) -> void:
 
 	var dist := _distance_to_player()
 
-	if dist < aggro_radius:
+	if dist < aggro_radius or _is_aggroed:
+		_is_aggroed = true
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()

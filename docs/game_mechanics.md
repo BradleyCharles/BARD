@@ -47,6 +47,8 @@ Set unconditionally in `mob_base._ready()`, inherited by all mob subclasses.
 
 **Key rule:** mask=1 (world geometry only) blocks mobs on rocks and trees without introducing mob-player or mob-mob pushing. Those are on layers 2 and 8 respectively — not in the mask — so mutual constraint forces never apply between mobs and the player.
 
+**Hitbox radii:** Defined as constants in `mob_base.gd` (`HITBOX_SLIME1` … `HITBOX_VAMPIRE3`). Each mob calls `_apply_hitbox(HITBOX_X)` in `_ready()` after `super._ready()`. This overrides the scene-file CircleShape2D radius and updates `body_radius` and `contact_radius` in one call. To tune, change the constant in `mob_base.gd`.
+
 ### NPCs — `npc/npc_base.gd` (`_add_physics_body()`)
 
 Only **non-wandering NPCs** (named characters) get a `StaticBody2D` child. Wandering background NPCs have no physics body.
@@ -165,6 +167,8 @@ Charger AI. Three phases (local enum `OrcPhase`):
 
 Does not stop at `contact_radius` — passes through the player during the charge. Damage fires via `_is_attacking` gate in `player.gd`.
 
+**Charge trigger:** orcs enter CHARGE only when `dist < CHARGE_TRIGGER_RADIUS` (140 px, defined per-script), not at full `aggro_radius`. This prevents charges from starting off-screen distance. Once `_is_aggroed = true` (set when first charge begins), the orc keeps re-triggering charges but still requires the player to re-enter `CHARGE_TRIGGER_RADIUS` after each recovery — they do not actively pursue between charges.
+
 Stats: Orc1 HP=8 dmg=2 kb=250 speed=280; Orc2 HP=14 dmg=3 kb=350 speed=320; Orc3 HP=22 dmg=4 kb=450 speed=360.
 
 ### Plant1/2/3 — `mob/plant1.gd`, `mob/plant2.gd`, `mob/plant3.gd`
@@ -176,6 +180,9 @@ Creeper AI. Uses mob_base `AIState` (WANDER_STATE / CHASE_STATE):
 walk_attack loops while in strike range. Damage fires via `_is_attacking` gate in `player.gd`.
 
 Stats: Plant1 HP=10 dmg=2 kb=200; Plant2 HP=18 dmg=3 kb=300; Plant3 HP=28 dmg=5 kb=400.
+
+### Plant1/2/3 — permanent aggro
+Once `dist < aggro_radius` triggers CHASE_STATE, `_is_aggroed = true` is set. The `_is_aggroed or dist < aggro_radius` check means the plant never drops back to WANDER even if the player runs away. Plants chase until killed.
 
 ### Vampire1/2/3 — `mob/vampire1.gd`, `mob/vampire2.gd`, `mob/vampire3.gd`
 
@@ -190,7 +197,7 @@ var tangent := Vector2(-to_player.y, to_player.x).normalized()
 var radial  := to_player.normalized() * (dist - ORBIT_RADIUS) * 0.05
 linear_velocity = (tangent * ORBIT_SPEED) + radial
 ```
-Damage fires via `_is_attacking` gate in `player.gd`.
+Damage fires via `_is_attacking` gate in `player.gd`. Vampires orbit immediately on spawn (no aggro_radius check needed — they always have player_ref). `z_index = 4` so they render above the Decor0 layer (z_index 3), appearing to fly over trees and rocks.
 
 Stats: V1 HP=6 dmg=1 kb=200 orbit=90 dash=350 interval=3.0–5.0 s; V2 HP=10 dmg=2 kb=300 orbit=100 dash=400 interval=2.5–4.0 s; V3 HP=16 dmg=3 kb=400 orbit=110 dash=450 interval=2.0–3.5 s.
 
@@ -210,6 +217,18 @@ if mob_attacking != null and mob_attacking == false:
 This lets each mob control its own damage window precisely without any central coordination.
 
 ---
+
+## Player Combat Fixes
+
+### Sprite stuck in idle after being hit
+**Root cause:** `_start_attack()` did not check `_is_hurt`. Pressing attack during the hurt animation interrupted it before `animation_finished` could fire, leaving `_is_hurt = true` permanently. With `_is_hurt` stuck true, `_update_animation` was blocked from running indefinitely.
+
+**Fix:** Added `not _is_hurt` to the attack guard in `_process`. The player cannot attack while the hurt animation is playing; this also naturally prevents the stuck state.
+
+### B button triggering dodge when closing menus
+**Root cause:** `teleport_menu.gd` (and similar menus) pause the tree and close via `_unhandled_input` with `set_input_as_handled()`. However, `player.gd` checks dodge via `Input.is_action_just_pressed()` (polling), which ignores `set_input_as_handled`. On the first unpaused frame the just-pressed state from the B press was still visible.
+
+**Fix:** `player.gd` overrides `_notification(NOTIFICATION_UNPAUSED)` to set `_post_unpause_grace = 0.15`. The dodge check is gated behind `_post_unpause_grace <= 0.0`, blocking dodge input for 150 ms after any unpause event.
 
 ## Why Mobs Must Not Set `linear_velocity` While Hurt
 

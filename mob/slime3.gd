@@ -36,6 +36,7 @@ func _ready() -> void:
 	knockback_force = 250.0
 
 	super._ready()
+	_apply_hitbox(HITBOX_SLIME3)
 
 	set_meta("monster_type", "slime3")
 	_home_zone = Rect2(Vector2.ZERO, world_size)
@@ -165,7 +166,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var dist := _distance_to_player()
-	if dist < aggro_radius:
+	if dist < aggro_radius or _is_aggroed:
+		_is_aggroed = true
 		if ai_state != AIState.CHASE_STATE:
 			ai_state = AIState.CHASE_STATE
 			wander_timer.stop()
@@ -179,9 +181,6 @@ func _physics_process(delta: float) -> void:
 		else:
 			linear_velocity = Vector2.ZERO
 			_play_idle()
-	elif ai_state == AIState.CHASE_STATE:
-		ai_state = AIState.WANDER_STATE
-		_begin_move()
 
 	linear_velocity += _calc_separation()
 

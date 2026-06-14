@@ -411,18 +411,17 @@ func _on_mob_died(mob_body: Node) -> void:
 		var zone: String = mob_body.get_meta("bounty_zone")
 		SceneManager.record_bounty_kill(monster_type, zone)
 
-	if not is_testing:
-		match monster_type:
-			"slime1", "slime2", "slime3":
-				_zone_c_slime_killed += 1
-			"orc1", "orc2", "orc3":
-				_zone_a_orc_killed += 1
-			"plant1", "plant2", "plant3":
-				_zone_a_plant_killed += 1
-			"vampire1", "vampire2", "vampire3":
-				_zone_b_vampire_killed += 1
-		_check_boss_triggers()
-		_update_boss_tracker()
+	match monster_type:
+		"slime1", "slime2", "slime3":
+			_zone_c_slime_killed += 1
+		"orc1", "orc2", "orc3":
+			_zone_a_orc_killed += 1
+		"plant1", "plant2", "plant3":
+			_zone_a_plant_killed += 1
+		"vampire1", "vampire2", "vampire3":
+			_zone_b_vampire_killed += 1
+	_check_boss_triggers()
+	_update_boss_tracker()
 
 
 func _on_player_died() -> void:

@@ -140,6 +140,7 @@ BARD/
 │   ├── weapon_hud.tscn
 │   ├── boss_health_bar.gd        # Top-center boss HP bar (shown when boss is alive)
 │   ├── boss_health_bar.tscn
+│   ├── boss_tracker.gd           # Bottom-left boss summon tracker HUD (field only; instantiated by field.gd)
 │   ├── minimap.gd                # Bottom-right minimap (field scene only; instantiated by field.gd)
 │   ├── teleport_menu.gd          # Testing-only teleport menu (SELECT key; instantiated by field.gd when testing_mode ON)
 │   ├── loading_screen.gd         # Overlay shown while pipeline runs

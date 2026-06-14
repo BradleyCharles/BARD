@@ -6,6 +6,7 @@ const ASSET_BASE       : String = "res://assets/mobs/Orc2/"
 const MOB_RADIUS       : float  = 30.0
 const CHARGE_SPEED     : float  = 320.0
 const CHARGE_DURATION  : float  = 1.2
+const CHARGE_TRIGGER_RADIUS : float = 140.0
 const RECOVER_DURATION : float  = 0.8
 
 # ── AI phase ──────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ func _ready() -> void:
 	knockback_force = 350.0
 
 	super._ready()
+	_apply_hitbox(HITBOX_ORC2)
 
 	set_meta("monster_type", "orc2")
 	_home_zone   = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
@@ -149,7 +151,8 @@ func _physics_process(delta: float) -> void:
 
 	match _orc_phase:
 		OrcPhase.WANDER:
-			if _distance_to_player() < aggro_radius and _player_ref != null:
+			if _distance_to_player() < CHARGE_TRIGGER_RADIUS and _player_ref != null:
+				_is_aggroed  = true
 				_charge_dir  = global_position.direction_to(_player_ref.global_position)
 				_update_facing(_charge_dir)
 				_orc_phase   = OrcPhase.CHARGE

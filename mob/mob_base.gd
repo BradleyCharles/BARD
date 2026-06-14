@@ -8,6 +8,22 @@ signal died(mob: Node)
 enum Personality { WANDER = 0, WEAK_AGGRESSIVE = 1, PACK_MENTALITY = 2, BOSS = 3 }
 enum AIState     { WANDER_STATE = 0, CHASE_STATE = 1, FLEE_STATE = 2 }
 
+## ── Hitbox radii ─────────────────────────────────────────────────────────────
+## Tune these to tighten or loosen per-mob collision detection.
+## Call _apply_hitbox(HITBOX_X) in the subclass _ready() after super._ready().
+const HITBOX_SLIME1   : float = 18.0
+const HITBOX_SLIME2   : float = 18.0
+const HITBOX_SLIME3   : float = 20.0
+const HITBOX_ORC1     : float = 18.0
+const HITBOX_ORC2     : float = 20.0
+const HITBOX_ORC3     : float = 22.0
+const HITBOX_PLANT1   : float = 16.0
+const HITBOX_PLANT2   : float = 18.0
+const HITBOX_PLANT3   : float = 20.0
+const HITBOX_VAMPIRE1 : float = 14.0
+const HITBOX_VAMPIRE2 : float = 16.0
+const HITBOX_VAMPIRE3 : float = 18.0
+
 @export var max_health    : int   = 1
 @export var personality   : int   = Personality.WANDER
 @export var aggro_radius  : float = 150.0
@@ -22,6 +38,7 @@ var _player_ref    : Node2D = null
 var _hurt_timer    : float  = 0.0
 var body_radius    : float  = 30.0
 var contact_radius : float  = 44.0
+var _is_aggroed    : bool   = false
 
 
 func _ready() -> void:
@@ -38,6 +55,16 @@ func _compute_body_radius() -> void:
 		var cs: CollisionShape2D = child as CollisionShape2D
 		if cs != null and cs.shape is CircleShape2D:
 			body_radius    = (cs.shape as CircleShape2D).radius * scale.x
+			contact_radius = body_radius + 20.0
+			return
+
+
+func _apply_hitbox(r: float) -> void:
+	for child in get_children():
+		var cs: CollisionShape2D = child as CollisionShape2D
+		if cs != null and cs.shape is CircleShape2D:
+			(cs.shape as CircleShape2D).radius = r
+			body_radius    = r * scale.x
 			contact_radius = body_radius + 20.0
 			return
 

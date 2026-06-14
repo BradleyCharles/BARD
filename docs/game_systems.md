@@ -27,6 +27,7 @@ This is the authoritative map of how each feature works end-to-end, so implement
 18. [Game State and Persistence](#18-game-state-and-persistence)
 19. [Game Over Screen](#19-game-over-screen)
 20. [Pipeline Progress Bar](#20-pipeline-progress-bar)
+21. [Boss Summon Tracker HUD](#21-boss-summon-tracker-hud)
 
 ---
 
@@ -661,15 +662,14 @@ Scenes are `@export` vars assigned in the Godot editor inspector on `field.tscn`
 ### On kill
 
 `_on_mob_died(mob_body)` (connected at spawn via `mob.died.connect(...)`):
-1. If mob has `is_testing_mob` meta: skip kill recording and boss triggers entirely — testing mobs do not affect bounty or boss state.
-2. `SceneManager.record_kill(monster_type)` — increments `monsters_killed_today`
-3. If mob has `bounty_zone` meta: `SceneManager.record_bounty_kill(monster_type, zone)` — increments bounty kill counter, marks complete when quota met
-4. Routes kill to the correct zone counter via `match monster_type`:
+1. `SceneManager.record_kill(monster_type)` — increments `monsters_killed_today` (all mobs)
+2. If mob has `bounty_zone` meta **and is not a testing mob**: `SceneManager.record_bounty_kill(monster_type, zone)` — increments bounty kill counter, marks complete when quota met
+3. Routes kill to the correct zone boss counter via `match monster_type` — **all mobs including testing mobs** contribute so boss spawning and the boss tracker work in testing mode:
    - `"slime1"/"slime2"/"slime3"` → `_zone_c_slime_killed`
    - `"orc1"/"orc2"/"orc3"` → `_zone_a_orc_killed`
    - `"plant1"/"plant2"/"plant3"` → `_zone_a_plant_killed`
    - `"vampire1"/"vampire2"/"vampire3"` → `_zone_b_vampire_killed`
-5. `_check_boss_triggers()`
+4. `_check_boss_triggers()` + `_update_boss_tracker()`
 
 Mob meta tags set at spawn time:
 - `set_meta("bounty_zone", zone)` — links kill to the correct bounty
@@ -848,6 +848,56 @@ player presses SELECT in field scene (_unhandled_input)
 
 ### Close flow
 Emits `menu_closed` → `_on_teleport_closed()` in `field.gd` → `queue_free()` + nulls `_teleport_menu`.
+
+---
+
+---
+
+## 21. Boss Summon Tracker HUD
+
+**Owner:** `ui/boss_tracker.gd` (instantiated by `world/field.gd`)  
+**Layer:** 5 (bottom-left, field scene only)
+
+A compact overlay that fills in as the player kills mobs belonging to each boss family. Appears only when the player has at least one kill toward a boss; hides per-family row once that boss has spawned.
+
+### Layout
+
+One row per boss family (Slime / Orc / Plant / Vampire), each showing:
+- Family name label
+- Fill bar (colour-coded per family: teal / orange / green / purple)
+- `N / 20` kill counter
+
+The outer panel is hidden when all rows are hidden (no kills yet, or all bosses already spawned).
+
+### Flow
+
+```
+field.gd._on_mob_died()
+  → kill counter incremented (e.g. _zone_c_slime_killed)
+  → _check_boss_triggers()
+  → _update_boss_tracker()
+      • calls boss_tracker.set_family("slime", count, _slime3_boss_spawned)
+      • repeated for orc / plant / vampire
+  → boss_tracker._refresh_row()
+      • row.visible = count > 0 and not spawned
+      • fill bar width = BAR_WIDTH * count / threshold
+      • count label updated
+  → boss_tracker._sync_panel_visibility()
+```
+
+### API
+
+| Method | Called by | Purpose |
+|--------|-----------|---------|
+| `init(threshold: int)` | `field.gd._ready()` | Build UI; sets kill threshold (20) |
+| `set_family(family, count, spawned)` | `field.gd._update_boss_tracker()` | Update one family's bar and visibility |
+
+### What to keep in mind
+
+- Testing-mode kills **do** increment boss counters (so boss mechanics and the tracker can be verified during testing). They are still excluded from bounty kill recording.
+- `set_family` silently no-ops for unknown family keys.
+- Once a boss spawns (`spawned = true`), that family's row is hidden permanently for the session — there is no respawn.
+- The tracker is instantiated in `field.gd._ready()` using the same script-on-CanvasLayer pattern as the minimap.
 
 ---
 

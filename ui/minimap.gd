@@ -10,8 +10,10 @@ extends CanvasLayer
 ## Tile layers are pre-rendered into an Image once at init time so _on_draw()
 ## only issues a single texture draw call per frame for the terrain.
 
-const PANEL_W : float = 375.0
-const PADDING : float = 10.0
+const PANEL_W   : float = 375.0
+const PADDING   : float = 10.0
+const CAM_ZOOM  : float = 3.5   ## must match Camera2D.zoom set in field.gd
+const VIEW_SCALE: float = 2.0   ## minimap shows this many times the player viewport
 
 const _C_PANEL_BG  := Color(0.06, 0.04, 0.03, 0.88)
 const _C_BORDER    := Color(0.40, 0.30, 0.14, 0.75)
@@ -31,6 +33,7 @@ var _map_w       : float      = 0.0
 var _map_h       : float      = 0.0
 var _map_origin  : Vector2
 
+var _view_rect   : Rect2
 var _canvas       : Control
 var _tile_texture : ImageTexture
 
@@ -131,7 +134,23 @@ func _process(_delta: float) -> void:
 
 # ── Drawing ───────────────────────────────────────────────────────────────────
 
+
+func _compute_view_rect() -> void:
+	var vp_size : Vector2 = get_viewport().get_visible_rect().size
+	var half_w  : float   = vp_size.x / CAM_ZOOM * VIEW_SCALE * 0.5
+	var half_h  : float   = vp_size.y / CAM_ZOOM * VIEW_SCALE * 0.5
+	var players := get_tree().get_nodes_in_group("player")
+	var center  : Vector2 = _world_rect.get_center()
+	if players.size() > 0 and players[0] is Node2D:
+		center = (players[0] as Node2D).global_position
+	var x : float = clampf(center.x - half_w,
+			_world_rect.position.x, _world_rect.end.x - half_w * 2.0)
+	var y : float = clampf(center.y - half_h,
+			_world_rect.position.y, _world_rect.end.y - half_h * 2.0)
+	_view_rect = Rect2(Vector2(x, y), Vector2(half_w * 2.0, half_h * 2.0))
+
 func _on_draw() -> void:
+	_compute_view_rect()
 	var panel_size := Vector2(PANEL_W, _panel_h)
 
 	# 1. Panel background
@@ -142,7 +161,16 @@ func _on_draw() -> void:
 
 	# 3. Terrain texture (pre-baked from TileMapLayers)
 	if _tile_texture != null:
-		_canvas.draw_texture(_tile_texture, _map_origin)
+		# Map _view_rect into texture coordinates (baked at _world_rect scale)
+		var tw : float = _tile_texture.get_width()
+		var th : float = _tile_texture.get_height()
+		var sx : float = (_view_rect.position.x - _world_rect.position.x) / _world_rect.size.x * tw
+		var sy : float = (_view_rect.position.y - _world_rect.position.y) / _world_rect.size.y * th
+		var sw : float = _view_rect.size.x / _world_rect.size.x * tw
+		var sh : float = _view_rect.size.y / _world_rect.size.y * th
+		var src_rect := Rect2(sx, sy, sw, sh)
+		_canvas.draw_texture_rect_region(
+				_tile_texture, Rect2(_map_origin, Vector2(_map_w, _map_h)), src_rect)
 
 	# 4. Zone highlights (semi-transparent, drawn over terrain)
 	var zone_colors : Array = [_C_ZONE_A, _C_ZONE_B, _C_ZONE_C]
@@ -199,8 +227,8 @@ func _draw_player_arrow(center: Vector2, facing: Vector2) -> void:
 # ── Coordinate helpers ────────────────────────────────────────────────────────
 
 func _to_map(world_pos: Vector2) -> Vector2:
-	var nx := clampf((world_pos.x - _world_rect.position.x) / _world_rect.size.x, 0.0, 1.0)
-	var ny := clampf((world_pos.y - _world_rect.position.y) / _world_rect.size.y, 0.0, 1.0)
+	var nx := (world_pos.x - _view_rect.position.x) / _view_rect.size.x
+	var ny := (world_pos.y - _view_rect.position.y) / _view_rect.size.y
 	return Vector2(_map_origin.x + nx * _map_w, _map_origin.y + ny * _map_h)
 
 

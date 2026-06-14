@@ -21,7 +21,6 @@ var _home_zone: Rect2
 var facing       : String = "down"
 var _is_dying    : bool   = false
 var _is_hurt     : bool   = false
-var _is_aggroed       : bool  = false
 var _returning_to_zone: bool  = false
 
 
@@ -33,6 +32,7 @@ func _ready() -> void:
 	knockback_force = 350.0
 
 	super._ready()
+	_apply_hitbox(HITBOX_SLIME2)
 
 	set_meta("monster_type", "slime2")
 	_home_zone = Rect2(Vector2.ZERO, world_size)
