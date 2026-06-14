@@ -467,7 +467,8 @@ func get_zone_rects() -> Dictionary:
 func _update_boss_tracker() -> void:
 	if _boss_tracker == null:
 		return
-	(_boss_tracker as Object).call("set_family", "slime",   _zone_c_slime_killed,   _slime3_boss_spawned)
-	(_boss_tracker as Object).call("set_family", "orc",     _zone_a_orc_killed,     _orc3_boss_spawned)
-	(_boss_tracker as Object).call("set_family", "plant",   _zone_a_plant_killed,   _plant3_boss_spawned)
-	(_boss_tracker as Object).call("set_family", "vampire", _zone_b_vampire_killed, _vampire3_boss_spawned)
+	var bt := _boss_tracker as Object
+	bt.call("set_family", "slime",   _zone_c_slime_killed,   _slime3_boss_spawned)
+	bt.call("set_family", "orc",     _zone_a_orc_killed,     _orc3_boss_spawned)
+	bt.call("set_family", "plant",   _zone_a_plant_killed,   _plant3_boss_spawned)
+	bt.call("set_family", "vampire", _zone_b_vampire_killed, _vampire3_boss_spawned)
