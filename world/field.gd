@@ -53,7 +53,7 @@ extends Node
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 const SPAWN_MARGIN         : float = 40.0
-const BOSS_KILL_THRESHOLD  : int   = 20
+const BOSS_KILL_THRESHOLD  : int   = 10
 const MAX_MOBS_PER_ZONE    : int   = 5
 const MAX_TESTING_MOBS     : int   = 10
 

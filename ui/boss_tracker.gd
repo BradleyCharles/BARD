@@ -1,8 +1,8 @@
 extends CanvasLayer
 
 const _FONT_PATH  := "res://fonts/almendra.regular.ttf"
-const BAR_WIDTH   : float = 120.0
-const BAR_HEIGHT  : float = 10.0
+const BAR_WIDTH   : float = 150.0
+const BAR_HEIGHT  : float = 20.0
 const MARGIN      : float = 16.0
 
 const _C_BG      := Color(0.06, 0.04, 0.03, 0.90)
@@ -75,7 +75,7 @@ func _build_ui() -> void:
 	var heading := Label.new()
 	heading.text = "BOSS SUMMONS"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 13)
+	heading.add_theme_font_size_override("font_size", 23)
 	heading.add_theme_color_override("font_color", _C_TEXT)
 	if _font:
 		heading.add_theme_font_override("font", _font)
@@ -91,7 +91,9 @@ func _build_ui() -> void:
 	_panel.hide()
 
 
-func _build_row(parent: VBoxContainer, key: String, label_text: String, fill_color: Color) -> Dictionary:
+func _build_row(
+		parent: VBoxContainer, key: String, label_text: String, fill_color: Color
+) -> Dictionary:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 5)
 	row.hide()
@@ -99,8 +101,8 @@ func _build_row(parent: VBoxContainer, key: String, label_text: String, fill_col
 
 	var name_lbl := Label.new()
 	name_lbl.text = label_text
-	name_lbl.custom_minimum_size = Vector2(52.0, 0.0)
-	name_lbl.add_theme_font_size_override("font_size", 12)
+	name_lbl.custom_minimum_size = Vector2(72.0, 0.0)
+	name_lbl.add_theme_font_size_override("font_size", 20)
 	name_lbl.add_theme_color_override("font_color", _C_TEXT)
 	if _font:
 		name_lbl.add_theme_font_override("font", _font)
@@ -119,8 +121,8 @@ func _build_row(parent: VBoxContainer, key: String, label_text: String, fill_col
 
 	var count_lbl := Label.new()
 	count_lbl.text = "0/%d" % _threshold
-	count_lbl.custom_minimum_size = Vector2(38.0, 0.0)
-	count_lbl.add_theme_font_size_override("font_size", 12)
+	count_lbl.custom_minimum_size = Vector2(52.0, 0.0)
+	count_lbl.add_theme_font_size_override("font_size", 20)
 	count_lbl.add_theme_color_override("font_color", _C_TEXT)
 	if _font:
 		count_lbl.add_theme_font_override("font", _font)
