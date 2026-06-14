@@ -42,6 +42,7 @@ func _ready() -> void:
 	knockback_force = MobStats.SLIME3_BOSS_KNOCKBACK
 
 	super._ready()
+	_apply_hitbox(MobStats.SLIME3_BOSS_HITBOX_RADIUS)
 
 	set_meta("monster_type", "slime3_boss")
 	viewport_rect = Rect2(Vector2.ZERO, world_size)

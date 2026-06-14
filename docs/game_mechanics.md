@@ -47,7 +47,7 @@ Set unconditionally in `mob_base._ready()`, inherited by all mob subclasses.
 
 **Key rule:** mask=1 (world geometry only) blocks mobs on rocks and trees without introducing mob-player or mob-mob pushing. Those are on layers 2 and 8 respectively — not in the mask — so mutual constraint forces never apply between mobs and the player.
 
-**Hitbox radii:** Defined as constants in `mob_base.gd` (`HITBOX_SLIME1` … `HITBOX_VAMPIRE3`). Each mob calls `_apply_hitbox(HITBOX_X)` in `_ready()` after `super._ready()`. This overrides the scene-file CircleShape2D radius and updates `body_radius` and `contact_radius` in one call. To tune, change the constant in `mob_base.gd`.
+**Hitbox radii:** Defined as `*_HITBOX_RADIUS` constants in `mob/mob_stats.gd`. Each mob and boss calls `_apply_hitbox(MobStats.X_HITBOX_RADIUS)` in `_ready()` after `super._ready()`. This overrides the scene-file CircleShape2D radius and updates `body_radius` and `contact_radius` in one call. To tune, change the constant in `mob_stats.gd`.
 
 ### NPCs — `npc/npc_base.gd` (`_add_physics_body()`)
 

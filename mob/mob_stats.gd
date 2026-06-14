@@ -5,7 +5,7 @@ class_name MobStats
 # Slime1 · Pack Mentality · flees alone, chases on pack
 const SLIME1_MAX_HEALTH          : int   = 3
 const SLIME1_DAMAGE              : int   = 1
-const SLIME1_KNOCKBACK           : float = 100.0
+const SLIME1_KNOCKBACK           : float = 150.0
 const SLIME1_AGGRO_RADIUS        : float = 200.0
 const SLIME1_HITBOX_RADIUS       : float = 10.0
 const SLIME1_SPEED_MIN           : float = 40.0
@@ -17,7 +17,7 @@ const SLIME1_LINK_SCAN_INTERVAL  : float = 0.5
 # Slime2 · Pack Mentality · passive until hit, then alerts nearby pack
 const SLIME2_MAX_HEALTH          : int   = 6
 const SLIME2_DAMAGE              : int   = 2
-const SLIME2_KNOCKBACK           : float = 350.0
+const SLIME2_KNOCKBACK           : float = 250.0
 const SLIME2_AGGRO_RADIUS        : float = 200.0
 const SLIME2_HITBOX_RADIUS       : float = 10.0
 const SLIME2_SPEED_MIN           : float = 50.0
@@ -26,8 +26,8 @@ const SLIME2_ALERT_RADIUS        : float = 200.0
 
 # Slime3 · Weak Aggressive · chases on sight
 const SLIME3_MAX_HEALTH          : int   = 8
-const SLIME3_DAMAGE              : int   = 2
-const SLIME3_KNOCKBACK           : float = 250.0
+const SLIME3_DAMAGE              : int   = 3
+const SLIME3_KNOCKBACK           : float = 350.0
 const SLIME3_AGGRO_RADIUS        : float = 200.0
 const SLIME3_HITBOX_RADIUS       : float = 10.0
 const SLIME3_SPEED_MIN           : float = 60.0
@@ -38,37 +38,37 @@ const SLIME3_SPEED_MAX           : float = 110.0
 # Orc1 · Charger AI
 const ORC1_MAX_HEALTH            : int   = 8
 const ORC1_DAMAGE                : int   = 2
-const ORC1_KNOCKBACK             : float = 250.0
+const ORC1_KNOCKBACK             : float = 150.0
 const ORC1_AGGRO_RADIUS          : float = 200.0
 const ORC1_HITBOX_RADIUS         : float = 18.0
 const ORC1_WANDER_SPEED          : float = 40.0
 const ORC1_CHARGE_SPEED          : float = 280.0
 const ORC1_CHARGE_DURATION       : float = 1.2
-const ORC1_CHARGE_TRIGGER_RADIUS : float = 140.0
+const ORC1_CHARGE_TRIGGER_RADIUS : float = 100.0
 const ORC1_RECOVER_DURATION      : float = 0.8
 
 # Orc2 · Charger AI
 const ORC2_MAX_HEALTH            : int   = 14
 const ORC2_DAMAGE                : int   = 3
-const ORC2_KNOCKBACK             : float = 350.0
+const ORC2_KNOCKBACK             : float = 250.0
 const ORC2_AGGRO_RADIUS          : float = 200.0
 const ORC2_HITBOX_RADIUS         : float = 20.0
 const ORC2_WANDER_SPEED          : float = 45.0
 const ORC2_CHARGE_SPEED          : float = 320.0
 const ORC2_CHARGE_DURATION       : float = 1.2
-const ORC2_CHARGE_TRIGGER_RADIUS : float = 140.0
+const ORC2_CHARGE_TRIGGER_RADIUS : float = 100.0
 const ORC2_RECOVER_DURATION      : float = 0.8
 
 # Orc3 · Charger AI
 const ORC3_MAX_HEALTH            : int   = 22
 const ORC3_DAMAGE                : int   = 4
-const ORC3_KNOCKBACK             : float = 450.0
+const ORC3_KNOCKBACK             : float = 350.0
 const ORC3_AGGRO_RADIUS          : float = 200.0
 const ORC3_HITBOX_RADIUS         : float = 22.0
 const ORC3_WANDER_SPEED          : float = 50.0
 const ORC3_CHARGE_SPEED          : float = 360.0
 const ORC3_CHARGE_DURATION       : float = 1.2
-const ORC3_CHARGE_TRIGGER_RADIUS : float = 140.0
+const ORC3_CHARGE_TRIGGER_RADIUS : float = 100.0
 const ORC3_RECOVER_DURATION      : float = 0.8
 
 # ── PLANTS — zone_a ───────────────────────────────────────────────────────────
@@ -79,8 +79,8 @@ const PLANT1_DAMAGE              : int   = 2
 const PLANT1_KNOCKBACK           : float = 200.0
 const PLANT1_AGGRO_RADIUS        : float = 200.0
 const PLANT1_HITBOX_RADIUS       : float = 16.0
-const PLANT1_WANDER_SPEED        : float = 20.0
-const PLANT1_AGGRO_SPEED         : float = 35.0
+const PLANT1_WANDER_SPEED        : float = 10.0
+const PLANT1_AGGRO_SPEED         : float = 25.0
 const PLANT1_STRIKE_RADIUS       : float = 90.0
 
 # Plant2 · Creeper AI
@@ -89,8 +89,8 @@ const PLANT2_DAMAGE              : int   = 3
 const PLANT2_KNOCKBACK           : float = 300.0
 const PLANT2_AGGRO_RADIUS        : float = 200.0
 const PLANT2_HITBOX_RADIUS       : float = 18.0
-const PLANT2_WANDER_SPEED        : float = 22.0
-const PLANT2_AGGRO_SPEED         : float = 40.0
+const PLANT2_WANDER_SPEED        : float = 12.0
+const PLANT2_AGGRO_SPEED         : float = 30.0
 const PLANT2_STRIKE_RADIUS       : float = 90.0
 
 # Plant3 · Creeper AI
@@ -99,8 +99,8 @@ const PLANT3_DAMAGE              : int   = 5
 const PLANT3_KNOCKBACK           : float = 400.0
 const PLANT3_AGGRO_RADIUS        : float = 200.0
 const PLANT3_HITBOX_RADIUS       : float = 20.0
-const PLANT3_WANDER_SPEED        : float = 25.0
-const PLANT3_AGGRO_SPEED         : float = 45.0
+const PLANT3_WANDER_SPEED        : float = 15.0
+const PLANT3_AGGRO_SPEED         : float = 35.0
 const PLANT3_STRIKE_RADIUS       : float = 90.0
 
 # ── VAMPIRES — zone_b ─────────────────────────────────────────────────────────
@@ -153,6 +153,7 @@ const VAMPIRE3_DASH_INTERVAL_MAX : float = 3.5
 const SLIME3_BOSS_MAX_HEALTH         : int   = 30
 const SLIME3_BOSS_DAMAGE             : int   = 5
 const SLIME3_BOSS_KNOCKBACK          : float = 600.0
+const SLIME3_BOSS_HITBOX_RADIUS      : float = 30.0
 const SLIME3_BOSS_SPEED              : float = 60.0
 const SLIME3_BOSS_AOE_DAMAGE         : int   = 7
 const SLIME3_BOSS_AOE_KNOCKBACK      : float = 700.0

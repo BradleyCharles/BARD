@@ -430,7 +430,7 @@ All mob balance constants in one file. Edit here to tune any enemy without touch
 - `MAX_HEALTH`, `DAMAGE`, `KNOCKBACK`, `AGGRO_RADIUS`, `HITBOX_RADIUS`
 - Speed constants (SPEED_MIN/MAX for slimes; WANDER_SPEED/AGGRO_SPEED for plants; WANDER_SPEED/CHARGE_SPEED for orcs; ORBIT_SPEED/DASH_SPEED for vampires)
 - AI behaviour radii and timers (PACK_TRIGGER_RADIUS, CHARGE_TRIGGER_RADIUS, ORBIT_RADIUS, STRIKE_RADIUS, DASH_DURATION, RECOVER_DURATION, etc.)
-- Boss section adds: AOE/beam attack constants, ATTACK_COOLDOWN, TELEGRAPH_DURATION, GOOP_DROP
+- Boss section adds: HITBOX_RADIUS, AOE/beam attack constants, ATTACK_COOLDOWN, TELEGRAPH_DURATION, GOOP_DROP
 
 Previously the hitbox constants lived on `mob_base.gd`; they now live here. All mob scripts reference `MobStats.X` — their local behavior constants are re-exported from this file via `const FOO = MobStats.X`.
 
