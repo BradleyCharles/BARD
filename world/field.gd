@@ -57,7 +57,6 @@ const BOSS_KILL_THRESHOLD  : int   = 10
 const MAX_MOBS_PER_ZONE    : int   = 5
 const MAX_TESTING_MOBS     : int   = 10
 const DEMO_ROW_SPACING     : float = 120.0
-const DEMO_ROW_Y_OFFSET    : float = 200.0
 
 # ── Kill counters & boss flags ────────────────────────────────────────────────
 
@@ -85,9 +84,10 @@ var _testing_timer : Timer      = null
 @onready var _player        = $Player
 @onready var _entrance      : Area2D    = $TownEntrance
 @onready var _mob_container : Node2D    = $MobContainer
-@onready var _terrain_nw    : ColorRect = $ZoneA
-@onready var _terrain_ne    : ColorRect = $ZoneB
-@onready var _terrain_se    : ColorRect = $ZoneC
+@onready var _terrain_nw      : ColorRect = $ZoneA
+@onready var _terrain_ne      : ColorRect = $ZoneB
+@onready var _terrain_se      : ColorRect = $ZoneC
+@onready var _terrain_testing : ColorRect = $ZoneTesting
 
 var _pause_menu    : CanvasLayer = null
 var _minimap       : CanvasLayer = null
@@ -332,43 +332,37 @@ func _testing_random_mob(zone: String) -> String:
 			return ("orc" if randf() < 0.5 else "plant") + tier
 		"zone_b":
 			if roll < 0.5:   return "vampire1"
-			elif roll < 0.8: return "vampire2"
-			else:             return "vampire3"
+			if roll < 0.8:   return "vampire2"
+			return "vampire3"
 		"zone_c":
 			if roll < 0.5:   return "slime1"
-			elif roll < 0.8: return "slime2"
-			else:             return "slime3"
+			if roll < 0.8:   return "slime2"
+			return "slime3"
 	return "slime1"
 
 
 # ── Hitbox demo row ──────────────────────────────────────────────────────────
 
 func _spawn_hitbox_demo_row() -> void:
-	var mob_types: Array[String] = [
-		"slime1", "slime2", "slime3",
-		"orc1", "orc2", "orc3",
-		"plant1", "plant2", "plant3",
-		"vampire1", "vampire2", "vampire3",
+	var demo_script: GDScript = load("res://mob/mob_demo.gd") as GDScript
+	if demo_script == null:
+		return
+	var families: Array = [
+		["slime1",   "slime2",   "slime3",   "slime3_boss"],
+		["orc1",     "orc2",     "orc3",     "orc3_boss"],
+		["plant1",   "plant2",   "plant3",   "plant3_boss"],
+		["vampire1", "vampire2", "vampire3", "vampire3_boss"],
 	]
-	var count: int = mob_types.size()
-	var row_x: float = 0.0
-	var row_y: float = 145.0
-
-	for i: int in count:
-		var monster_type: String = mob_types[i]
-		var scene: PackedScene = _get_mob_scene(monster_type)
-		if scene == null:
-			continue
-		var mob = scene.instantiate()
-		mob.set_meta("is_testing_mob", true)
-		mob.set_meta("is_hitbox_demo", true)
-		mob.position = Vector2(row_x + i * DEMO_ROW_SPACING, row_y)
-		_mob_container.add_child(mob)
-		if mob.has_method("set_playable_rect"):
-			mob.set_playable_rect(_playable_rect)
-		elif mob.has_method("set_world_size"):
-			mob.set_world_size(world_size)
-		mob.call("enable_demo_mode")
+	var origin: Vector2 = _terrain_testing.position + Vector2(SPAWN_MARGIN, SPAWN_MARGIN)
+	for row: int in families.size():
+		var family: Array = families[row]
+		for col: int in family.size():
+			var mob: Node2D = Node2D.new()
+			mob.set_script(demo_script)
+			mob.set_meta("is_testing_mob", true)
+			mob.position = origin + Vector2(col * DEMO_ROW_SPACING, row * DEMO_ROW_SPACING)
+			_mob_container.add_child(mob)
+			mob.call("init", family[col])
 
 
 # ── Teleport menu ─────────────────────────────────────────────────────────────

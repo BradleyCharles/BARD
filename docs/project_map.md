@@ -95,6 +95,7 @@ BARD/
 │   ├── vampire2.gd / .tscn       # Vampire2: stalker AI, HP=10, dmg=2, zone_b
 │   ├── vampire3.gd / .tscn       # Vampire3: stalker AI, HP=16, dmg=3, zone_b
 │   ├── vampire3_boss.gd / .tscn  # Vampire3 Boss: HP=40, orbit+life drain, drops 15 Goop — after 10 vampire kills
+│   ├── mob_demo.gd               # Testing-only display mob: idle sprite + hitbox circle, no AI/physics
 │   └── mob.tscn                  # Unused legacy mob scene
 ├── npc/                          # NPC base system
 │   ├── npc_base.gd               # Proximity detection, dialogue loading/merging, wandering

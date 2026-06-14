@@ -39,7 +39,6 @@ var _hurt_timer    : float  = 0.0
 var body_radius    : float  = 30.0
 var contact_radius : float  = 44.0
 var _is_aggroed    : bool   = false
-var _demo_mode     : bool   = false
 
 
 func _ready() -> void:
@@ -125,43 +124,6 @@ func _player_is_invincible() -> bool:
 		return false
 	var iframes: Variant = _player_ref.get("_iframes")
 	return iframes != null and float(iframes) > 0.0
-
-
-func enable_demo_mode() -> void:
-	_demo_mode = true
-	freeze = true
-	collision_layer = 0
-	collision_mask  = 0
-	linear_velocity = Vector2.ZERO
-	remove_from_group("ground_mobs")
-	set_physics_process(false)
-	set_process(false)
-	for child in get_children():
-		var t: Timer = child as Timer
-		if t != null:
-			t.stop()
-	call_deferred("_apply_demo_idle")
-
-
-func _apply_demo_idle() -> void:
-	var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
-	if sprite == null:
-		return
-	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("idle_front"):
-		sprite.play("idle_front")
-	queue_redraw()
-
-
-func _draw() -> void:
-	if not _demo_mode:
-		return
-	for child in get_children():
-		var cs: CollisionShape2D = child as CollisionShape2D
-		if cs != null and cs.shape is CircleShape2D:
-			var r: float = (cs.shape as CircleShape2D).radius
-			draw_circle(cs.position, r, Color(1.0, 1.0, 0.0, 0.25))
-			draw_arc(cs.position, r, 0.0, TAU, 32, Color(1.0, 1.0, 0.0, 1.0), 2.0)
-			return
 
 
 func _calc_separation() -> Vector2:

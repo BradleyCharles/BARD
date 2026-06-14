@@ -9199,6 +9199,13 @@ offset_right = 2271.0
 offset_bottom = 4069.0
 color = Color(0.33333334, 0.41960785, 0.18431373, 1)
 
+[node name="ZoneTesting" type="ColorRect" parent="." unique_id=568897059]
+offset_left = 700.0
+offset_top = 1601.0
+offset_right = 1961.0
+offset_bottom = 2101.0
+color = Color(0.4627451, 0.6, 0.38039216, 1)
+
 [node name="TownExitMap" type="TileMap" parent="." unique_id=1064371065]
 position = Vector2(-2622, 27)
 tile_set = SubResource("TileSet_x6cfc")

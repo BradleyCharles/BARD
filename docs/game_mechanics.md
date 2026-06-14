@@ -238,22 +238,18 @@ This lets each mob control its own damage window precisely without any central c
 
 ## Hitbox Demo Mode
 
-When `SceneManager.testing_mode` is enabled, `field.gd._start_testing_spawning()` calls `_spawn_hitbox_demo_row()` in addition to the normal zone fill. This spawns one of each non-boss mob type in a horizontal row near the south edge of the playable rect (just above the town exit), with 120 px spacing.
+When `SceneManager.testing_mode` is enabled, `field.gd._start_testing_spawning()` calls `_spawn_hitbox_demo_row()` in addition to the normal zone fill. This spawns one of each non-boss mob type in a horizontal row at y=145, starting at x=0, with 120 px spacing.
 
-Each demo mob has `mob.call("enable_demo_mode")` called on it immediately after `add_child`. `enable_demo_mode()` in `mob_base.gd`:
+Each demo mob is an instance of `mob/mob_demo.gd` — a plain `Node2D` with no AI, no collision, and no physics. It is completely separate from `mob_base.gd`. `field.gd` creates each node via `Node2D.new() + set_script(demo_script)`, then calls `mob.call("init", mob_type)`.
 
-- Sets `_demo_mode = true`
-- Sets `freeze = true` (stops RigidBody2D physics)
-- Sets `collision_layer = 0` and `collision_mask = 0` (invisible to player SwordHitbox and HurtArea — completely uninteractable)
-- Sets `linear_velocity = Vector2.ZERO`
-- Removes the mob from the `"ground_mobs"` group (no minimap dot, no separation pushback from regular mobs)
-- Calls `set_physics_process(false)` and `set_process(false)` (no AI runs)
-- Stops all child Timer nodes (prevents wander timer from switching away from idle animation)
-- Deferred: plays `"idle_front"` animation on the `AnimatedSprite2D` child, then calls `queue_redraw()`
+`init(mob_type)` in `mob_demo.gd`:
+- Looks up the idle-front `.aseprite` path and hitbox radius from `_CONFIGS`
+- Loads the aseprite, builds a single-animation `SpriteFrames`, plays it on the internal `AnimatedSprite2D`
+- Calls `queue_redraw()` to trigger `_draw()`
 
-`_draw()` in `mob_base.gd` fires when `_demo_mode` is true and draws a semi-transparent yellow fill and solid yellow outline circle matching the mob's `CircleShape2D` radius — the hitbox as it exists in physics.
+`_draw()` draws a semi-transparent yellow fill and solid yellow outline circle at the mob's local origin with radius matching the hitbox constant from `mob_base.gd`.
 
-Demo mobs are tagged `is_testing_mob = true` so `_stop_testing_spawning()` cleans them up automatically when testing mode is toggled off. They are NOT connected to `_on_mob_died` and cannot be killed through normal gameplay.
+Demo mobs are tagged `is_testing_mob = true` so `_stop_testing_spawning()` cleans them up automatically when testing mode is toggled off.
 
 ## What to Avoid
 
