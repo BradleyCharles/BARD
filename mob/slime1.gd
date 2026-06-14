@@ -37,7 +37,7 @@ func _ready() -> void:
 	personality     = Personality.PACK_MENTALITY
 	aggro_radius    = 200.0
 	damage          = 1
-	knockback_force = 200.0
+	knockback_force = 100.0
 
 	super._ready()
 	_apply_hitbox(HITBOX_SLIME1)

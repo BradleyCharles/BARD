@@ -190,6 +190,9 @@ func _process(delta: float) -> void:
 		return
 	if _iframes > 0.0:
 		_iframes -= delta
+		if _iframes <= 0.0:
+			_iframes = 0.0
+			_apply_contact_damage()
 	if _post_unpause_grace > 0.0:
 		_post_unpause_grace -= delta
 	if _attack_buffer > 0.0:
@@ -499,6 +502,29 @@ func _block_mob_movement(vel: Vector2) -> Vector2:
 
 
 # ── Collision ──────────────────────────────────────────────────────────────────
+
+func _apply_contact_damage() -> void:
+	if is_dying:
+		return
+	for body in _hurt_area.get_overlapping_bodies():
+		var b: Node2D = body as Node2D
+		if b == null:
+			continue
+		if not (b.is_in_group("ground_mobs") or b.is_in_group("flying_mobs")):
+			continue
+		var mob_attacking: Variant = b.get("_is_attacking")
+		if mob_attacking != null and mob_attacking == false:
+			continue
+		var mob_damage: int = 1
+		var mob_kb_force: float = 150.0
+		if "damage" in b:
+			mob_damage = b.damage
+		if "knockback_force" in b:
+			mob_kb_force = b.knockback_force
+		var kb_dir: Vector2 = (global_position - b.global_position).normalized()
+		take_damage(mob_damage, kb_dir * mob_kb_force)
+		return
+
 
 func _on_body_entered(body: Node2D) -> void:
 	if is_dying:
