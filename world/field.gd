@@ -56,6 +56,8 @@ const SPAWN_MARGIN         : float = 40.0
 const BOSS_KILL_THRESHOLD  : int   = 10
 const MAX_MOBS_PER_ZONE    : int   = 5
 const MAX_TESTING_MOBS     : int   = 10
+const DEMO_ROW_SPACING     : float = 120.0
+const DEMO_ROW_Y_OFFSET    : float = 200.0
 
 # ── Kill counters & boss flags ────────────────────────────────────────────────
 
@@ -254,6 +256,7 @@ func _on_testing_mode_changed(enabled: bool) -> void:
 
 
 func _start_testing_spawning() -> void:
+	_spawn_hitbox_demo_row()
 	for zone in _zone_rects:
 		_fill_testing_zone(zone)
 
@@ -336,6 +339,36 @@ func _testing_random_mob(zone: String) -> String:
 			elif roll < 0.8: return "slime2"
 			else:             return "slime3"
 	return "slime1"
+
+
+# ── Hitbox demo row ──────────────────────────────────────────────────────────
+
+func _spawn_hitbox_demo_row() -> void:
+	var mob_types: Array[String] = [
+		"slime1", "slime2", "slime3",
+		"orc1", "orc2", "orc3",
+		"plant1", "plant2", "plant3",
+		"vampire1", "vampire2", "vampire3",
+	]
+	var count: int = mob_types.size()
+	var row_x: float = 0.0
+	var row_y: float = 145.0
+
+	for i: int in count:
+		var monster_type: String = mob_types[i]
+		var scene: PackedScene = _get_mob_scene(monster_type)
+		if scene == null:
+			continue
+		var mob = scene.instantiate()
+		mob.set_meta("is_testing_mob", true)
+		mob.set_meta("is_hitbox_demo", true)
+		mob.position = Vector2(row_x + i * DEMO_ROW_SPACING, row_y)
+		_mob_container.add_child(mob)
+		if mob.has_method("set_playable_rect"):
+			mob.set_playable_rect(_playable_rect)
+		elif mob.has_method("set_world_size"):
+			mob.set_world_size(world_size)
+		mob.call("enable_demo_mode")
 
 
 # ── Teleport menu ─────────────────────────────────────────────────────────────
