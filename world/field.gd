@@ -90,6 +90,7 @@ var _testing_timer : Timer      = null
 var _pause_menu    : CanvasLayer = null
 var _minimap       : CanvasLayer = null
 var _teleport_menu : CanvasLayer = null
+var _boss_tracker  : CanvasLayer = null
 
 
 func _ready() -> void:
@@ -118,6 +119,14 @@ func _ready() -> void:
 	_minimap.set_script(mm_script)
 	add_child(_minimap)
 	(_minimap as Object).call("init", _playable_rect, _zone_rects, _build_minimap_tile_layers())
+
+	var bt_script : GDScript = load("res://ui/boss_tracker.gd")
+	_boss_tracker = CanvasLayer.new()
+	_boss_tracker.set_script(bt_script)
+	add_child(_boss_tracker)
+	(_boss_tracker as Object).call("init", BOSS_KILL_THRESHOLD)
+
+	_player.hit.connect(_on_player_died)
 
 	_start_bounty_spawning()
 	SceneManager.bounties_updated.connect(_on_bounties_updated)
@@ -413,6 +422,14 @@ func _on_mob_died(mob_body: Node) -> void:
 			"vampire1", "vampire2", "vampire3":
 				_zone_b_vampire_killed += 1
 		_check_boss_triggers()
+		_update_boss_tracker()
+
+
+func _on_player_died() -> void:
+	var go_script: GDScript = load("res://ui/game_over_screen.gd")
+	var go_layer := CanvasLayer.new()
+	go_layer.set_script(go_script)
+	add_child(go_layer)
 
 
 func _on_entrance_entered(area: Area2D) -> void:
@@ -446,3 +463,12 @@ func _build_minimap_tile_layers() -> Array:
 
 func get_zone_rects() -> Dictionary:
 	return _zone_rects
+
+
+func _update_boss_tracker() -> void:
+	if _boss_tracker == null:
+		return
+	(_boss_tracker as Object).call("set_family", "slime",   _zone_c_slime_killed,   _slime3_boss_spawned)
+	(_boss_tracker as Object).call("set_family", "orc",     _zone_a_orc_killed,     _orc3_boss_spawned)
+	(_boss_tracker as Object).call("set_family", "plant",   _zone_a_plant_killed,   _plant3_boss_spawned)
+	(_boss_tracker as Object).call("set_family", "vampire", _zone_b_vampire_killed, _vampire3_boss_spawned)

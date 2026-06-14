@@ -25,7 +25,8 @@ This is the authoritative map of how each feature works end-to-end, so implement
 16. [Mob Spawning in the Field](#16-mob-spawning-in-the-field)
 17. [Boss Triggers](#17-boss-triggers)
 18. [Game State and Persistence](#18-game-state-and-persistence)
-19. [Pipeline Progress Bar](#19-pipeline-progress-bar)
+19. [Game Over Screen](#19-game-over-screen)
+20. [Pipeline Progress Bar](#20-pipeline-progress-bar)
 
 ---
 
@@ -733,7 +734,47 @@ Written by `end_of_day.py` during the run. Polled every 3 s by Godot. Format:
 
 ---
 
-## 19. Pipeline Progress Bar
+## 19. Game Over Screen
+
+**Owner:** `ui/game_over_screen.gd`  
+**Trigger:** `_player.hit` signal in `world/field.gd` (emitted at the end of the player's death animation)
+
+Instantiated dynamically by `field.gd._on_player_died()` as a CanvasLayer (layer 200, `PROCESS_MODE_ALWAYS`).
+
+### Sequence
+
+```
+Player HP reaches 0 → take_damage() → _start_dying("hit")
+  → hurt animation → death animation → hit.emit()
+  → field._on_player_died()
+      • instantiate game_over_screen.gd as a new CanvasLayer
+      • add_child() → _ready() sets layer=200
+
+game_over_screen._animate():
+  1. Wait 2 frames for Godot layout
+  2. Set title.pivot_offset = title.size / 2  (scale from its own center)
+  3. Tween title.scale: 0.05 → 1.0 over 1.2 s (TRANS_BACK, EASE_OUT)
+  4. Reposition Continue label below title
+  5. Wait 0.5 s
+  6. Fade in "[ Continue ]" over 0.6 s
+  7. _can_confirm = true
+
+Player presses Interact (E / A) or left-clicks
+  → SceneManager.load_game(0)   ← same action as Continue on the main menu
+```
+
+### Input handling
+
+The screen absorbs `pause` and `menu_cancel` actions so the pause menu cannot open while it is active. Only `interact` and mouse left-click trigger the continue action.
+
+### What to keep in mind
+
+- The screen never pauses the tree — the player is already `is_dying` and cannot move or be hit again.
+- The "Continue" path calls `SceneManager.load_game(0)`. If no save exists in slot 0 the load will fail silently; in practice the player must have saved via the pause menu at least once for this to work.
+
+---
+
+## 20. Pipeline Progress Bar
 
 **Owner:** `autoload/scene_manager.gd` — `_poll_progress()` + `_show_overlay()`
 

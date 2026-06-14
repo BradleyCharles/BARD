@@ -143,7 +143,8 @@ BARD/
 │   ├── minimap.gd                # Bottom-right minimap (field scene only; instantiated by field.gd)
 │   ├── teleport_menu.gd          # Testing-only teleport menu (SELECT key; instantiated by field.gd when testing_mode ON)
 │   ├── loading_screen.gd         # Overlay shown while pipeline runs
-│   └── loading_screen.tscn
+│   ├── loading_screen.tscn
+│   └── game_over_screen.gd       # Full-screen GAME OVER overlay (CanvasLayer, layer 200)
 ├── world/                        # World/scene scripts
 │   ├── field.gd                  # Ashfield: bounty-zone mob spawning, kill events
 │   ├── field.tscn
