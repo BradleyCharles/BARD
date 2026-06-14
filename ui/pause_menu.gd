@@ -27,7 +27,8 @@ var _confirm_rows     : Array[Label]    = []
 var _confirm_actions  : Array[Callable] = []
 var _confirm_sel      : int             = 0
 
-var _bounty_screen : CanvasLayer = null
+var _bounty_screen  : CanvasLayer = null
+var _testing_label  : Label       = null
 
 
 func _ready() -> void:
@@ -121,6 +122,17 @@ func _build_ui() -> void:
 		vbox.add_child(lbl)
 		_buttons.append(lbl)
 
+	var test_lbl := Label.new()
+	test_lbl.text = _testing_label_text()
+	test_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	test_lbl.add_theme_font_size_override("font_size", 28)
+	test_lbl.add_theme_color_override("font_color", _C_DIM)
+	if _font:
+		test_lbl.add_theme_font_override("font", _font)
+	vbox.add_child(test_lbl)
+	_buttons.append(test_lbl)
+	_testing_label = test_lbl
+
 	var fs_lbl := Label.new()
 	fs_lbl.text = _fullscreen_label_text()
 	fs_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -138,6 +150,16 @@ func _build_ui() -> void:
 func _fullscreen_label_text() -> String:
 	var is_fs: bool = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	return "Fullscreen  [%s]" % ("ON" if is_fs else "OFF")
+
+
+func _testing_label_text() -> String:
+	return "Testing  [%s]" % ("ON" if SceneManager.testing_mode else "OFF")
+
+
+func _toggle_testing_mode() -> void:
+	SceneManager.set_testing_mode(not SceneManager.testing_mode)
+	if _testing_label:
+		_testing_label.text = _testing_label_text()
 
 
 func _highlight(idx: int) -> void:
@@ -210,7 +232,8 @@ func _confirm_selection() -> void:
 		1: _show_save_picker()
 		2: _show_load_picker()
 		3: _open_bounty_screen()
-		4:
+		4: _toggle_testing_mode()
+		5:
 			if not OS.has_feature("editor"):
 				var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
 				if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:

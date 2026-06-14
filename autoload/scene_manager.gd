@@ -40,8 +40,9 @@ var weapon_upgrades          : Dictionary = {}
 var _scripts_earned_today    : int        = 0
 var _bounties_turned_in_today: Array      = []
 
-var player_health     : int = 100
-var player_max_health : int = 100
+var player_health     : int  = 100
+var player_max_health : int  = 100
+var testing_mode      : bool = false
 
 
 # ── Signals ───────────────────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ signal scripts_updated
 signal player_health_changed
 signal inventory_updated
 signal day_updated
+signal testing_mode_changed(enabled: bool)
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -329,6 +331,11 @@ func record_bounty_kill(monster_type: String, zone: String) -> void:
 func set_player_health(hp: int) -> void:
 	player_health = clamp(hp, 0, player_max_health)
 	player_health_changed.emit()
+
+
+func set_testing_mode(enabled: bool) -> void:
+	testing_mode = enabled
+	testing_mode_changed.emit(enabled)
 
 
 func earn_scripts(amount: int) -> void:
