@@ -36,7 +36,7 @@ var _dash_cooldown   : float        = 0.0
 func _ready() -> void:
 	max_health      = 10
 	personality     = Personality.WANDER
-	aggro_radius    = 250.0
+	aggro_radius    = 200.0
 	damage          = 2
 	knockback_force = 300.0
 

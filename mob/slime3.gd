@@ -31,7 +31,7 @@ var _returning_to_zone: bool  = false
 func _ready() -> void:
 	max_health      = 8
 	personality     = Personality.WEAK_AGGRESSIVE
-	aggro_radius    = 250.0
+	aggro_radius    = 200.0
 	damage          = 2
 	knockback_force = 250.0
 

@@ -36,7 +36,7 @@ var _returning_to_zone: bool   = false
 func _ready() -> void:
 	max_health      = 3
 	personality     = Personality.PACK_MENTALITY
-	aggro_radius    = 300.0
+	aggro_radius    = 200.0
 	damage          = 1
 	knockback_force = 200.0
 

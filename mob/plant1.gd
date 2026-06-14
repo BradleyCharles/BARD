@@ -26,7 +26,7 @@ var _is_attacking : bool   = false
 func _ready() -> void:
 	max_health      = 10
 	personality     = Personality.WANDER
-	aggro_radius    = 220.0
+	aggro_radius    = 200.0
 	damage          = 2
 	knockback_force = 200.0
 

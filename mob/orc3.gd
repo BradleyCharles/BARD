@@ -39,7 +39,7 @@ var _phase_timer  : float    = 0.0
 func _ready() -> void:
 	max_health      = 22
 	personality     = Personality.WANDER
-	aggro_radius    = 250.0
+	aggro_radius    = 200.0
 	damage          = 4
 	knockback_force = 450.0
 
