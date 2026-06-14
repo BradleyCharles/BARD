@@ -103,7 +103,7 @@ Features with distinct data or configuration concerns get their own script. Foll
 
 - **Stats / tuning data** (damage, speed, health, timers): live in a `*_stats.gd` or `*_data.gd` file with `class_name`, using `const` for primitive types and `static var` for Vector/object types. Never hardcode balance numbers inside logic scripts.
 - **Per-weapon data**: add `Player/weapons/<weapon>_data.gd` using `sword_data.gd` or `axe_data.gd` as a template. Register the new weapon in `player.gd:_ready()` by adding an entry to `_weapon_stats`.
-- **Input actions**: all input action name strings live in `Player/player_input.gd` (`class_name PlayerInput`). Use `PlayerInput.ATTACK` etc. throughout the project — never a bare `"attack"` string.
+- **Input actions**: all input action name strings live in `Player/player1/player_input.gd` (`class_name PlayerInput`). Use `PlayerInput.ATTACK` etc. throughout the project — never a bare `"attack"` string.
 - **Distinct system behaviors**: if a node script grows to handle two unrelated responsibilities, split them into a host node + a child component node.
 
 **Do not split when:**
@@ -117,16 +117,18 @@ Features with distinct data or configuration concerns get their own script. Foll
 
 ```
 autoload/scene_manager.gd          ← global singleton
-Player/player.gd                   ← player movement, combat, health
-Player/player_stats.gd             ← tuning constants (health, speed, dodge)
-Player/player_input.gd             ← input action name constants (PlayerInput)
+Player/player1/player.gd           ← player movement, combat, health
+Player/player1/player_stats.gd     ← tuning constants (health, speed, dodge)
+Player/player1/player_input.gd     ← input action name constants (PlayerInput)
 Player/weapons/sword_data.gd       ← sword stats (use as template for new weapons)
 Player/weapons/axe_data.gd         ← axe stats
 npc/npc_base.gd                    ← all NPCs share this base
 world/field.gd                     ← Ashfield (hunting zone)
 world/town.gd                      ← Thornwall (town scene)
 ui/                                ← all HUD and overlay scripts
-mob/slime1.gd                      ← only active enemy type
+mob/slime1.gd                      ← Slime1 enemy (pack AI)
+mob/slime2.gd                      ← Slime2 enemy (passive-until-hit)
+mob/slime3.gd                      ← Slime3 enemy (aggressive on sight)
 pipeline/                          ← Python LLM pipeline
 data/bounty_pool.json              ← static bounty definitions
 dialogue/                          ← LLM-generated per-NPC per-day JSON

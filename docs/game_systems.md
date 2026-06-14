@@ -426,7 +426,7 @@ Wandering NPCs can trigger brief two-line exchanges with nearby wanderers:
 
 ### Physics
 
-Each NPC (wandering or named) has a `StaticBody2D` child (layer 8, mask 0, radius 12 px) added in `_add_physics_body()`. This makes NPCs solid to the player without generating physics forces. See `docs/game_mechanics.md` for the full collision explanation.
+Only **named (non-wandering) NPCs** get a `StaticBody2D` child (layer 8, mask 0, radius 12 px) added in `_add_physics_body()`. They are also added to group `"npc_blocker"` so player script-level blocking applies. Wandering NPCs have no physics body — the player passes through them. See `docs/game_mechanics.md` for the full collision explanation.
 
 ---
 
@@ -537,7 +537,7 @@ Kill progress is always lost on drop — the bounty returns to the board in its 
 ## 13. Bounty Tracker HUD
 
 **Owner:** `ui/bounty_tracker.gd`  
-**Layer:** 15 (bottom-right)
+**Layer:** 15 (top-right)
 
 Passive overlay. Shows active/in-progress bounties with flavor text and `killed / quantity` counter. Hidden when no active bounties. Rebuilds instantly on `SceneManager.bounties_updated`.
 
@@ -622,9 +622,9 @@ Three zones map to `ColorRect` terrain nodes in `field.tscn`:
 ### Spawn logic
 
 On `_ready()`, `_start_bounty_spawning()` iterates all `SceneManager.active_bounties`. For each bounty:
-- Create a repeating `Timer` (wait 3 s) stored in `_bounty_timers[zone]`
+- Create a repeating `Timer` (wait 3.5 s) stored in `_bounty_timers[zone]`
 - One mob spawns immediately via `_spawn_bounty_mob(monster_type, zone)`
-- Timer fires every 3 s, spawning another until `MAX_MOBS_PER_ZONE = 5` reached
+- Timer fires every 3.5 s, spawning another until `MAX_MOBS_PER_ZONE = 5` reached
 
 `_count_zone_mobs(zone)` counts alive mobs in `MobContainer` that have meta `bounty_zone == zone`.
 

@@ -60,7 +60,9 @@ BARD/
 ├── dialogue/                     # Generated day-specific NPC dialogue JSON
 │   └── {npc_id}_day{N}.json
 ├── docs/
-│   └── project_map.md            # This file — update when adding/removing features
+│   ├── project_map.md            # Directory, scripts, constants — update on structural changes
+│   ├── game_mechanics.md         # Collision layers, damage flow, mob AI rules
+│   └── game_systems.md           # End-to-end system flows (pipeline, bounties, dialogue, etc.)
 ├── fonts/
 │   ├── almendra.regular.ttf      # Dialogue/HUD text
 │   ├── almendra.bold.ttf
@@ -104,10 +106,11 @@ BARD/
 │   └── lore/
 │       └── thornwall.txt         # Hardcoded setting description injected into prompts
 ├── Player/
-│   ├── player.gd                 # Movement, attack, animation, health, collision
-│   ├── player_stats.gd           # Tuning constants: MAX_HEALTH, dodge timing, BASE_SPEED
-│   ├── player_input.gd           # Input action name constants (class_name PlayerInput)
-│   ├── player.tscn
+│   ├── player1/
+│   │   ├── player.gd             # Movement, attack, animation, health, collision
+│   │   ├── player_stats.gd       # Tuning constants: MAX_HEALTH, dodge timing, BASE_SPEED
+│   │   ├── player_input.gd       # Input action name constants (class_name PlayerInput)
+│   │   └── player.tscn
 │   └── weapons/
 │       ├── sword_data.gd         # Sword: DAMAGE=1, SWING_FPS=40, KNOCKBACK=200, HITBOX
 │       └── axe_data.gd           # Axe: DAMAGE=2, SWING_FPS=24, KNOCKBACK=400, HITBOX
@@ -168,7 +171,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `flags` | Dictionary | Named story/interaction flags |
 | `scripts` | int | Player currency (primary) |
 | `slime_goop` | int | Rare drop currency (from elite/boss slimes) |
-| `owned_weapons` | Array | Weapon IDs owned by the player (default: `["sword"]`) |
+| `owned_weapons` | Array | Weapon IDs owned by the player (default: `["sword", "axe"]`) |
 | `weapon_upgrades` | Dictionary | Upgrade tier per weapon ID |
 | `player_health` | int | Current HP (range 0–100) |
 
@@ -179,6 +182,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `scripts_updated` | `scripts` or `slime_goop` value changed |
 | `player_health_changed` | `player_health` changed |
 | `inventory_updated` | `owned_weapons`, `weapon_upgrades`, or `slime_goop` changed |
+| `day_updated` | `day` incremented at end_day |
 
 **Public API:**
 | Method | Purpose |
@@ -206,9 +210,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 
 8-directional movement (arrow keys / WASD, left stick) clamped to world bounds set by the scene.
 
-**Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, attack / attack_up / attack_down, hurt, death. Source: `assets/Swordsman_lvl3/` (.aseprite files, one per direction: front/back/side_left/side_right), imported via AsepriteWizard plugin. Weapon swing overlays come from `assets/Sword/` (1–8 PNGs) and `assets/Axe/` (1–10 PNGs).
-
-> **Note:** `_build_sprite_frames()` in `player.gd` currently references the old `Swordsman_lvl1/Without_shadow/` path (now removed) and must be rewritten to load from `Swordsman_lvl3/`.
+**Animations:** idle / idle_up / idle_down, walk / walk_up / walk_down, run / run_up / run_down, attack / attack_up / attack_down, hurt, death. Source: `assets/Swordsman_lvl3/` (.aseprite files, one per direction: front/back/side_left/side_right), loaded at runtime via `_build_sprite_frames()`. Weapon swing overlays come from `assets/Sword/` (1–8 PNGs) and `assets/Axe/` (1–10 PNGs).
 
 **Combat:**
 - Attack: `A` key / gamepad West (X) button; sword hitbox (`$SwordHitbox`) active on frames 2–6.
@@ -242,11 +244,12 @@ All player balance constants in one file. Edit here for tuning.
 |----------|-------|---------|
 | `MAX_HEALTH` | 100 | Starting and max HP |
 | `IFRAME_TIME` | 1.0 s | Invincibility duration after hit or dodge |
-| `BASE_SPEED` | 300.0 px/s | Default movement speed (also `@export` default in player.gd) |
+| `BASE_SPEED` | 150.0 px/s | Default movement speed (also `@export` default in player.gd) |
 | `DODGE_SPEED` | 900.0 px/s | Velocity during a dodge |
 | `DODGE_DURATION` | 0.15 s | How long a single dodge lasts |
 | `DODGE_COOLDOWN` | 0.5 s | Minimum time between dodges |
-| `RUN_SPEED_MULTIPLIER` | 1.25 | Speed multiplier applied while Run is held |
+| `RUN_SPEED_MULTIPLIER` | 10 | Speed multiplier applied while Run is held |
+| `KNOCKBACK_DURATION` | 0.30 s | How long player knockback velocity is applied |
 
 ---
 
@@ -273,8 +276,8 @@ Each weapon is a GDScript file with `class_name` and typed constants. Use `sword
 
 | File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX | HITBOX_OFFSET |
 |------|----|--------|-----------|-----------|--------|---------------|
-| `sword_data.gd` | `"sword"` | 1 | 30.0 | 300.0 | 60×40 px | 60.0 px |
-| `axe_data.gd` | `"axe"` | 2 | 15.0 | 600.0 | 35×70 px | 60.0 px |
+| `sword_data.gd` | `"sword"` | 1 | 30.0 | 300.0 | 60×40 px | 30.0 px |
+| `axe_data.gd` | `"axe"` | 2 | 15.0 | 600.0 | 35×70 px | 45.0 px |
 
 ---
 
@@ -300,10 +303,8 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 **Wanderers:** Background NPCs with `is_wanderer = true` wander at `WANDER_SPEED = 38 px/s`, picking new direction every 2.5–6 s (30% idle chance), carrying no dialogue. Use `assets/Swordsman_lvl1/` sprites.
 
 **Sprite assignment by NPC type:**
-- Wanderers → `assets/Swordsman_lvl1/` (.aseprite per direction)
-- Named NPCs (innkeeper, blacksmith, guild master) → `assets/Swordsman_lvl2/`
-
-> **Note:** `_build_sprite_frames()` in `npc_base.gd` currently references the old `Swordsman_lvl1/Without_shadow/` path (now removed) and must be rewritten to load from the correct lvl1/lvl2 directory based on `is_wanderer`.
+- Wanderers → `assets/Swordsman_lvl1/` (idle animations: front/back/side_right)
+- Named NPCs (innkeeper, blacksmith, guild master) → `assets/Swordsman_lvl2/` (same layout)
 
 ---
 
@@ -365,10 +366,10 @@ Top-left CanvasLayer HUD, below the health bar (offset_top 90). Displays `Script
 
 3840×2160 px playable area ("The Ashfield").
 
-**Camera:** Zoomed 1.5× in `_ready()`. Limits clamped to world edges so the player cannot push the camera into void (half-viewport = 640×360 px at 1.5× zoom).
+**Camera:** Zoomed 3.5× in `_ready()`. Limits clamped to world edges via `BoundaryLeft/Right/Top/Bottom` ColorRect nodes (playable area ~x 349–6285, y 350–4096).
 
 **Bounty-zone mob spawning:**
-- Three zones mapped to `ColorRect` terrain nodes: `zone_a` (NW), `zone_b` (NE), `zone_c` (SE).
+- Three zones mapped to `ColorRect` terrain nodes: `zone_a` (NE, node `TerrainNW`), `zone_b` (SE, node `TerrainNE`), `zone_c` (SW, node `TerrainSE`). Note: scene node names are misnamed — the actual quadrant positions are NE, SE, and SW; the NW quadrant has no zone. `zone_a` maps to `_terrain_nw` in code, etc.
 - On load, spawns mob count = `quantity - killed` for each active/available bounty.
 - Respawn: one mob every 8 s until zone quota is filled.
 - Each spawned mob's `died` signal is connected to `_on_mob_died()`.
@@ -387,7 +388,7 @@ Top-left CanvasLayer HUD, below the health bar (offset_top 90). Displays `Script
 
 4800×2700 px playable area ("Thornwall").
 
-**Camera:** Zoomed 1.5× in `_ready()`, limits clamped to world edges (half-viewport = 640×360 px).
+**Camera:** Zoomed 3.5× in `_ready()`.
 
 - On load: reads `world_registry.json`, assigns `npc_id` / `npc_name` to each NPC node by role, then calls `reload_all_dialogue()`.
 - `FieldExit` Area2D triggers `SceneManager.go_to_field()`.
@@ -422,8 +423,8 @@ Base class (extends `RigidBody2D`) for all enemy types.
 Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=300`, `damage=1`, `knockback_force=200`. Speed 40–70 px/s.
 
 - Wander: random direction, 1–3 s move / 1–4 s pause cycle.
-- AI (pack link system): When a slime1 enters aggro range with fewer than `PACK_COUNT_NEEDED=2` nearby mobs, it flees. When ≥2 mobs are within `PACK_TRIGGER_RADIUS=200px`, it calls `trigger_aggro()`, permanently switching to chase and cascading aggro to all slime1s within 200px. Aggro re-cascades every `LINK_SCAN_INTERVAL=0.5s`.
-- Once aggroed a slime1 never returns to wander or flee — it chases until death.
+- AI (pack link system): When a slime1 enters aggro range with fewer than `PACK_COUNT_NEEDED=2` nearby mobs, it flees. When ≥2 mobs are within `PACK_TRIGGER_RADIUS=200px`, it calls `trigger_aggro()`, switching to chase and cascading aggro to all slime1s within 200px. Aggro re-cascades every `LINK_SCAN_INTERVAL=0.5s`.
+- **Leash:** If an aggroed slime1 wanders outside its home zone, it de-aggros and returns to zone center before resuming wander.
 - Sprites: `.aseprite` per animation/direction from `assets/Slime1/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
 - Boundary clamping in `_integrate_forces()`.
 
@@ -501,10 +502,10 @@ Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
 Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field.gd._ready()`.
 
-- 500×500 px panel anchored to the bottom-right corner (16 px margin).
-- Map content letterboxes the 3840×2160 world into a 476×268 px area (16:9 preserved), centred vertically within the panel.
+- 375 px wide; height computed to match the 16:9 world aspect ratio (~211 px). 16 px margin from the screen edge.
+- Terrain from `TileMapLayer` nodes is pre-baked into an `ImageTexture` once at init. Bounty zones rendered as semi-transparent coloured overlays.
 - **North is always up**; the map does not rotate.
-- **Player** drawn as a filled gold circle (5.5 px) with a directional triangle pointing toward `player.facing`.
+- **Player** drawn as a filled gold circle (5.5 px radius) with a directional triangle pointing toward `player.facing`.
 - **Enemies** drawn as 3.5 px red dots (group `"ground_mobs"`); bosses drawn in orange.
 - Redraws every frame via `_process → queue_redraw`.
 - All drawing is done via the `draw` signal on an inner Control node.
@@ -729,9 +730,9 @@ game_state.json written → pipeline reads it → NPC dialogue references bounti
 - **Fallback chain:** LLM call fails → retry up to 3× → LLM-based JSON repair → previous day's dialogue file → `pipeline/fallbacks/`.
 - **NPC memory:** Each night the LLM extracts one recollection fact and appends it to `game_state.npc_facts`. Future prompts include these facts, creating narrative persistence.
 - **Day state write order:** State is written to `game_state.json` *before* the pipeline launches, so the pipeline always reads the completed day's data.
-- **Bounty zones:** Zones `zone_a/b/c` map 1-to-1 to `TerrainNW/NE/SE` ColorRect nodes in `field.tscn`. Mob meta tag `bounty_zone` links kills to the correct bounty entry.
+- **Bounty zones:** Zones `zone_a/b/c` map 1-to-1 to `TerrainNW/NE/SE` ColorRect nodes in `field.tscn` (visually NE/SE/SW — node names are misnamed). Mob meta tag `bounty_zone` links kills to the correct bounty entry.
 - **Guild commander patch:** `npc_base.gd:_patch_guild_commander_root()` dynamically replaces the first response option with "I have completed a bounty" if any bounty has `status == "complete"`, enabling the turn-in flow without changing the LLM dialogue.
-- **Scripts currency:** Scripts are the player's only currency. Earned by turning in bounties. Displayed top-right. Not yet spendable (future phase).
+- **Scripts currency:** Scripts are the player's primary currency. Earned by turning in bounties. Displayed top-left. Spent at the blacksmith to buy the axe (50 Scripts) and upgrade weapons.
 
 ---
 

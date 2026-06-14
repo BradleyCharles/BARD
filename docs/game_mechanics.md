@@ -183,6 +183,6 @@ All slimes stop (`linear_velocity = Vector2.ZERO`) when within `contact_radius` 
 1. Extend `mob_base.gd` (inherits layer=8, mask=0, `take_damage`, `died` signal automatically).
 2. Set `max_health`, `damage`, `knockback_force`, `aggro_radius` in `_ready()` before calling `super._ready()`.
 3. In `_physics_process`, guard the velocity-setting block with `if _is_hurt: return`.
-4. Add a `CONTACT_RADIUS` constant and stop chasing when within it.
+4. Use `contact_radius` (inherited from `mob_base`, auto-computed as `body_radius + 20.0` in `_ready()`) to stop chasing when within range — do not add a local constant.
 5. Do **not** add player-separation logic to `_integrate_forces` — it prevents damage contact.
 6. Register the new scene in `field.gd` as a `@export var` and wire it in the editor.
