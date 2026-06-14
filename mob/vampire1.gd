@@ -41,6 +41,7 @@ func _ready() -> void:
 	knockback_force = 200.0
 
 	super._ready()
+	collision_mask = 0
 	_apply_hitbox(HITBOX_VAMPIRE1)
 	z_index = 4
 

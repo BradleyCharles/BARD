@@ -197,7 +197,7 @@ var tangent := Vector2(-to_player.y, to_player.x).normalized()
 var radial  := to_player.normalized() * (dist - ORBIT_RADIUS) * 0.05
 linear_velocity = (tangent * ORBIT_SPEED) + radial
 ```
-Damage fires via `_is_attacking` gate in `player.gd`. Vampires orbit immediately on spawn (no aggro_radius check needed — they always have player_ref). `z_index = 4` so they render above the Decor0 layer (z_index 3), appearing to fly over trees and rocks.
+Damage fires via `_is_attacking` gate in `player.gd`. Vampires orbit immediately on spawn (no aggro_radius check needed — they always have player_ref). `z_index = 4` so they render above the Decor0 layer (z_index 3), appearing to fly over trees and rocks. `collision_mask = 0` (set after `super._ready()` in each vampire script) so they pass through world geometry (crystals, rocks) rather than being blocked by it.
 
 Stats: V1 HP=6 dmg=1 kb=200 orbit=90 dash=350 interval=3.0–5.0 s; V2 HP=10 dmg=2 kb=300 orbit=100 dash=400 interval=2.5–4.0 s; V3 HP=16 dmg=3 kb=400 orbit=110 dash=450 interval=2.0–3.5 s.
 
@@ -241,6 +241,7 @@ This lets each mob control its own damage window precisely without any central c
 | Anti-pattern | Problem |
 |---|---|
 | Setting mob `collision_mask` to include player (2) or entity (8) layers | Mobs generate physics forces against whatever they detect on their mask; including player/mob layers causes continuous pushing |
+| Leaving `collision_mask = 1` on flying mobs (vampires) | Flying mobs get stuck on world geometry (crystals, rocks). Vampires use `collision_mask = 0` and enforce their own boundaries in `_integrate_forces`. |
 | Player `collision_mask` not including layer 8 | Player passes through mob and NPC bodies; oscillation occurs as mob AI reacts to player inside its contact zone |
 | Player-separation code inside `_integrate_forces` on mobs | Keeps mob permanently away from player; `HurtArea.body_entered` never fires; mob deals no damage |
 | Setting `linear_velocity` every frame without an `_is_hurt` guard | Overrides `apply_central_impulse` knockback in the same frame it's applied; knockback appears to do nothing |

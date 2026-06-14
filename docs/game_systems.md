@@ -697,7 +697,7 @@ Four independent boss triggers — one per mob family (zone_c slimes, zone_a orc
 
 `_check_boss_triggers()` is called on every mob kill (testing mobs excluded). On threshold reached:
 1. `call_deferred("_spawn_boss", scene)` — deferred to avoid spawning mid-physics step
-2. Boss instantiated at `world_size * 0.5` (map center)
+2. Boss instantiated at the center of its home zone rect (`_zone_rects[zone].get_center()`)
 3. `boss_health_bar.tscn` instantiated, `init(boss)` called — connects to `boss.died` signal, shows top-center HP bar
 4. Boss drops 15 Slime Goop on death (handled in the boss script's `_on_died()`)
 

@@ -362,28 +362,29 @@ func _on_teleport_closed() -> void:
 func _check_boss_triggers() -> void:
 	if not _slime3_boss_spawned and _zone_c_slime_killed >= BOSS_KILL_THRESHOLD:
 		_slime3_boss_spawned = true
-		call_deferred("_spawn_boss", slime3_boss_scene)
+		call_deferred("_spawn_boss", slime3_boss_scene, "zone_c")
 
 	if not _orc3_boss_spawned and _zone_a_orc_killed >= BOSS_KILL_THRESHOLD:
 		_orc3_boss_spawned = true
-		call_deferred("_spawn_boss", orc3_boss_scene)
+		call_deferred("_spawn_boss", orc3_boss_scene, "zone_a")
 
 	if not _plant3_boss_spawned and _zone_a_plant_killed >= BOSS_KILL_THRESHOLD:
 		_plant3_boss_spawned = true
-		call_deferred("_spawn_boss", plant3_boss_scene)
+		call_deferred("_spawn_boss", plant3_boss_scene, "zone_a")
 
 	if not _vampire3_boss_spawned and _zone_b_vampire_killed >= BOSS_KILL_THRESHOLD:
 		_vampire3_boss_spawned = true
-		call_deferred("_spawn_boss", vampire3_boss_scene)
+		call_deferred("_spawn_boss", vampire3_boss_scene, "zone_b")
 
 
-func _spawn_boss(scene: PackedScene) -> void:
+func _spawn_boss(scene: PackedScene, zone: String) -> void:
 	if scene == null:
 		push_error("Field: _spawn_boss called with null scene")
 		return
 
+	var zone_rect: Rect2 = _zone_rects.get(zone, Rect2(Vector2.ZERO, world_size))
 	var boss = scene.instantiate()
-	boss.position = world_size * 0.5
+	boss.position = zone_rect.get_center()
 	_mob_container.add_child(boss)
 	if boss.has_method("set_playable_rect"):
 		boss.set_playable_rect(_playable_rect)
