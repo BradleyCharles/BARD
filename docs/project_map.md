@@ -10,7 +10,7 @@
 
 ## Overview
 
-BARD integrates a local LLM with a Godot 4 game. The player hunts slimes in a field, completes bounties, sleeps at an inn to end the day, and a Python pipeline generates new NPC dialogue based on game state before the next day begins. The dialogue system is the academic focus; the gameplay loop exists to feed it meaningful context.
+BARD integrates a local LLM with a Godot 4 game. The player hunts mobs (slimes in zone_c, orcs and plants in zone_a, vampires in zone_b) in the field, completes bounties, sleeps at an inn to end the day, and a Python pipeline generates new NPC dialogue based on game state before the next day begins. The dialogue system is the academic focus; the gameplay loop exists to feed it meaningful context.
 
 ```
 Day N: hunt slimes → complete bounties → inn (end day)
@@ -50,13 +50,17 @@ BARD/
 │   ├── Sword/                    # Sword attack animation: individual PNGs 1.png–8.png
 │   ├── Axe/                      # Axe attack animation: individual PNGs 1.png–10.png
 │   ├── Bounty_Board/             # Bounty board world object sprites
-│   ├── Slime1/                   # slime1 and slime1_boss assets (.aseprite per animation/direction)
-│   ├── Slime2/                   # slime2 and slime2_boss assets (.aseprite per animation/direction)
-│   └── Slime3/                   # slime3 and slime3_boss assets (.aseprite per animation/direction)
+│   └── mobs/                     # All mob sprite sheets (.aseprite per animation/direction)
+│       ├── Slime1/               # slime1 and slime3_boss assets
+│       ├── Slime2/               # slime2 assets
+│       ├── Slime3/               # slime3 and slime3_boss assets
+│       ├── Orc1/ Orc2/ Orc3/    # orc1/2/3 and orc3_boss assets
+│       ├── Plant1/ Plant2/ Plant3/  # plant1/2/3 and plant3_boss assets
+│       └── Vampire1/ Vampire2/ Vampire3/  # vampire1/2/3 and vampire3_boss assets
 ├── autoload/
 │   └── scene_manager.gd          # Global singleton: all game state + pipeline orchestration
 ├── data/
-│   └── bounty_pool.json          # Static bounty definitions (9 entries, 3 zones × 3 tiers)
+│   └── bounty_pool.json          # Static bounty definitions (36 entries: zone_c slimes × 9, zone_a orcs+plants × 18, zone_b vampires × 9)
 ├── dialogue/                     # Generated day-specific NPC dialogue JSON
 │   └── {npc_id}_day{N}.json
 ├── docs/
@@ -75,18 +79,22 @@ BARD/
 │   └── main.tscn
 ├── mob/                          # Enemy definitions
 │   ├── mob_base.gd               # Shared base (extends RigidBody2D): health, take_damage, died signal, AI state machine
-│   ├── slime1.gd                 # Slime1: PACK_MENTALITY, HP=3, flees alone; links pack on 2+ nearby; chases when linked
-│   ├── slime1.tscn
-│   ├── slime1_boss.gd            # Slime1 Boss: HP=10, always chases, AOE attack, drops 5 Goop
-│   ├── slime1_boss.tscn
-│   ├── slime2.gd                 # Slime2: PACK_MENTALITY, HP=6, passive until hit; alerts nearby on damage
-│   ├── slime2.tscn
-│   ├── slime2_boss.gd            # Slime2 Boss: HP=20, always chases, AOE attack, drops 12 Goop
-│   ├── slime2_boss.tscn
-│   ├── slime3.gd                 # Slime3: WEAK_AGGRESSIVE, HP=8, chases on sight within 250px
-│   ├── slime3.tscn
-│   ├── slime3_boss.gd            # Slime3 Boss: HP=30, always chases, AOE attack, drops 20 Goop
-│   ├── slime3_boss.tscn
+│   ├── slime1.gd / .tscn         # Slime1: PACK_MENTALITY, HP=3, zone_c, flees alone, links pack on 2+ nearby
+│   ├── slime2.gd / .tscn         # Slime2: PACK_MENTALITY, HP=6, zone_c, passive until hit
+│   ├── slime3.gd / .tscn         # Slime3: WEAK_AGGRESSIVE, HP=8, zone_c, chases on sight
+│   ├── slime3_boss.gd / .tscn    # Slime3 Boss: HP=30, AOE attack, drops 20 Goop — spawns after 20 combined slime kills
+│   ├── orc1.gd / .tscn           # Orc1: charger AI, HP=8, dmg=2, zone_a
+│   ├── orc2.gd / .tscn           # Orc2: charger AI, HP=14, dmg=3, zone_a
+│   ├── orc3.gd / .tscn           # Orc3: charger AI, HP=22, dmg=4, zone_a
+│   ├── orc3_boss.gd / .tscn      # Orc3 Boss: HP=60, telegraphed charge, drops 15 Goop — after 20 orc kills
+│   ├── plant1.gd / .tscn         # Plant1: creeper AI, HP=10, dmg=2, zone_a
+│   ├── plant2.gd / .tscn         # Plant2: creeper AI, HP=18, dmg=3, zone_a
+│   ├── plant3.gd / .tscn         # Plant3: creeper AI, HP=28, dmg=5, zone_a
+│   ├── plant3_boss.gd / .tscn    # Plant3 Boss: HP=50, starburst AOE, drops 15 Goop — after 20 plant kills
+│   ├── vampire1.gd / .tscn       # Vampire1: stalker AI, HP=6, dmg=1, zone_b
+│   ├── vampire2.gd / .tscn       # Vampire2: stalker AI, HP=10, dmg=2, zone_b
+│   ├── vampire3.gd / .tscn       # Vampire3: stalker AI, HP=16, dmg=3, zone_b
+│   ├── vampire3_boss.gd / .tscn  # Vampire3 Boss: HP=40, orbit+life drain, drops 15 Goop — after 20 vampire kills
 │   └── mob.tscn                  # Unused legacy mob scene
 ├── npc/                          # NPC base system
 │   ├── npc_base.gd               # Proximity detection, dialogue loading/merging, wandering
@@ -133,6 +141,7 @@ BARD/
 │   ├── boss_health_bar.gd        # Top-center boss HP bar (shown when boss is alive)
 │   ├── boss_health_bar.tscn
 │   ├── minimap.gd                # Bottom-right minimap (field scene only; instantiated by field.gd)
+│   ├── teleport_menu.gd          # Testing-only teleport menu (SELECT key; instantiated by field.gd when testing_mode ON)
 │   ├── loading_screen.gd         # Overlay shown while pipeline runs
 │   └── loading_screen.tscn
 ├── world/                        # World/scene scripts
@@ -171,6 +180,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `flags` | Dictionary | Named story/interaction flags |
 | `scripts` | int | Player currency (primary) |
 | `slime_goop` | int | Rare drop currency (from elite/boss slimes) |
+| `testing_mode` | bool | When true, field spawns all mobs for testing; bypasses bounty spawning |
 | `owned_weapons` | Array | Weapon IDs owned by the player (default: `["sword", "axe"]`) |
 | `weapon_upgrades` | Dictionary | Upgrade tier per weapon ID |
 | `player_health` | int | Current HP (range 0–100) |
@@ -183,6 +193,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `player_health_changed` | `player_health` changed |
 | `inventory_updated` | `owned_weapons`, `weapon_upgrades`, or `slime_goop` changed |
 | `day_updated` | `day` incremented at end_day |
+| `testing_mode_changed(enabled: bool)` | Emitted when testing_mode toggled via pause menu |
 
 **Public API:**
 | Method | Purpose |
@@ -198,6 +209,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `refresh_daily_bounties()` | Repopulate available list from bounty_pool.json |
 | `earn_scripts(amount)` | Add to `scripts`, emit `scripts_updated` |
 | `earn_slime_goop(amount)` | Add to `slime_goop`, emit `inventory_updated` |
+| `set_testing_mode(enabled)` | Set `testing_mode`, emit `testing_mode_changed` |
 | `buy_weapon(id, cost)` | Deduct Scripts, append to `owned_weapons`; no-op if already owned |
 | `upgrade_weapon(id, cost_scripts, cost_goop)` | Deduct Scripts + Goop, increment `weapon_upgrades[id]` |
 | `set_player_health(hp)` | Clamp and set HP, emit `player_health_changed` |
@@ -267,6 +279,7 @@ Centralizes all input action name strings. Use `PlayerInput.ATTACK` etc. everywh
 | `WEAPON_SWAP` | Q / North button |
 | `MENU_UP/DOWN` | Arrow keys / D-pad |
 | `MENU_CANCEL` | Escape / East button |
+| `SELECT` | Tab / controller Back button (opens teleport menu in field when testing_mode ON) |
 
 ---
 
@@ -376,9 +389,12 @@ Top-left CanvasLayer HUD, below the health bar (offset_top 90). Displays `Script
 - On kill: `SceneManager.record_kill()` and `SceneManager.record_bounty_kill()` called; mob frees itself.
 
 **Boss triggers:**
-- `BOSS_KILL_THRESHOLD = 20`. Three independent kill counters (`_slime1_killed`, `_slime2_killed`, `_slime3_killed`) and boss-spawned flags, one per enemy type.
-- When a type's kill count reaches the threshold, its boss spawns once at world center; `boss_health_bar.tscn` is instantiated and `init(boss)` called.
-- Exports `slime1_scene`, `slime2_scene`, `slime3_scene`, `slime1_boss_scene`, `slime2_boss_scene`, `slime3_boss_scene` — all must be assigned in the Godot editor inspector.
+- `BOSS_KILL_THRESHOLD = 20`. Four independent family kill counters (`_zone_c_slime_killed`, `_zone_a_orc_killed`, `_zone_a_plant_killed`, `_zone_b_vampire_killed`) and four boss-spawned flags.
+- When a family's count reaches the threshold, the matching boss spawns once at world center; `boss_health_bar.tscn` is instantiated and `init(boss)` called.
+- Export vars: `slime1/2/3_scene`, `slime3_boss_scene`, `orc1/2/3_scene`, `orc3_boss_scene`, `plant1/2/3_scene`, `plant3_boss_scene`, `vampire1/2/3_scene`, `vampire3_boss_scene` — all must be assigned in the Godot editor inspector.
+
+**Testing mode:**
+- When `SceneManager.testing_mode` is true, all bounty timers stop and each zone is filled to 10 weighted-random mobs. Testing mobs do not affect bounty or boss counters. SELECT opens the teleport menu to jump between zones.
 
 **TownEntrance** (Area2D at south edge): triggers `SceneManager.go_to_town()` when player enters.
 
@@ -420,74 +436,88 @@ Base class (extends `RigidBody2D`) for all enemy types.
 
 ### 13. Slime1 — `mob/slime1.gd`
 
-Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=300`, `damage=1`, `knockback_force=200`. Speed 40–70 px/s.
+Extends `mob_base`. `max_health=3`, `personality=PACK_MENTALITY`, `aggro_radius=300`, `damage=1`, `knockback_force=200`. Speed 40–70 px/s. Zone: zone_c.
 
 - Wander: random direction, 1–3 s move / 1–4 s pause cycle.
-- AI (pack link system): When a slime1 enters aggro range with fewer than `PACK_COUNT_NEEDED=2` nearby mobs, it flees. When ≥2 mobs are within `PACK_TRIGGER_RADIUS=200px`, it calls `trigger_aggro()`, switching to chase and cascading aggro to all slime1s within 200px. Aggro re-cascades every `LINK_SCAN_INTERVAL=0.5s`.
-- **Leash:** If an aggroed slime1 wanders outside its home zone, it de-aggros and returns to zone center before resuming wander.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- AI (pack link system): flees alone; links pack when ≥2 nearby slime1 within `PACK_TRIGGER_RADIUS=200px`. Aggro cascades to all linked slime1s every `LINK_SCAN_INTERVAL=0.5s`.
+- **Leash:** de-aggros and returns to zone center if it wanders outside its home zone.
+- Sprites: `.aseprite` per animation/direction from `assets/mobs/Slime1/`.
 - Boundary clamping in `_integrate_forces()`.
 
 ---
 
-### 14. Slime1 Boss — `mob/slime1_boss.gd`
+### 14. Slime2 — `mob/slime2.gd`
 
-Extends `mob_base`. `max_health=10`, `personality=BOSS`, `damage=3`, `knockback_force=400`. `BOSS_SPEED=50 px/s`. Drops 5 Slime Goop on death.
+Extends `mob_base`. `max_health=6`, `personality=PACK_MENTALITY`, `aggro_radius=200`, `damage=2`, `knockback_force=350`. Speed 50–100 px/s. Zone: zone_c.
 
-- Always chases player.
-- **AOE attack:** When player is within `AOE_RADIUS=120px` and cooldown is ready, enters TELEGRAPH phase — renders an expanding red circle for `TELEGRAPH_DURATION=1.5s`, then fires AOE (`AOE_DAMAGE=3`, `AOE_KNOCKBACK=500`). `ATTACK_COOLDOWN=6s` after firing.
-- Invulnerable to hurt animation during TELEGRAPH/ATTACKING phases.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime1/` (includes Attack animation set).
-- Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime1 kills. Boundary clamping (`MOB_RADIUS=40`) in `_integrate_forces()`.
-
----
-
-### 15. Slime2 — `mob/slime2.gd`
-
-Extends `mob_base`. `max_health=6`, `personality=PACK_MENTALITY`, `aggro_radius=200`, `damage=2`, `knockback_force=350`. Speed 50–100 px/s.
-
-- AI: **Passive until attacked.** Wanders normally; ignores the player. When hit, permanently sets `_is_aggroed = true` and calls `_alert_nearby_pack()`, which aggroes all slime2s within `ALERT_RADIUS=200px`. Once aggroed, chases player indefinitely.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime2/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- AI: **Passive until attacked.** When hit, permanently aggroes and calls `_alert_nearby_pack()` (alerts all slime2 within `ALERT_RADIUS=200px`). Once aggroed, chases player indefinitely.
+- Sprites: `.aseprite` per animation/direction from `assets/mobs/Slime2/`.
 - Boundary clamping in `_integrate_forces()`.
 
 ---
 
-### 16. Slime2 Boss — `mob/slime2_boss.gd`
+### 15. Slime3 — `mob/slime3.gd`
 
-Extends `mob_base`. `max_health=20`, `personality=BOSS`, `damage=4`, `knockback_force=500`. `BOSS_SPEED=55 px/s`. Drops 12 Slime Goop on death.
+Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius=250`, `damage=2`, `knockback_force=250`. Speed 60–110 px/s. Zone: zone_c.
 
-- Always chases player.
-- **AOE attack:** Same telegraph system as Slime1 Boss. `AOE_RADIUS=150px`, `AOE_DAMAGE=5`, `AOE_KNOCKBACK=600`, `ATTACK_COOLDOWN=5s`, `TELEGRAPH_DURATION=1.5s`.
-- Extra player-separation push in `_integrate_forces()`.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime2/` (includes Attack animation set).
-- Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime2 kills.
-
----
-
-### 17. Slime3 — `mob/slime3.gd`
-
-Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius=250`, `damage=2`, `knockback_force=250`. Speed 60–110 px/s.
-
-- Wander: random direction, 1–3 s move / 1–4 s pause cycle.
-- AI: Chases player on sight (within `aggro_radius`); returns to wander when player leaves range.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime3/` (Idle, Walk, Run, Hurt, Death × front/back/left/right).
+- Chases player on sight; returns to wander when player leaves aggro range.
+- Sprites: `.aseprite` per animation/direction from `assets/mobs/Slime3/`.
 - Boundary clamping in `_integrate_forces()`.
 
 ---
 
-### 18. Slime3 Boss — `mob/slime3_boss.gd`
+### 16. Slime3 Boss — `mob/slime3_boss.gd`
 
-Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_force=600`. `BOSS_SPEED=60 px/s`. Drops 20 Slime Goop on death.
+Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_force=600`. Drops 20 Slime Goop. Spawns after 20 **combined** slime kills.
 
-- Always chases player.
-- **AOE attack:** Same telegraph system as other bosses. `AOE_RADIUS=150px`, `AOE_DAMAGE=7`, `AOE_KNOCKBACK=700`, `ATTACK_COOLDOWN=5s`, `TELEGRAPH_DURATION=1.5s`.
-- Extra player-separation push in `_integrate_forces()`.
-- Sprites: `.aseprite` per animation/direction from `assets/Slime3/` (includes Attack animation set).
-- Spawns at world center after `BOSS_KILL_THRESHOLD=20` slime3 kills.
+- Always chases; AOE attack with 1.5 s telegraph. `AOE_RADIUS=150`, `AOE_DAMAGE=7`, `AOE_KNOCKBACK=700`, `ATTACK_COOLDOWN=5s`.
+- Sprites: from `assets/mobs/Slime3/` (includes Attack animation).
 
 ---
 
-### 19. Weapon HUD — `ui/weapon_hud.gd`
+### 17. Orc1/2/3 — `mob/orc1.gd`, `mob/orc2.gd`, `mob/orc3.gd`
+
+Charger AI. Zone: zone_a. HP 8/14/22, dmg 2/3/4, knockback 250/350/450, charge speed 280/320/360.
+`_is_attacking=true` during CHARGE phase only. See `docs/game_mechanics.md` for AI detail.
+
+---
+
+### 18. Orc3 Boss — `mob/orc3_boss.gd`
+
+HP=60, dmg=6, kb=600. Drops 15 Goop. Spawns after 20 combined orc kills.
+Telegraphed charge (1.5 s orange indicator via `_draw()`), then 500 px/s charge for 1.0 s.
+
+---
+
+### 19. Plant1/2/3 — `mob/plant1.gd`, `mob/plant2.gd`, `mob/plant3.gd`
+
+Creeper AI. Zone: zone_a. HP 10/18/28, dmg 2/3/5, knockback 200/300/400.
+`_is_attacking=true` while within `STRIKE_RADIUS=90 px` and playing walk_attack. See `docs/game_mechanics.md`.
+
+---
+
+### 20. Plant3 Boss — `mob/plant3_boss.gd`
+
+HP=50, dmg=7, kb=500. Drops 15 Goop. Spawns after 20 combined plant kills.
+Starburst AOE: 5 beams drawn via `_draw()`, 2.0 s telegraph, angular hit check (±0.35 rad per beam, reach=400 px).
+
+---
+
+### 21. Vampire1/2/3 — `mob/vampire1.gd`, `mob/vampire2.gd`, `mob/vampire3.gd`
+
+Stalker AI. Zone: zone_b. HP 6/10/16, dmg 1/2/3, knockback 200/300/400.
+Orbits at 200 px, dashes at player on timer (`_is_attacking=true` during dash). See `docs/game_mechanics.md`.
+
+---
+
+### 22. Vampire3 Boss — `mob/vampire3_boss.gd`
+
+HP=40, dmg=5, kb=400. Drops 15 Goop. Spawns after 20 combined vampire kills.
+Faster orbit/dash; life drain: heals 4 HP when dash connects.
+
+---
+
+### 23. Weapon HUD — `ui/weapon_hud.gd`
 
 Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
@@ -498,7 +528,7 @@ Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
 ---
 
-### 20. Minimap — `ui/minimap.gd`
+### 24. Minimap — `ui/minimap.gd`
 
 Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field.gd._ready()`.
 
@@ -510,7 +540,7 @@ Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field
 - Redraws every frame via `_process → queue_redraw`.
 - All drawing is done via the `draw` signal on an inner Control node.
 
-### 21. Boss Health Bar — `ui/boss_health_bar.gd`
+### 25. Boss Health Bar — `ui/boss_health_bar.gd`
 
 Top-center CanvasLayer (layer 20). Shown only while boss is alive.
 
@@ -690,6 +720,9 @@ game_state.json written → pipeline reads it → NPC dialogue references bounti
 | `menu_up` | Up arrow | D-pad up |
 | `menu_down` | Down arrow | D-pad down |
 | `menu_cancel` | Escape | East button (B) |
+| `select` | Tab | Back button (Select) |
+
+`select` is used only in the field scene when `testing_mode` is ON — it opens the teleport menu.
 
 `interact` is the universal "do thing" action: open NPC dialogue, open bounty board, confirm menu selections.
 `menu_cancel` shares the East button with `dodge`; player process is frozen while any menu is open so there is no conflict.

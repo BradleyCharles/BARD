@@ -62,6 +62,141 @@ def describe_slime_kills(n: int) -> str:
     ])
 
 
+# ── Orc kills ────────────────────────────────────────────────────────────────
+
+def describe_orc_kills(n: int) -> str:
+    if n == 0:
+        return random.choice([
+            "No orcs were encountered in the field today.",
+            "The northwest trails were clear of orc activity.",
+            "The hunter returned without crossing any orcs today.",
+        ])
+    if n == 1:
+        return random.choice([
+            "A single orc was put down in the field.",
+            "One orc was encountered and dealt with today.",
+        ])
+    if n <= 3:
+        return random.choice([
+            "A small number of orcs were driven back today.",
+            "Light orc activity — only a few encountered on the trails.",
+            "The hunter handled a handful of orcs without serious incident.",
+        ])
+    if n <= 7:
+        return random.choice([
+            "A moderate number of orcs were cleared from the northwest trails.",
+            "Solid orc culling today — the warband was thinned considerably.",
+            "The hunter worked through a fair number of the brutes today.",
+        ])
+    if n <= 12:
+        return random.choice([
+            "Heavy orc presence today — a significant number were put down.",
+            "The northwest was thick with them. The hunter cleared a large group.",
+            "A hard day's work. The orc numbers have been meaningfully reduced.",
+        ])
+    if n <= 20:
+        return random.choice([
+            "The field was overrun with orcs. The hunter cleared them in force today.",
+            "An intense engagement — orcs in large numbers, met head on.",
+            "The hunter pushed deep into their territory and cleared a substantial warband.",
+        ])
+    return random.choice([
+        "Exceptional engagement today — the hunter cleared an extraordinary number of orcs.",
+        "The northwest saw one of its heaviest orc incursions on record. The hunter did not flinch.",
+        "A landmark day. Orc numbers in the field were the highest seen in recent memory.",
+    ])
+
+
+# ── Plant kills ───────────────────────────────────────────────────────────────
+
+def describe_plant_kills(n: int) -> str:
+    if n == 0:
+        return random.choice([
+            "No plant creatures were cleared from the field today.",
+            "The trails were free of the creeping growths today.",
+            "The hunter returned without cutting back any plant creatures.",
+        ])
+    if n == 1:
+        return random.choice([
+            "A single plant creature was cut down today.",
+            "One of the creeping growths was cleared from the trail.",
+        ])
+    if n <= 3:
+        return random.choice([
+            "A small number of plant creatures were cleared today.",
+            "Light growth activity — only a few of the creepers encountered.",
+            "The hunter cut back a handful of the encroaching growths.",
+        ])
+    if n <= 7:
+        return random.choice([
+            "A moderate number of plant creatures were cut down today.",
+            "Steady work against the creeping growth — a fair number cleared.",
+            "The hunter made a solid dent in the plant infestation today.",
+        ])
+    if n <= 12:
+        return random.choice([
+            "Heavy plant activity today — a significant number cleared from the field.",
+            "The growth was thick in places. The hunter cleared a large cluster.",
+            "A productive if harrowing day against the plant creatures.",
+        ])
+    if n <= 20:
+        return random.choice([
+            "The field was choked with them. The hunter cleared plant creatures in great numbers.",
+            "An intense session against the creeping growths — they were everywhere.",
+            "The hunter pushed through dense growth and cleared a substantial infestation.",
+        ])
+    return random.choice([
+        "Exceptional activity today — the hunter cleared a remarkable number of plant creatures.",
+        "The northwest saw one of its heaviest growth surges on record. The hunter cut through all of it.",
+        "A landmark day against the plant menace. Numbers cleared were the highest in recent memory.",
+    ])
+
+
+# ── Vampire kills ─────────────────────────────────────────────────────────────
+
+def describe_vampire_kills(n: int) -> str:
+    if n == 0:
+        return random.choice([
+            "No vampires were encountered in the fen today.",
+            "The marsh was quiet — no vampire activity to report.",
+            "The hunter returned from the northeast without a single engagement.",
+        ])
+    if n == 1:
+        return random.choice([
+            "A single vampire was put down in the fen today.",
+            "One of the pale hunters was cornered and dealt with.",
+        ])
+    if n <= 3:
+        return random.choice([
+            "A small number of vampires were cleared from the fen today.",
+            "Light vampire activity — only a few of the circling predators encountered.",
+            "The hunter dispatched a handful of the creatures before they could scatter.",
+        ])
+    if n <= 7:
+        return random.choice([
+            "A moderate number of vampires were driven out of the marsh today.",
+            "Steady work in the fen — a fair number of the pale hunters put down.",
+            "The hunter threaded through their orbit patterns and cleared several today.",
+        ])
+    if n <= 12:
+        return random.choice([
+            "Heavy vampire activity today — a significant number cleared from the northeast.",
+            "The fen was thick with them. The hunter cleared a large roost.",
+            "A difficult and dangerous day in the marsh. The vampire numbers were meaningfully reduced.",
+        ])
+    if n <= 20:
+        return random.choice([
+            "The fen was swarming. The hunter cleared vampires in large numbers today.",
+            "An intense day against the circling predators — they came from every direction.",
+            "The hunter pressed into their territory and cleared a substantial flight of vampires.",
+        ])
+    return random.choice([
+        "Exceptional engagement today — the hunter cleared an extraordinary number of vampires.",
+        "The northeast fen saw one of its heaviest vampire concentrations on record. The hunter met them alone.",
+        "A landmark day. Vampire numbers cleared were the highest in recent memory.",
+    ])
+
+
 # ── Total field kills (all monster types) ────────────────────────────────────
 
 def describe_field_activity(total_kills: int) -> str:
@@ -97,6 +232,7 @@ def describe_kill_history(history: list[dict], monster_type: str = "slime1") -> 
     """
     Summarise the hunter's overall record with a given monster type
     across all recorded days.
+    Supported types: slime1/2/3, orc1/2/3, plant1/2/3, vampire1/2/3
     """
     total = sum(day.get(monster_type, 0) for day in history)
 

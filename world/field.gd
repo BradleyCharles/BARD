@@ -83,9 +83,9 @@ var _testing_timer : Timer      = null
 @onready var _player        = $Player
 @onready var _entrance      : Area2D    = $TownEntrance
 @onready var _mob_container : Node2D    = $MobContainer
-@onready var _terrain_nw    : ColorRect = $TerrainNW
-@onready var _terrain_ne    : ColorRect = $TerrainNE
-@onready var _terrain_se    : ColorRect = $TerrainSE
+@onready var _terrain_nw    : ColorRect = $ZoneA
+@onready var _terrain_ne    : ColorRect = $ZoneB
+@onready var _terrain_se    : ColorRect = $ZoneC
 
 var _pause_menu    : CanvasLayer = null
 var _minimap       : CanvasLayer = null

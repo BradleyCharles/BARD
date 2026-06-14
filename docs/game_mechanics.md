@@ -156,6 +156,59 @@ Because `body_radius` is derived from `CircleShape2D.radius × scale.x`, `contac
 
 All slimes stop (`linear_velocity = Vector2.ZERO`) when within `contact_radius` of the player and chase when further. Player iframes prevent re-damage if a mob re-enters the hurt area, so no mob-side iframe check is needed. The previous pattern (`dist > contact_radius and not _player_is_invincible()`) was a bug: `_player_is_invincible()` is global state, so any mob hitting the player caused ALL mobs to stop rather than just the one at contact range.
 
+### Orc1/2/3 — `mob/orc1.gd`, `mob/orc2.gd`, `mob/orc3.gd`
+
+Charger AI. Three phases (local enum `OrcPhase`):
+- **WANDER**: Random walk. On player entering `aggro_radius`, locks `_charge_dir` and enters CHARGE.
+- **CHARGE**: `linear_velocity = _charge_dir * CHARGE_SPEED`. Plays run_attack. `_is_attacking = true`. CHARGE_DURATION=1.2 s, then RECOVER.
+- **RECOVER**: `linear_velocity = Vector2.ZERO`. `_is_attacking = false`. RECOVER_DURATION=0.8 s, then WANDER.
+
+Does not stop at `contact_radius` — passes through the player during the charge. Damage fires via `_is_attacking` gate in `player.gd`.
+
+Stats: Orc1 HP=8 dmg=2 kb=250 speed=280; Orc2 HP=14 dmg=3 kb=350 speed=320; Orc3 HP=22 dmg=4 kb=450 speed=360.
+
+### Plant1/2/3 — `mob/plant1.gd`, `mob/plant2.gd`, `mob/plant3.gd`
+
+Creeper AI. Uses mob_base `AIState` (WANDER_STATE / CHASE_STATE):
+- **WANDER_STATE**: Slow random movement (2–6 s move, 2–5 s pause). On player within `aggro_radius`, enters CHASE.
+- **CHASE_STATE**: Slow creep toward player. When `dist <= STRIKE_RADIUS=90 px`, plays walk_attack and sets `_is_attacking = true`. When `dist > STRIKE_RADIUS`, reverts to walk, `_is_attacking = false`. On player leaving `aggro_radius`, returns to WANDER.
+
+walk_attack loops while in strike range. Damage fires via `_is_attacking` gate in `player.gd`.
+
+Stats: Plant1 HP=10 dmg=2 kb=200; Plant2 HP=18 dmg=3 kb=300; Plant3 HP=28 dmg=5 kb=400.
+
+### Vampire1/2/3 — `mob/vampire1.gd`, `mob/vampire2.gd`, `mob/vampire3.gd`
+
+Stalker AI. Three phases (local enum `VampirePhase`):
+- **ORBIT**: Orbits player at `ORBIT_RADIUS=200 px`. Tangent velocity keeps orbit; radial term pulls toward correct radius. Plays run.
+- **DASH**: `linear_velocity = _dash_dir * DASH_SPEED`. `_is_attacking = true`. DASH_DURATION=0.4 s, then RECOVER.
+- **RECOVER**: `linear_velocity = Vector2.ZERO`. `_is_attacking = false`. RECOVER_DURATION=0.6 s, back to ORBIT. Dash timer reset to `randf_range(DASH_INTERVAL_MIN, DASH_INTERVAL_MAX)`.
+
+Orbit formula:
+```gdscript
+var tangent := Vector2(-to_player.y, to_player.x).normalized()
+var radial  := to_player.normalized() * (dist - ORBIT_RADIUS) * 0.05
+linear_velocity = (tangent * ORBIT_SPEED) + radial
+```
+Damage fires via `_is_attacking` gate in `player.gd`.
+
+Stats: V1 HP=6 dmg=1 kb=200 orbit=90 dash=350 interval=3.0–5.0 s; V2 HP=10 dmg=2 kb=300 orbit=100 dash=400 interval=2.5–4.0 s; V3 HP=16 dmg=3 kb=400 orbit=110 dash=450 interval=2.0–3.5 s.
+
+### _is_attacking Gate (player.gd `_on_body_entered`)
+
+New mob types (orcs, plants, vampires) declare `var _is_attacking: bool = false`. `player.gd._on_body_entered` reads this before processing damage:
+
+```gdscript
+var mob_attacking: Variant = body.get("_is_attacking")
+if mob_attacking != null and mob_attacking == false:
+    return
+```
+
+- Slimes have no `_is_attacking` → `body.get()` returns null → damage fires always (backward compatible).
+- New mobs: null means never returned; false = not attacking, no damage; true = damage fires.
+
+This lets each mob control its own damage window precisely without any central coordination.
+
 ---
 
 ## Why Mobs Must Not Set `linear_velocity` While Hurt
@@ -185,4 +238,5 @@ All slimes stop (`linear_velocity = Vector2.ZERO`) when within `contact_radius` 
 3. In `_physics_process`, guard the velocity-setting block with `if _is_hurt: return`.
 4. Use `contact_radius` (inherited from `mob_base`, auto-computed as `body_radius + 20.0` in `_ready()`) to stop chasing when within range — do not add a local constant.
 5. Do **not** add player-separation logic to `_integrate_forces` — it prevents damage contact.
-6. Register the new scene in `field.gd` as a `@export var` and wire it in the editor.
+6. If the mob should only deal damage during a specific animation, declare `var _is_attacking: bool = false` and set it true/false around the attack window. The `_on_body_entered` gate in `player.gd` reads this automatically. Slimes (no `_is_attacking`) retain always-on contact damage — the gate is backward compatible.
+7. Register the new scene in `field.gd` as a `@export var` and wire it in the editor.

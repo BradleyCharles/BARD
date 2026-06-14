@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://bfkfdbgn5w0og"
-path="res://.godot/imported/Slime1_Idle_left.aseprite-5279be221fe40326dc27a94f05dc7c46.res"
+path="res://.godot/imported/Slime1_Idle_left.aseprite-b9f9468aaed66892f8601a30a7f3e129.res"
 
 [deps]
 
-source_file="res://assets/Slime1/Idle/Slime1_Idle_left.aseprite"
-dest_files=["res://.godot/imported/Slime1_Idle_left.aseprite-5279be221fe40326dc27a94f05dc7c46.res"]
+source_file="res://assets/mobs/Slime1/Idle/Slime1_Idle_left.aseprite"
+dest_files=["res://.godot/imported/Slime1_Idle_left.aseprite-b9f9468aaed66892f8601a30a7f3e129.res"]
 
 [params]
 

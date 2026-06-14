@@ -176,6 +176,8 @@ func open(current_scene_path: String) -> void:
 	_selection  = 0
 	_highlight(_selection)
 	_fullscreen_label.text = _fullscreen_label_text()
+	if _testing_label:
+		_testing_label.text = _testing_label_text()
 	visible  = true
 	_is_open = true
 	get_tree().paused = true

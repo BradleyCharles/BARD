@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://dyep1ilg7kq11"
-path="res://.godot/imported/Slime2_Hurt_left.aseprite-f0e2960ea5c76c87d2f71fd271470489.res"
+path="res://.godot/imported/Slime2_Hurt_left.aseprite-4395a7bd08fd59af61525408441ad7d3.res"
 
 [deps]
 
-source_file="res://assets/Slime2/Hurt/Slime2_Hurt_left.aseprite"
-dest_files=["res://.godot/imported/Slime2_Hurt_left.aseprite-f0e2960ea5c76c87d2f71fd271470489.res"]
+source_file="res://assets/mobs/Slime2/Hurt/Slime2_Hurt_left.aseprite"
+dest_files=["res://.godot/imported/Slime2_Hurt_left.aseprite-4395a7bd08fd59af61525408441ad7d3.res"]
 
 [params]
 

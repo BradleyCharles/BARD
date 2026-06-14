@@ -522,7 +522,11 @@ Kill progress is always lost on drop — the bounty returns to the board in its 
 
 ### Bounty data source
 
-`data/bounty_pool.json` — static definitions (9 entries: 3 zones × 3 tiers). Not modified at runtime.
+`data/bounty_pool.json` — static definitions (36 entries). Zone assignments:
+- `zone_c` (9 entries): Slime1/2/3 × small/medium/large
+- `zone_a` (18 entries): Orc1/2/3 × small/medium/large + Plant1/2/3 × small/medium/large
+- `zone_b` (9 entries): Vampire1/2/3 × small/medium/large
+Not modified at runtime.
 
 ### Reward tiers
 
@@ -613,11 +617,11 @@ Upgrade tier is tracked in `SceneManager.weapon_upgrades["sword"]` / `["axe"]` b
 
 Three zones map to `ColorRect` terrain nodes in `field.tscn`:
 
-| Zone key | Terrain node | Location |
-|----------|-------------|---------|
-| `zone_a` | `TerrainNW` | NW corner |
-| `zone_b` | `TerrainNE` | NE corner |
-| `zone_c` | `TerrainSE` | SE corner |
+| Zone key | Terrain node | Location | Regular mobs |
+|----------|-------------|---------|--------------|
+| `zone_a` | `TerrainNW` | NW corner | Orc1, Orc2, Orc3, Plant1, Plant2, Plant3 |
+| `zone_b` | `TerrainNE` | NE corner | Vampire1, Vampire2, Vampire3 |
+| `zone_c` | `TerrainSE` | SE corner | Slime1, Slime2, Slime3 |
 
 ### Spawn logic
 
@@ -639,21 +643,44 @@ Scenes are `@export` vars assigned in the Godot editor inspector on `field.tscn`
 | `slime1_scene` | `mob/slime1.tscn` |
 | `slime2_scene` | `mob/slime2.tscn` |
 | `slime3_scene` | `mob/slime3.tscn` |
-| `slime1_boss_scene` | `mob/slime1_boss.tscn` |
-| `slime2_boss_scene` | `mob/slime2_boss.tscn` |
 | `slime3_boss_scene` | `mob/slime3_boss.tscn` |
+| `orc1_scene` | `mob/orc1.tscn` |
+| `orc2_scene` | `mob/orc2.tscn` |
+| `orc3_scene` | `mob/orc3.tscn` |
+| `orc3_boss_scene` | `mob/orc3_boss.tscn` |
+| `plant1_scene` | `mob/plant1.tscn` |
+| `plant2_scene` | `mob/plant2.tscn` |
+| `plant3_scene` | `mob/plant3.tscn` |
+| `plant3_boss_scene` | `mob/plant3_boss.tscn` |
+| `vampire1_scene` | `mob/vampire1.tscn` |
+| `vampire2_scene` | `mob/vampire2.tscn` |
+| `vampire3_scene` | `mob/vampire3.tscn` |
+| `vampire3_boss_scene` | `mob/vampire3_boss.tscn` |
 
 ### On kill
 
 `_on_mob_died(mob_body)` (connected at spawn via `mob.died.connect(...)`):
-1. `SceneManager.record_kill(monster_type)` — increments `monsters_killed_today`
-2. If mob has `bounty_zone` meta: `SceneManager.record_bounty_kill(monster_type, zone)` — increments bounty kill counter, marks complete when quota met
-3. Increments the per-type local counter (`_slime1_killed` etc.)
-4. `_check_boss_triggers()`
+1. If mob has `is_testing_mob` meta: skip kill recording and boss triggers entirely — testing mobs do not affect bounty or boss state.
+2. `SceneManager.record_kill(monster_type)` — increments `monsters_killed_today`
+3. If mob has `bounty_zone` meta: `SceneManager.record_bounty_kill(monster_type, zone)` — increments bounty kill counter, marks complete when quota met
+4. Routes kill to the correct zone counter via `match monster_type`:
+   - `"slime1"/"slime2"/"slime3"` → `_zone_c_slime_killed`
+   - `"orc1"/"orc2"/"orc3"` → `_zone_a_orc_killed`
+   - `"plant1"/"plant2"/"plant3"` → `_zone_a_plant_killed`
+   - `"vampire1"/"vampire2"/"vampire3"` → `_zone_b_vampire_killed`
+5. `_check_boss_triggers()`
 
 Mob meta tags set at spawn time:
 - `set_meta("bounty_zone", zone)` — links kill to the correct bounty
 - `set_meta("monster_type", type_string)` — set by the mob script itself in `_ready()`
+
+### Testing mode spawning
+
+When `SceneManager.testing_mode` is true:
+- `_start_testing_spawning()` runs instead of bounty spawning; all bounty timers are stopped.
+- Each zone is filled to `MAX_TESTING_MOBS_PER_ZONE = 10` with randomly weighted mobs (50% tier-1, 30% tier-2, 20% tier-3 for that zone's mob families).
+- Testing mobs are tagged `set_meta("is_testing_mob", true)` and `set_meta("testing_zone", zone)`. They do NOT receive `bounty_zone` meta so kills are not recorded.
+- On testing mode off: `_stop_testing_spawning()` frees all testing mobs and restarts bounty timers.
 
 ---
 
@@ -661,17 +688,24 @@ Mob meta tags set at spawn time:
 
 **Owner:** `world/field.gd`
 
-Each slime type has an independent boss trigger:
+Four independent boss triggers — one per mob family (zone_c slimes, zone_a orcs, zone_a plants, zone_b vampires):
 
-- `BOSS_KILL_THRESHOLD = 20` — kills of that type required
-- Per-type kill counters: `_slime1_killed`, `_slime2_killed`, `_slime3_killed`
-- Per-type spawn flags: `_slime1_boss_spawned` etc. (prevent double-spawn)
+- `BOSS_KILL_THRESHOLD = 20` — combined kills of that family required
+- Per-family kill counters: `_zone_c_slime_killed`, `_zone_a_orc_killed`, `_zone_a_plant_killed`, `_zone_b_vampire_killed`
+- Per-boss spawn flags: `_slime3_boss_spawned`, `_orc3_boss_spawned`, `_plant3_boss_spawned`, `_vampire3_boss_spawned` (prevent double-spawn)
 
-On threshold reached:
-1. `call_deferred("_spawn_boss", type)` — deferred to avoid spawning mid-physics step
+`_check_boss_triggers()` is called on every mob kill (testing mobs excluded). On threshold reached:
+1. `call_deferred("_spawn_boss", scene)` — deferred to avoid spawning mid-physics step
 2. Boss instantiated at `world_size * 0.5` (map center)
 3. `boss_health_bar.tscn` instantiated, `init(boss)` called — connects to `boss.died` signal, shows top-center HP bar
-4. Boss drops 5 Slime Goop on death (handled in the boss mob script)
+4. Boss drops 15 Slime Goop on death (handled in the boss script's `_on_died()`)
+
+| Boss | Kill family | Scene |
+|------|------------|-------|
+| Slime3 Boss | slime1 + slime2 + slime3 combined | `mob/slime3_boss.tscn` |
+| Orc3 Boss | orc1 + orc2 + orc3 combined | `mob/orc3_boss.tscn` |
+| Plant3 Boss | plant1 + plant2 + plant3 combined | `mob/plant3_boss.tscn` |
+| Vampire3 Boss | vampire1 + vampire2 + vampire3 combined | `mob/vampire3_boss.tscn` |
 
 ---
 
@@ -708,6 +742,71 @@ Shown only during `"eod"` mode. A 400×18 px `ColorRect` fill bar inside the loa
 Progress animates via a `Tween` on `size.x` toward `BAR_WIDTH * completed / total`. A label below shows `"Generating {npc_name}… (N / total)"`.
 
 On chronicle runs, the progress bar is not shown (no `pipeline_progress.json` is written by `chronicle.py`).
+
+---
+
+---
+
+## 20. Testing Mode
+
+**Owner:** `autoload/scene_manager.gd` + `ui/pause_menu.gd` + `world/field.gd`
+
+A development feature that bypasses the bounty system and fills every zone with mobs for rapid combat testing. It is not visible or accessible during normal play (only through the pause menu while in the field).
+
+### Toggle
+
+Pause menu → "Testing" row (index 4). Calls `SceneManager.set_testing_mode(bool)`, which sets `SceneManager.testing_mode` and emits `testing_mode_changed(enabled: bool)`. `field.gd` connects to this signal and calls `_start_testing_spawning()` / `_stop_testing_spawning()`.
+
+### Spawn behaviour (ON)
+- All active bounty timers are stopped.
+- Each zone (`zone_a`, `zone_b`, `zone_c`) is filled to `MAX_TESTING_MOBS_PER_ZONE = 10` mobs.
+- Per-zone random mob selection: 50% tier-1, 30% tier-2, 20% tier-3 within that zone's mob family (orcs+plants in zone_a; vampires in zone_b; slimes in zone_c).
+- Testing mobs receive `set_meta("is_testing_mob", true)` and `set_meta("testing_zone", zone)`. No `bounty_zone` meta — kills do not affect bounty counters or boss triggers.
+- When a testing mob dies it is not replaced immediately; a separate timer refills the zone back to 10 every few seconds.
+
+### Restore behaviour (OFF)
+- All testing mobs are freed (`queue_free()`).
+- Bounty spawning resumes via `_start_bounty_spawning()`.
+
+---
+
+## 21. Teleport Menu (Testing Only)
+
+**Owner:** `ui/teleport_menu.gd` (instantiated by `world/field.gd`)
+
+Available only when `SceneManager.testing_mode == true`. Opened by pressing SELECT (Tab / controller Back button) in the field scene.
+
+### Open flow
+```
+player presses SELECT in field scene (_unhandled_input)
+  → SceneManager.testing_mode == true? Yes
+  → _teleport_menu == null? Yes
+  → _open_teleport_menu()
+      • load("res://ui/teleport_menu.gd")
+      • CanvasLayer.new() + set_script()
+      • add_child()
+      • .call("init", _zone_rects, _player)   ← passes zone Rect2s and player ref
+      • connect("menu_closed", _on_teleport_closed)
+```
+
+### Menu options
+| Option | Action |
+|--------|--------|
+| Zone A (Orcs & Plants) | Teleports player to center of `zone_a` Rect2 |
+| Zone B (Vampires) | Teleports player to center of `zone_b` Rect2 |
+| Zone C (Slimes) | Teleports player to center of `zone_c` Rect2 |
+| Cancel | Closes menu, no action |
+
+### Input
+- `menu_up` / `menu_down`: navigate rows
+- `interact` (A / E): confirm selection
+- `menu_cancel` (B / Esc) or `SELECT`: close menu
+
+### Pause handling
+`get_tree().paused = true` on `init()`, `get_tree().paused = false` on close. CanvasLayer process mode = PROCESS_MODE_ALWAYS so it can read input while paused.
+
+### Close flow
+Emits `menu_closed` → `_on_teleport_closed()` in `field.gd` → `queue_free()` + nulls `_teleport_menu`.
 
 ---
 
