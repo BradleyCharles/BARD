@@ -82,19 +82,19 @@ BARD/
 │   ├── slime1.gd / .tscn         # Slime1: PACK_MENTALITY, HP=3, zone_c, flees alone, links pack on 2+ nearby
 │   ├── slime2.gd / .tscn         # Slime2: PACK_MENTALITY, HP=6, zone_c, passive until hit
 │   ├── slime3.gd / .tscn         # Slime3: WEAK_AGGRESSIVE, HP=8, zone_c, chases on sight
-│   ├── slime3_boss.gd / .tscn    # Slime3 Boss: HP=30, AOE attack, drops 20 Goop — spawns after 20 combined slime kills
+│   ├── slime3_boss.gd / .tscn    # Slime3 Boss: HP=30, AOE attack, drops 20 Goop — spawns after 10 combined slime kills
 │   ├── orc1.gd / .tscn           # Orc1: charger AI, HP=8, dmg=2, zone_a
 │   ├── orc2.gd / .tscn           # Orc2: charger AI, HP=14, dmg=3, zone_a
 │   ├── orc3.gd / .tscn           # Orc3: charger AI, HP=22, dmg=4, zone_a
-│   ├── orc3_boss.gd / .tscn      # Orc3 Boss: HP=60, telegraphed charge, drops 15 Goop — after 20 orc kills
+│   ├── orc3_boss.gd / .tscn      # Orc3 Boss: HP=60, telegraphed charge, drops 15 Goop — after 10 orc kills
 │   ├── plant1.gd / .tscn         # Plant1: creeper AI, HP=10, dmg=2, zone_a
 │   ├── plant2.gd / .tscn         # Plant2: creeper AI, HP=18, dmg=3, zone_a
 │   ├── plant3.gd / .tscn         # Plant3: creeper AI, HP=28, dmg=5, zone_a
-│   ├── plant3_boss.gd / .tscn    # Plant3 Boss: HP=50, starburst AOE, drops 15 Goop — after 20 plant kills
+│   ├── plant3_boss.gd / .tscn    # Plant3 Boss: HP=50, starburst AOE, drops 15 Goop — after 10 plant kills
 │   ├── vampire1.gd / .tscn       # Vampire1: stalker AI, HP=6, dmg=1, zone_b
 │   ├── vampire2.gd / .tscn       # Vampire2: stalker AI, HP=10, dmg=2, zone_b
 │   ├── vampire3.gd / .tscn       # Vampire3: stalker AI, HP=16, dmg=3, zone_b
-│   ├── vampire3_boss.gd / .tscn  # Vampire3 Boss: HP=40, orbit+life drain, drops 15 Goop — after 20 vampire kills
+│   ├── vampire3_boss.gd / .tscn  # Vampire3 Boss: HP=40, orbit+life drain, drops 15 Goop — after 10 vampire kills
 │   └── mob.tscn                  # Unused legacy mob scene
 ├── npc/                          # NPC base system
 │   ├── npc_base.gd               # Proximity detection, dialogue loading/merging, wandering
@@ -391,7 +391,7 @@ Top-left CanvasLayer HUD, below the health bar (offset_top 90). Displays `Script
 - On kill: `SceneManager.record_kill()` and `SceneManager.record_bounty_kill()` called; mob frees itself.
 
 **Boss triggers:**
-- `BOSS_KILL_THRESHOLD = 20`. Four independent family kill counters (`_zone_c_slime_killed`, `_zone_a_orc_killed`, `_zone_a_plant_killed`, `_zone_b_vampire_killed`) and four boss-spawned flags.
+- `BOSS_KILL_THRESHOLD = 10`. Four independent family kill counters (`_zone_c_slime_killed`, `_zone_a_orc_killed`, `_zone_a_plant_killed`, `_zone_b_vampire_killed`) and four boss-spawned flags.
 - When a family's count reaches the threshold, the matching boss spawns once at world center; `boss_health_bar.tscn` is instantiated and `init(boss)` called.
 - Export vars: `slime1/2/3_scene`, `slime3_boss_scene`, `orc1/2/3_scene`, `orc3_boss_scene`, `plant1/2/3_scene`, `plant3_boss_scene`, `vampire1/2/3_scene`, `vampire3_boss_scene` — all must be assigned in the Godot editor inspector.
 
@@ -470,7 +470,7 @@ Extends `mob_base`. `max_health=8`, `personality=WEAK_AGGRESSIVE`, `aggro_radius
 
 ### 16. Slime3 Boss — `mob/slime3_boss.gd`
 
-Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_force=600`. Drops 20 Slime Goop. Spawns after 20 **combined** slime kills.
+Extends `mob_base`. `max_health=30`, `personality=BOSS`, `damage=5`, `knockback_force=600`. Drops 20 Slime Goop. Spawns after 10 **combined** slime kills.
 
 - Always chases; AOE attack with 1.5 s telegraph. `AOE_RADIUS=150`, `AOE_DAMAGE=7`, `AOE_KNOCKBACK=700`, `ATTACK_COOLDOWN=5s`.
 - Sprites: from `assets/mobs/Slime3/` (includes Attack animation).
@@ -486,7 +486,7 @@ Charger AI. Zone: zone_a. HP 8/14/22, dmg 2/3/4, knockback 250/350/450, charge s
 
 ### 18. Orc3 Boss — `mob/orc3_boss.gd`
 
-HP=60, dmg=6, kb=600. Drops 15 Goop. Spawns after 20 combined orc kills.
+HP=60, dmg=6, kb=600. Drops 15 Goop. Spawns after 10 combined orc kills.
 Telegraphed charge (1.5 s orange indicator via `_draw()`), then 500 px/s charge for 1.0 s.
 
 ---
@@ -500,7 +500,7 @@ Creeper AI. Zone: zone_a. HP 10/18/28, dmg 2/3/5, knockback 200/300/400.
 
 ### 20. Plant3 Boss — `mob/plant3_boss.gd`
 
-HP=50, dmg=7, kb=500. Drops 15 Goop. Spawns after 20 combined plant kills.
+HP=50, dmg=7, kb=500. Drops 15 Goop. Spawns after 10 combined plant kills.
 Starburst AOE: 5 beams drawn via `_draw()`, 2.0 s telegraph, angular hit check (±0.35 rad per beam, reach=400 px).
 
 ---

@@ -691,7 +691,7 @@ When `SceneManager.testing_mode` is true:
 
 Four independent boss triggers — one per mob family (zone_c slimes, zone_a orcs, zone_a plants, zone_b vampires):
 
-- `BOSS_KILL_THRESHOLD = 20` — combined kills of that family required
+- `BOSS_KILL_THRESHOLD = 10` — combined kills of that family required
 - Per-family kill counters: `_zone_c_slime_killed`, `_zone_a_orc_killed`, `_zone_a_plant_killed`, `_zone_b_vampire_killed`
 - Per-boss spawn flags: `_slime3_boss_spawned`, `_orc3_boss_spawned`, `_plant3_boss_spawned`, `_vampire3_boss_spawned` (prevent double-spawn)
 
@@ -889,7 +889,7 @@ field.gd._on_mob_died()
 
 | Method | Called by | Purpose |
 |--------|-----------|---------|
-| `init(threshold: int)` | `field.gd._ready()` | Build UI; sets kill threshold (20) |
+| `init(threshold: int)` | `field.gd._ready()` | Build UI; sets kill threshold (10) |
 | `set_family(family, count, spawned)` | `field.gd._update_boss_tracker()` | Update one family's bar and visibility |
 
 ### What to keep in mind
