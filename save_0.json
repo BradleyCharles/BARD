@@ -2,7 +2,7 @@
 	"active_bounties": [],
 	"available_bounties": [
 		{
-			"display_name": "Verdant Ooze",
+			"display_name": "Marsh Creep",
 			"flavor": "A handful of slimes have been sighted on the ridge approach. Few hunters go that way willingly, which is why we're posting this.",
 			"id": "slime1_zone_c_small",
 			"monster_type": "slime1",
@@ -11,7 +11,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Mire Drift",
+			"display_name": "Damp Crawler",
 			"flavor": "A troubling mass of the creatures has spread across the ridge shelf. The last party to scout it did not linger to count them.",
 			"id": "slime1_zone_c_medium",
 			"monster_type": "slime1",
@@ -20,7 +20,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Verdant Ooze",
+			"display_name": "Mire Drift",
 			"flavor": "A great seething host of slimes blankets the upper ridge. This is not a nuisance — it is an infestation. The guild pays well for resolution.",
 			"id": "slime1_zone_c_large",
 			"monster_type": "slime1",
@@ -29,7 +29,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Murk Swarm",
+			"display_name": "Slate Swarm",
 			"flavor": "A small group of dark slimes patrols the ridge approach. They appear passive until disturbed — do not test them.",
 			"id": "slime2_zone_c_small",
 			"monster_type": "slime2",
@@ -47,7 +47,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Slate Swarm",
+			"display_name": "Tide Slither",
 			"flavor": "A dense pack of the dark variety blankets the upper ridge. The guild has had two failed culling attempts already. Pay is accordingly generous.",
 			"id": "slime2_zone_c_large",
 			"monster_type": "slime2",
@@ -56,7 +56,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Ash Crusher",
+			"display_name": "Char Behemoth",
 			"flavor": "The largest slimes have been spotted on the ridge approach. They are territorial and relentless. This posting is not for novices.",
 			"id": "slime3_zone_c_small",
 			"monster_type": "slime3",
@@ -65,7 +65,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Cinder Beast",
+			"display_name": "Rust Colossus",
 			"flavor": "A dangerous concentration of the largest slime breed has taken hold on the ridge shelf. They pursue on sight and do not give ground. The guild marks this urgent.",
 			"id": "slime3_zone_c_medium",
 			"monster_type": "slime3",
@@ -74,7 +74,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "Cinder Beast",
+			"display_name": "Smoldering Creep",
 			"flavor": "A great host of the apex slime variety holds the upper ridge. The guild has exhausted all other options. Bring skill and patience.",
 			"id": "slime3_zone_c_large",
 			"monster_type": "slime3",
@@ -83,7 +83,7 @@
 			"zone": "zone_c"
 		},
 		{
-			"display_name": "orc1_zone_a_small",
+			"display_name": "Mud Brawler",
 			"flavor": "A handful of young orcs have been spotted charging through the outer trails. They are fast and reckless — bait them into open ground before engaging.",
 			"id": "orc1_zone_a_small",
 			"monster_type": "orc1",
@@ -92,7 +92,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc1_zone_a_medium",
+			"display_name": "Iron Scout",
 			"flavor": "A war band of lesser orcs has claimed a stretch of the forest road. Caravans have diverted to the long route. The guild wants the road cleared.",
 			"id": "orc1_zone_a_medium",
 			"monster_type": "orc1",
@@ -101,7 +101,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc1_zone_a_large",
+			"display_name": "Mud Brawler",
 			"flavor": "A large raiding party of orcs has dug in near the outer waystation. They charge in waves and do not break easily. Experienced hunters only.",
 			"id": "orc1_zone_a_large",
 			"monster_type": "orc1",
@@ -110,7 +110,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc2_zone_a_small",
+			"display_name": "Ember Veteran",
 			"flavor": "Seasoned orc raiders have been sighted on the forest trails. They move faster than you expect and hit harder than they look. Keep your distance until the moment counts.",
 			"id": "orc2_zone_a_small",
 			"monster_type": "orc2",
@@ -119,7 +119,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc2_zone_a_medium",
+			"display_name": "Bronze Horde",
 			"flavor": "A warband of veteran orcs has taken hold along the main road. They have already overrun one hunter's camp. The guild considers this a priority threat.",
 			"id": "orc2_zone_a_medium",
 			"monster_type": "orc2",
@@ -128,7 +128,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc2_zone_a_large",
+			"display_name": "Tempered Brute",
 			"flavor": "A large force of battle-hardened orcs occupies the northwest approach. Their charges are punishing and their numbers make withdrawal difficult. This is not a casual posting.",
 			"id": "orc2_zone_a_large",
 			"monster_type": "orc2",
@@ -137,7 +137,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc3_zone_a_small",
+			"display_name": "Titan Warboss",
 			"flavor": "A small number of warchief-class orcs have been confirmed in the area. Each one is a serious threat alone. The guild advises extreme caution and does not post this lightly.",
 			"id": "orc3_zone_a_small",
 			"monster_type": "orc3",
@@ -146,7 +146,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc3_zone_a_medium",
+			"display_name": "Blackiron Chieftain",
 			"flavor": "A cluster of the largest orcs has established a stronghold near the waystation. They charge with tremendous force and recover quickly. Only the most capable hunters should respond.",
 			"id": "orc3_zone_a_medium",
 			"monster_type": "orc3",
@@ -155,7 +155,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "orc3_zone_a_large",
+			"display_name": "Dominion Warmaster",
 			"flavor": "A warchief warband of the strongest orcs has seized the northwest trails. Witnesses describe charges that shattered stone barriers. The guild offers its highest standard rate for this culling.",
 			"id": "orc3_zone_a_large",
 			"monster_type": "orc3",
@@ -164,7 +164,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant1_zone_a_small",
+			"display_name": "Fern Grasp",
 			"flavor": "A few creeping plant creatures have taken root along the outer trails. They are slow but close the distance without warning. Travelers have reported sudden lashing injuries.",
 			"id": "plant1_zone_a_small",
 			"monster_type": "plant1",
@@ -173,7 +173,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant1_zone_a_medium",
+			"display_name": "Bark Latch",
 			"flavor": "A thicket of mobile plant creatures has spread across the forest road. They advance slowly but do not stop. The guild wants the growth cut back before it spreads further.",
 			"id": "plant1_zone_a_medium",
 			"monster_type": "plant1",
@@ -182,7 +182,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant1_zone_a_large",
+			"display_name": "Bark Latch",
 			"flavor": "The outer trails are choked with the creeping variety of plant creature. They move in slow clusters that are difficult to reposition away from. The guild posts hazard pay.",
 			"id": "plant1_zone_a_large",
 			"monster_type": "plant1",
@@ -191,7 +191,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant2_zone_a_small",
+			"display_name": "Quill Spread",
 			"flavor": "A handful of the larger plant breed have rooted themselves near the forest road. Their strike radius is deceptive — do not assume you are safe until you have confirmed the distance.",
 			"id": "plant2_zone_a_small",
 			"monster_type": "plant2",
@@ -200,7 +200,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant2_zone_a_medium",
+			"display_name": "Thorn Cluster",
 			"flavor": "A grove of mid-tier plant creatures has encroached on the northwest approach. They move in silence and strike without warning when close. Several merchants have been injured.",
 			"id": "plant2_zone_a_medium",
 			"monster_type": "plant2",
@@ -209,7 +209,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant2_zone_a_large",
+			"display_name": "Quill Spread",
 			"flavor": "A large stand of the thorned plant variety has spread across the waystation grounds. Clearing them requires patience — rushing invites a punishing counterattack at close range.",
 			"id": "plant2_zone_a_large",
 			"monster_type": "plant2",
@@ -218,7 +218,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant3_zone_a_small",
+			"display_name": "Doom Growth",
 			"flavor": "The most dangerous plant creatures have been confirmed in the northwest zone. Their attacks at close range are severe. The guild will not send scouts — it is posting a bounty instead.",
 			"id": "plant3_zone_a_small",
 			"monster_type": "plant3",
@@ -227,7 +227,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant3_zone_a_medium",
+			"display_name": "Death Canopy",
 			"flavor": "A cluster of apex plant creatures has established a growth corridor along the forest road. Approaching without a plan is not advisable. The guild marks this a high-risk contract.",
 			"id": "plant3_zone_a_medium",
 			"monster_type": "plant3",
@@ -236,7 +236,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "plant3_zone_a_large",
+			"display_name": "Ruin Bloom",
 			"flavor": "A full infestation of the most dangerous plant breed blankets the northwest trails. They do not tire and they do not retreat. The guild has set aside exceptional funds for this clearance.",
 			"id": "plant3_zone_a_large",
 			"monster_type": "plant3",
@@ -245,7 +245,7 @@
 			"zone": "zone_a"
 		},
 		{
-			"display_name": "vampire1_zone_b_small",
+			"display_name": "Mist Lurker",
 			"flavor": "A few pale creatures have been seen circling travelers on the fen paths at night. They do not engage directly — they wait and then they rush. Locals will not travel that road after dusk.",
 			"id": "vampire1_zone_b_small",
 			"monster_type": "vampire1",
@@ -254,7 +254,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire1_zone_b_medium",
+			"display_name": "Grey Orbiter",
 			"flavor": "A pack of lesser vampires has made the marsh hollows their hunting ground. They orbit at a distance before striking without warning. Trappers report losing partners without hearing a sound.",
 			"id": "vampire1_zone_b_medium",
 			"monster_type": "vampire1",
@@ -263,7 +263,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire1_zone_b_large",
+			"display_name": "Grey Orbiter",
 			"flavor": "A swarming roost of vampire creatures has taken over the northeast fen. Their circling makes it difficult to track any single target. The guild urges group engagements and swift exits.",
 			"id": "vampire1_zone_b_large",
 			"monster_type": "vampire1",
@@ -272,7 +272,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire2_zone_b_small",
+			"display_name": "Night Dasher",
 			"flavor": "A handful of stronger vampire creatures have been confirmed in the fen. They move faster than the lesser kind and close the gap before most hunters can react. Confirmed casualties already on record.",
 			"id": "vampire2_zone_b_small",
 			"monster_type": "vampire2",
@@ -281,7 +281,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire2_zone_b_medium",
+			"display_name": "Shade Darter",
 			"flavor": "A clutch of mid-tier vampires has spread across the marsh. They orbit in coordinated patterns and dash at unpredictable moments. The guild advises against solo contracts at this scale.",
 			"id": "vampire2_zone_b_medium",
 			"monster_type": "vampire2",
@@ -290,7 +290,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire2_zone_b_large",
+			"display_name": "Eclipse Dasher",
 			"flavor": "A large flight of the stronger vampire breed has claimed the northeast approaches. In those numbers their dashes come from every direction simultaneously. The guild pays well for this one.",
 			"id": "vampire2_zone_b_large",
 			"monster_type": "vampire2",
@@ -299,7 +299,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire3_zone_b_small",
+			"display_name": "Apex Revenant",
 			"flavor": "The eldest of their kind have been spotted deep in the fen. They are fast, precise, and difficult to corner. Few hunters who have seen them up close have lived to describe the experience.",
 			"id": "vampire3_zone_b_small",
 			"monster_type": "vampire3",
@@ -308,7 +308,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire3_zone_b_medium",
+			"display_name": "Void Ancient",
 			"flavor": "A coven of apex vampires has claimed the deeper marsh. Their orbiting patterns are almost hypnotic and their dashes are nearly impossible to anticipate. This is a contract for the guild's best.",
 			"id": "vampire3_zone_b_medium",
 			"monster_type": "vampire3",
@@ -317,7 +317,7 @@
 			"zone": "zone_b"
 		},
 		{
-			"display_name": "vampire3_zone_b_large",
+			"display_name": "Dark Sovereign",
 			"flavor": "A gathering of the most dangerous vampire creatures ever recorded in this region has taken over the northeast fen. The guild will not describe what was found at the last campsite. The pay speaks for itself.",
 			"id": "vampire3_zone_b_large",
 			"monster_type": "vampire3",
@@ -331,12 +331,15 @@
 		"first_bounty_accepted": false,
 		"first_bounty_completed": false,
 		"met_aldric": false,
+		"met_elara_vance": true,
 		"met_gareth": false,
+		"met_milos_volkov": true,
 		"met_mira": false,
+		"met_sergei_krylov": true,
 		"player_slept_at_inn": false
 	},
 	"meta": {
-		"day": 1,
+		"day": 2,
 		"scene_path": "res://world/town.tscn",
 		"schema_version": "1.0"
 	},
@@ -352,10 +355,14 @@
 
 	},
 	"world_state": {
-		"monsters_killed_history": [],
+		"monsters_killed_history": [
+			{
+				"slime1": 1.0,
+				"slime3": 1.0
+			}
+		],
 		"monsters_killed_today": {
-			"slime1": 1.0,
-			"slime3": 1.0
+
 		}
 	}
 }
