@@ -124,6 +124,7 @@ BARD/
 │       ├── sword_data.gd         # Sword: DAMAGE=1, SWING_FPS=40, KNOCKBACK=200, HITBOX
 │       └── axe_data.gd           # Axe: DAMAGE=2, SWING_FPS=24, KNOCKBACK=400, HITBOX
 ├── ui/                           # All HUD and overlay UI components
+│   ├── ui_theme.gd               # UITheme autoload: static color getters that branch on SceneManager.light_mode
 │   ├── dialog_box.gd             # Typewriter effect, branching responses, dialogue actions
 │   ├── dialog_box.tscn
 │   ├── bounty_board.gd           # Full-screen bounty board overlay (CanvasLayer)
@@ -186,6 +187,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `scripts` | int | Player currency (primary) |
 | `slime_goop` | int | Rare drop currency (from elite/boss slimes) |
 | `testing_mode` | bool | When true, field spawns all mobs for testing; bypasses bounty spawning |
+| `light_mode` | bool | When true, UI uses the light (cream/parchment) theme; default `true` |
 | `owned_weapons` | Array | Weapon IDs owned by the player (default: `["sword", "axe"]`) |
 | `weapon_upgrades` | Dictionary | Upgrade tier per weapon ID |
 | `player_health` | int | Current HP (range 0–100) |
@@ -199,6 +201,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `inventory_updated` | `owned_weapons`, `weapon_upgrades`, or `slime_goop` changed |
 | `day_updated` | `day` incremented at end_day |
 | `testing_mode_changed(enabled: bool)` | Emitted when testing_mode toggled via pause menu |
+| `theme_changed` | Emitted when light/dark theme is toggled via pause menu |
 
 **Public API:**
 | Method | Purpose |
@@ -215,6 +218,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `earn_scripts(amount)` | Add to `scripts`, emit `scripts_updated` |
 | `earn_slime_goop(amount)` | Add to `slime_goop`, emit `inventory_updated` |
 | `set_testing_mode(enabled)` | Set `testing_mode`, emit `testing_mode_changed` |
+| `toggle_theme()` | Flip `light_mode`, emit `theme_changed` |
 | `buy_weapon(id, cost)` | Deduct Scripts, append to `owned_weapons`; no-op if already owned |
 | `upgrade_weapon(id, cost_scripts, cost_goop)` | Deduct Scripts + Goop, increment `weapon_upgrades[id]` |
 | `set_player_health(hp)` | Clamp and set HP, emit `player_health_changed` |
@@ -593,6 +597,37 @@ Music is loaded and played directly in the scene scripts using an `AudioStreamPl
 | Field → Zone C | — | `assets/Music/ZoneC/12 - Frozen Abyss.wav` |
 
 Zone detection is done in `field.gd._process()` via `_update_zone_music()`: player position is checked against `_zone_rects`; music only switches when the active zone changes.
+
+---
+
+### 27. UITheme — `ui/ui_theme.gd`
+
+Autoload singleton (registered as `UITheme` in `project.godot`). Provides static color getters that branch on `SceneManager.light_mode`. Every UI file calls `UITheme.xxx()` instead of hardcoded color constants.
+
+**Theme modes:**
+- **Light** (`light_mode = true`, default): warm cream/parchment panels (`bg ≈ #F5F0E8`), dark amber/brown text (`text ≈ #231C12`), dark gold headings (`gold ≈ #7F5C08`).
+- **Dark** (`light_mode = false`): near-black panels (`bg ≈ #141009`), warm cream text (`text ≈ #D1C2A3`), bright gold headings (`gold ≈ #F2D973`).
+
+Border/accent gold-brown and semantic colors (health red, complete green, goop purple, boss red) are **identical in both themes**.
+
+**Color getters:**
+| Method | Purpose |
+|--------|---------|
+| `bg(alpha)` | Panel background (cream vs near-black) |
+| `overlay(alpha)` | Full-screen dim overlay (near-white vs near-black) |
+| `border()` | Panel border (gold-brown, same both themes) |
+| `border_dim()` | Subtle border variant (same both themes) |
+| `gold()` | Primary heading/selected text |
+| `text()` | Body text |
+| `dim(alpha)` | Secondary/unselected text |
+| `hint()` | Tertiary hint text |
+| `section()` | Section sub-heading |
+
+**Toggle:** `SceneManager.toggle_theme()` flips `light_mode` and emits `theme_changed`. All themed UI nodes connect `SceneManager.theme_changed` and call `_apply_theme()` (or rebuild entirely) in response.
+
+**Files NOT themed** (intentionally): `ui/game_over_screen.gd`, `ui/loading_screen.gd` — these are cinematic and always dark.
+
+**LSP note:** The Godot language server does not recognize new autoloads until the editor project is rescanned. All `"Identifier 'UITheme' not declared"` errors in the IDE are **false positives**; the code is correct at runtime.
 
 ---
 

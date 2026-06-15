@@ -9,15 +9,15 @@ extends CanvasLayer
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG       := Color(0.06, 0.04, 0.03, 0.80)
-const _C_BORDER   := Color(0.40, 0.30, 0.14, 0.65)
-const _C_HEADER   := Color(0.68, 0.55, 0.28, 1.0)
-const _C_ACTIVE   := Color(0.82, 0.76, 0.64, 1.0)
+# Semantic status colours — same in both themes.
 const _C_COMPLETE := Color(0.48, 0.74, 0.42, 0.85)
 
-var _font  : Font
-var _panel : PanelContainer
-var _list  : VBoxContainer
+var _font        : Font
+var _panel       : PanelContainer
+var _panel_style : StyleBoxFlat
+var _header_lbl  : Label
+var _sep_style   : StyleBoxFlat
+var _list        : VBoxContainer
 
 
 func _ready() -> void:
@@ -25,31 +25,36 @@ func _ready() -> void:
 		_font = load(_FONT_PATH)
 	_build_ui()
 	SceneManager.bounties_updated.connect(_rebuild)
+	SceneManager.theme_changed.connect(_on_theme_changed)
 	_rebuild()
 
 
 # ── UI Construction ───────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
-	# Full-rect reference so child anchors resolve against the viewport
 	var ref := Control.new()
 	ref.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ref.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ref)
 
 	_panel = PanelContainer.new()
-	# Anchor all four corners to the top-right of the viewport
 	_panel.anchor_left   = 1.0
 	_panel.anchor_top    = 0.0
 	_panel.anchor_right  = 1.0
 	_panel.anchor_bottom = 0.0
-	# Grow inward (left) and downward from that anchor point
 	_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_panel.grow_vertical   = Control.GROW_DIRECTION_END
 	_panel.offset_right    = -16.0
 	_panel.offset_top      = 16.0
-	_panel.custom_minimum_size    = Vector2(264.0, 0.0)
-	_panel.add_theme_stylebox_override("panel", _panel_style())
+	_panel.custom_minimum_size = Vector2(264.0, 0.0)
+
+	_panel_style = StyleBoxFlat.new()
+	_panel_style.set_border_width_all(1)
+	_panel_style.corner_radius_top_left     = 3
+	_panel_style.corner_radius_top_right    = 3
+	_panel_style.corner_radius_bottom_left  = 3
+	_panel_style.corner_radius_bottom_right = 3
+	_panel.add_theme_stylebox_override("panel", _panel_style)
 	ref.add_child(_panel)
 
 	var margin := MarginContainer.new()
@@ -63,25 +68,41 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 5)
 	margin.add_child(vbox)
 
-	var header := Label.new()
-	header.text = "BOUNTIES"
+	_header_lbl = Label.new()
+	_header_lbl.text = "BOUNTIES"
 	if _font:
-		header.add_theme_font_override("font", _font)
-	header.add_theme_font_size_override("font_size", 18)
-	header.add_theme_color_override("font_color", _C_HEADER)
-	vbox.add_child(header)
+		_header_lbl.add_theme_font_override("font", _font)
+	_header_lbl.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(_header_lbl)
 
-	var sep       := HSeparator.new()
-	var sep_style := StyleBoxFlat.new()
-	sep_style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.5)
-	sep_style.content_margin_top    = 1.0
-	sep_style.content_margin_bottom = 1.0
-	sep.add_theme_stylebox_override("separator", sep_style)
+	var sep := HSeparator.new()
+	_sep_style = StyleBoxFlat.new()
+	_sep_style.content_margin_top    = 1.0
+	_sep_style.content_margin_bottom = 1.0
+	sep.add_theme_stylebox_override("separator", _sep_style)
 	vbox.add_child(sep)
 
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 4)
 	vbox.add_child(_list)
+
+	_apply_theme()
+
+
+func _apply_theme() -> void:
+	if _panel_style:
+		_panel_style.bg_color     = UITheme.bg(0.80)
+		_panel_style.border_color = UITheme.border_dim()
+	if _sep_style:
+		var bc: Color = UITheme.border_dim()
+		_sep_style.bg_color = Color(bc.r, bc.g, bc.b, 0.5)
+	if _header_lbl:
+		_header_lbl.add_theme_color_override("font_color", UITheme.section())
+
+
+func _on_theme_changed() -> void:
+	_apply_theme()
+	_rebuild()
 
 
 # ── Rebuild ───────────────────────────────────────────────────────────────────
@@ -89,9 +110,9 @@ func _build_ui() -> void:
 func _rebuild() -> void:
 	_clear()
 
-	var entries : Array = SceneManager.active_bounties.filter(
+	var entries: Array = SceneManager.active_bounties.filter(
 		func(b: Dictionary) -> bool:
-			var s : String = b.get("status", "")
+			var s: String = b.get("status", "")
 			return s == "active" or s == "complete"
 	)
 
@@ -105,38 +126,25 @@ func _rebuild() -> void:
 
 
 func _make_entry(bounty: Dictionary) -> Control:
-	var zone_labels : Dictionary = {"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"}
-	var zone        : String     = zone_labels.get(bounty.get("zone", ""), bounty.get("zone", ""))
-	var quantity    : int        = bounty.get("quantity", 0)
-	var killed      : int        = bounty.get("killed", 0)
-	var status      : String     = bounty.get("status", "active")
-	var monster_type: String     = bounty.get("monster_type", "")
-	var short_text  : String     = "%s — %d / %d %s" % [zone, killed, quantity, monster_type]
+	var zone_labels: Dictionary = {
+		"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"
+	}
+	var zone        : String = zone_labels.get(bounty.get("zone", ""), bounty.get("zone", ""))
+	var quantity    : int    = bounty.get("quantity", 0)
+	var killed      : int    = bounty.get("killed", 0)
+	var status      : String = bounty.get("status", "active")
+	var monster_type: String = bounty.get("monster_type", "")
+	var short_text  : String = "%s — %d / %d %s" % [zone, killed, quantity, monster_type]
 
 	var lbl := Label.new()
 	lbl.text = short_text
 	if _font:
 		lbl.add_theme_font_override("font", _font)
 	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", _C_COMPLETE if status == "complete" else _C_ACTIVE)
+	lbl.add_theme_color_override(
+		"font_color", _C_COMPLETE if status == "complete" else UITheme.text()
+	)
 	return lbl
-
-
-# ── Style ─────────────────────────────────────────────────────────────────────
-
-func _panel_style() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color            = _C_BG
-	sb.border_width_left   = 1
-	sb.border_width_right  = 1
-	sb.border_width_top    = 1
-	sb.border_width_bottom = 1
-	sb.border_color               = _C_BORDER
-	sb.corner_radius_top_left     = 3
-	sb.corner_radius_top_right    = 3
-	sb.corner_radius_bottom_left  = 3
-	sb.corner_radius_bottom_right = 3
-	return sb
 
 
 # ── Internals ─────────────────────────────────────────────────────────────────

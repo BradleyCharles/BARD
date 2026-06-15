@@ -22,6 +22,7 @@ import/import_plugin/default_automatic_importer="SpriteFrames"
 [autoload]
 
 SceneManager="*uid://dle5heb308jt2"
+UITheme="*res://ui/ui_theme.gd"
 
 [display]
 

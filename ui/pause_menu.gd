@@ -4,17 +4,15 @@ extends CanvasLayer
 ## Pauses the scene tree while open; this node runs with PROCESS_MODE_ALWAYS.
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
-const _C_BG      := Color(0.0,  0.0,  0.0,  0.88)
-const _C_PANEL   := Color(0.07, 0.05, 0.03, 1.0)
-const _C_BORDER  := Color(0.50, 0.40, 0.20, 0.90)
-const _C_GOLD    := Color(0.95, 0.85, 0.45, 1.0)
-const _C_DIM     := Color(0.60, 0.55, 0.45, 1.0)
 
 var _font             : Font
 var _buttons          : Array[Label] = []
 var _selection        : int          = 0
 var _is_open          : bool         = false
 var _scene_path       : String       = ""
+
+var _ref              : Control        = null
+var _panel_style      : StyleBoxFlat   = null
 
 var _load_picker    : Control          = null
 var _picker_rows    : Array[Label]    = []
@@ -28,6 +26,7 @@ var _confirm_sel      : int             = 0
 
 var _bounty_screen  : CanvasLayer = null
 var _testing_label  : Label       = null
+var _theme_label    : Label       = null
 
 
 func _ready() -> void:
@@ -37,6 +36,7 @@ func _ready() -> void:
 		_font = load(_FONT_PATH)
 	_build_ui()
 	visible = false
+	SceneManager.theme_changed.connect(_on_theme_changed)
 
 
 func _process(_delta: float) -> void:
@@ -69,29 +69,33 @@ func _process(_delta: float) -> void:
 # ── Main menu UI ──────────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
-	var ref := Control.new()
-	ref.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ref.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(ref)
+	_buttons.clear()
+	_testing_label = null
+	_theme_label   = null
+
+	_ref = Control.new()
+	_ref.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ref.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_ref)
 
 	var bg := ColorRect.new()
-	bg.color = _C_BG
+	bg.color = UITheme.overlay(0.88)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ref.add_child(bg)
+	_ref.add_child(bg)
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
-	var style := StyleBoxFlat.new()
-	style.bg_color     = _C_PANEL
-	style.border_color = _C_BORDER
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
-	style.set_content_margin_all(40)
-	panel.add_theme_stylebox_override("panel", style)
+	_panel_style = StyleBoxFlat.new()
+	_panel_style.bg_color     = UITheme.bg()
+	_panel_style.border_color = UITheme.border()
+	_panel_style.set_border_width_all(2)
+	_panel_style.set_corner_radius_all(6)
+	_panel_style.set_content_margin_all(40)
+	panel.add_theme_stylebox_override("panel", _panel_style)
 	panel.custom_minimum_size = Vector2(360.0, 0.0)
-	ref.add_child(panel)
+	_ref.add_child(panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 18)
@@ -101,13 +105,13 @@ func _build_ui() -> void:
 	title.text = "PAUSED"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 36)
-	title.add_theme_color_override("font_color", _C_GOLD)
+	title.add_theme_color_override("font_color", UITheme.gold())
 	if _font:
 		title.add_theme_font_override("font", _font)
 	vbox.add_child(title)
 
 	var sep := HSeparator.new()
-	sep.add_theme_color_override("color", Color(0.50, 0.40, 0.20, 0.60))
+	sep.add_theme_color_override("color", UITheme.border())
 	vbox.add_child(sep)
 
 	for option in ["Resume", "Save", "Load", "Bounties"]:
@@ -115,17 +119,28 @@ func _build_ui() -> void:
 		lbl.text = option
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.add_theme_font_size_override("font_size", 28)
-		lbl.add_theme_color_override("font_color", _C_DIM)
+		lbl.add_theme_color_override("font_color", UITheme.dim())
 		if _font:
 			lbl.add_theme_font_override("font", _font)
 		vbox.add_child(lbl)
 		_buttons.append(lbl)
 
+	var theme_lbl := Label.new()
+	theme_lbl.text = _theme_label_text()
+	theme_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	theme_lbl.add_theme_font_size_override("font_size", 28)
+	theme_lbl.add_theme_color_override("font_color", UITheme.dim())
+	if _font:
+		theme_lbl.add_theme_font_override("font", _font)
+	vbox.add_child(theme_lbl)
+	_buttons.append(theme_lbl)
+	_theme_label = theme_lbl
+
 	var test_lbl := Label.new()
 	test_lbl.text = _testing_label_text()
 	test_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	test_lbl.add_theme_font_size_override("font_size", 28)
-	test_lbl.add_theme_color_override("font_color", _C_DIM)
+	test_lbl.add_theme_color_override("font_color", UITheme.dim())
 	if _font:
 		test_lbl.add_theme_font_override("font", _font)
 	vbox.add_child(test_lbl)
@@ -139,16 +154,38 @@ func _testing_label_text() -> String:
 	return "Testing  [%s]" % ("ON" if SceneManager.testing_mode else "OFF")
 
 
+func _theme_label_text() -> String:
+	return "Theme  [%s]" % ("Light" if SceneManager.light_mode else "Dark")
+
+
 func _toggle_testing_mode() -> void:
 	SceneManager.set_testing_mode(not SceneManager.testing_mode)
 	if _testing_label:
 		_testing_label.text = _testing_label_text()
 
 
+func _toggle_theme() -> void:
+	SceneManager.toggle_theme()
+
+
+func _on_theme_changed() -> void:
+	if _theme_label:
+		_theme_label.text = _theme_label_text()
+	var was_open := _is_open
+	_close_picker()
+	_close_confirm()
+	_is_open = false
+	if _ref:
+		_ref.queue_free()
+		_ref = null
+	_build_ui()
+	_is_open = was_open
+
+
 func _highlight(idx: int) -> void:
 	for i in _buttons.size():
 		_buttons[i].add_theme_color_override(
-			"font_color", _C_GOLD if i == idx else _C_DIM
+			"font_color", UITheme.gold() if i == idx else UITheme.dim()
 		)
 
 
@@ -160,6 +197,8 @@ func open(current_scene_path: String) -> void:
 	_highlight(_selection)
 	if _testing_label:
 		_testing_label.text = _testing_label_text()
+	if _theme_label:
+		_theme_label.text = _theme_label_text()
 	visible  = true
 	_is_open = true
 	get_tree().paused = true
@@ -216,7 +255,8 @@ func _confirm_selection() -> void:
 		1: _show_save_picker()
 		2: _show_load_picker()
 		3: _open_bounty_screen()
-		4: _toggle_testing_mode()
+		4: _toggle_theme()
+		5: _toggle_testing_mode()
 
 
 # ── Bounty screen ────────────────────────────────────────────────────────────
@@ -240,7 +280,7 @@ func _close_bounty_screen() -> void:
 func _highlight_picker() -> void:
 	for i in _picker_rows.size():
 		_picker_rows[i].add_theme_color_override(
-			"font_color", _C_GOLD if i == _picker_sel else _C_DIM
+			"font_color", UITheme.gold() if i == _picker_sel else UITheme.dim()
 		)
 
 
@@ -256,7 +296,7 @@ func _close_picker() -> void:
 func _highlight_confirm() -> void:
 	for i in _confirm_rows.size():
 		_confirm_rows[i].add_theme_color_override(
-			"font_color", _C_GOLD if i == _confirm_sel else _C_DIM
+			"font_color", UITheme.gold() if i == _confirm_sel else UITheme.dim()
 		)
 
 
@@ -285,7 +325,7 @@ func _show_save_picker() -> void:
 		lbl.text = "Slot %d  %s" % [slot + 1, ("— empty —" if not has else "")]
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.add_theme_font_size_override("font_size", 22)
-		lbl.add_theme_color_override("font_color", _C_DIM)
+		lbl.add_theme_color_override("font_color", UITheme.dim())
 		if _font:
 			lbl.add_theme_font_override("font", _font)
 		vbox.add_child(lbl)
@@ -339,7 +379,7 @@ func _show_overwrite_confirm(slot: int) -> void:
 		lbl.text = pair[0]
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.add_theme_font_size_override("font_size", 24)
-		lbl.add_theme_color_override("font_color", _C_DIM)
+		lbl.add_theme_color_override("font_color", UITheme.dim())
 		if _font:
 			lbl.add_theme_font_override("font", _font)
 		vbox.add_child(lbl)
@@ -373,7 +413,7 @@ func _show_load_picker() -> void:
 		lbl.text = "Slot %d  %s" % [slot + 1, ("— empty —" if not has else "")]
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.add_theme_font_size_override("font_size", 22)
-		lbl.add_theme_color_override("font_color", _C_DIM if not has else _C_GOLD)
+		lbl.add_theme_color_override("font_color", UITheme.dim() if not has else UITheme.gold())
 		if _font:
 			lbl.add_theme_font_override("font", _font)
 		vbox.add_child(lbl)
@@ -409,7 +449,7 @@ func _build_overlay_panel(title_text: String) -> Control:
 	root.process_mode = Node.PROCESS_MODE_ALWAYS
 
 	var bg := ColorRect.new()
-	bg.color = Color(0.0, 0.0, 0.0, 0.70)
+	bg.color = UITheme.overlay(0.70)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
 
@@ -418,8 +458,8 @@ func _build_overlay_panel(title_text: String) -> Control:
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	var style := StyleBoxFlat.new()
-	style.bg_color     = _C_PANEL
-	style.border_color = _C_BORDER
+	style.bg_color     = UITheme.bg()
+	style.border_color = UITheme.border()
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
 	style.set_content_margin_all(32)
@@ -435,7 +475,7 @@ func _build_overlay_panel(title_text: String) -> Control:
 	title.text = title_text
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
-	title.add_theme_color_override("font_color", _C_GOLD)
+	title.add_theme_color_override("font_color", UITheme.gold())
 	if _font:
 		title.add_theme_font_override("font", _font)
 	vbox.add_child(title)
@@ -448,7 +488,7 @@ func _add_cancel_row(vbox: VBoxContainer) -> void:
 	cancel.text = "[ Cancel ]"
 	cancel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cancel.add_theme_font_size_override("font_size", 20)
-	cancel.add_theme_color_override("font_color", _C_DIM)
+	cancel.add_theme_color_override("font_color", UITheme.dim())
 	if _font:
 		cancel.add_theme_font_override("font", _font)
 	cancel.mouse_filter = Control.MOUSE_FILTER_STOP

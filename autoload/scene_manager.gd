@@ -43,6 +43,7 @@ var _bounties_turned_in_today: Array      = []
 var player_health     : int  = 100
 var player_max_health : int  = 100
 var testing_mode      : bool = false
+var light_mode        : bool = true
 
 
 # ── Signals ───────────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ signal player_health_changed
 signal inventory_updated
 signal day_updated
 signal testing_mode_changed(enabled: bool)
+signal theme_changed
 
 
 # ── Scene Paths ───────────────────────────────────────────────────────────────
@@ -339,6 +341,11 @@ func set_player_health(hp: int) -> void:
 func set_testing_mode(enabled: bool) -> void:
 	testing_mode = enabled
 	testing_mode_changed.emit(enabled)
+
+
+func toggle_theme() -> void:
+	light_mode = not light_mode
+	theme_changed.emit()
 
 
 func earn_scripts(amount: int) -> void:

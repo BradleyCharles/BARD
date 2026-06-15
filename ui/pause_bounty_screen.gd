@@ -6,18 +6,11 @@ extends CanvasLayer
 signal screen_closed
 
 const _FONT_PATH  := "res://fonts/almendra.regular.ttf"
-const _C_BG       := Color(0.09, 0.07, 0.05, 0.97)
-const _C_BORDER   := Color(0.52, 0.40, 0.20, 1.0)
-const _C_GOLD     := Color(0.88, 0.73, 0.38, 1.0)
-const _C_SECTION  := Color(0.60, 0.50, 0.28, 1.0)
-const _C_TEXT     := Color(0.82, 0.76, 0.64, 1.0)
-const _C_EMPTY    := Color(0.50, 0.46, 0.38, 1.0)
-const _C_HINT     := Color(0.42, 0.38, 0.30, 1.0)
+
+# Semantic colours — same in both themes.
 const _C_PROGRESS := Color(0.78, 0.70, 0.38, 1.0)
 const _C_COMPLETE := Color(0.48, 0.74, 0.42, 1.0)
 const _C_WARNING  := Color(0.85, 0.35, 0.25, 1.0)
-const _C_PANEL    := Color(0.07, 0.05, 0.03, 1.0)
-const _C_DIM      := Color(0.60, 0.55, 0.45, 1.0)
 
 const _ZONE_LABELS: Dictionary = {
 	"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"
@@ -71,6 +64,7 @@ func _ready() -> void:
 	_tex_vampire2 = _load_tex("res://assets/Bounty_Board/vampire2_bounty.png")
 	_tex_vampire3 = _load_tex("res://assets/Bounty_Board/vampire3_bounty.png")
 	_build_ui()
+	SceneManager.theme_changed.connect(_on_theme_changed)
 	_input_guard = true
 	_refresh()
 
@@ -139,6 +133,23 @@ func _try_drop() -> void:
 	_show_drop_confirm(bounty)
 
 
+# ── Theme ─────────────────────────────────────────────────────────────────────
+
+func _on_theme_changed() -> void:
+	_close_confirm()
+	if _ref:
+		_ref.queue_free()
+	_ref         = null
+	_list        = null
+	_detail_pane = null
+	_scroll      = null
+	_row_map.clear()
+	_bounties.clear()
+	_build_ui()
+	_input_guard = true
+	_refresh()
+
+
 # ── UI Construction ───────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
@@ -148,7 +159,7 @@ func _build_ui() -> void:
 	add_child(_ref)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.0, 0.0, 0.0, 0.60)
+	dim.color = UITheme.overlay(0.60)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_ref.add_child(dim)
@@ -170,8 +181,7 @@ func _build_ui() -> void:
 	main_vbox.add_theme_constant_override("separation", 8)
 	outer.add_child(main_vbox)
 
-	var title := _lbl("Active Bounties", 30, _C_GOLD)
-	main_vbox.add_child(title)
+	main_vbox.add_child(_lbl("Active Bounties", 30, UITheme.gold()))
 	main_vbox.add_child(_hsep())
 
 	var content := HBoxContainer.new()
@@ -210,7 +220,7 @@ func _build_ui() -> void:
 
 	main_vbox.add_child(_hsep())
 
-	var hint := _lbl("↑↓  Navigate     [A]  Drop Bounty     [B]  Back", 14, _C_HINT)
+	var hint := _lbl("↑↓  Navigate     [A]  Drop Bounty     [B]  Back", 14, UITheme.hint())
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	main_vbox.add_child(hint)
 
@@ -229,7 +239,7 @@ func _refresh() -> void:
 	)
 
 	if active.is_empty():
-		_list.add_child(_lbl("  No active contracts.", 18, _C_EMPTY))
+		_list.add_child(_lbl("  No active contracts.", 18, UITheme.dim()))
 	else:
 		for bounty: Dictionary in active:
 			var row: HBoxContainer = _bounty_row(bounty)
@@ -271,7 +281,7 @@ func _bounty_row(bounty: Dictionary) -> HBoxContainer:
 	var total  : int    = int(bounty.get("quantity", 0))
 	var status : String = bounty.get("status", "active")
 
-	text_col.add_child(_lbl(display + "  —  " + zone, 18, _C_TEXT))
+	text_col.add_child(_lbl(display + "  —  " + zone, 18, UITheme.text()))
 
 	var prog_text : String
 	var prog_color: Color
@@ -294,7 +304,7 @@ func _update_detail(bounty: Dictionary) -> void:
 		child.queue_free()
 
 	if bounty.is_empty():
-		var empty := _lbl("No active contracts.", 18, _C_EMPTY)
+		var empty := _lbl("No active contracts.", 18, UITheme.dim())
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_detail_pane.add_child(empty)
 		return
@@ -321,14 +331,14 @@ func _update_detail(bounty: Dictionary) -> void:
 		img.stretch_mode          = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		_detail_pane.add_child(img)
 
-	var name_lbl := _lbl(display, 24, _C_GOLD)
+	var name_lbl := _lbl(display, 24, UITheme.gold())
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detail_pane.add_child(name_lbl)
 
-	_detail_pane.add_child(_lbl("%s  ·  %s  ·  %s" % [zone_s, diff, size_s], 15, _C_SECTION))
+	_detail_pane.add_child(_lbl("%s  ·  %s  ·  %s" % [zone_s, diff, size_s], 15, UITheme.section()))
 	_detail_pane.add_child(_hsep())
 
-	var flavor_lbl := _lbl(flavor, 16, _C_TEXT)
+	var flavor_lbl := _lbl(flavor, 16, UITheme.text())
 	flavor_lbl.autowrap_mode         = TextServer.AUTOWRAP_WORD_SMART
 	flavor_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detail_pane.add_child(flavor_lbl)
@@ -344,7 +354,7 @@ func _update_detail(bounty: Dictionary) -> void:
 		prog_text  = "Progress:  %d / %d" % [killed, quantity]
 		prog_color = _C_PROGRESS
 	_detail_pane.add_child(_lbl(prog_text, 16, prog_color))
-	_detail_pane.add_child(_lbl("Reward:  %s" % reward, 16, _C_GOLD))
+	_detail_pane.add_child(_lbl("Reward:  %s" % reward, 16, UITheme.gold()))
 	_detail_pane.add_child(_hsep())
 
 	var drop_lbl := _lbl("[A]  Drop this contract", 15, _C_WARNING)
@@ -373,7 +383,7 @@ func _update_cursor() -> void:
 		var display : String = bounty.get("display_name", bounty.get("id", ""))
 		var zone    : String = _ZONE_LABELS.get(bounty.get("zone", ""), bounty.get("zone", ""))
 		name_lbl.text = ("▶  " if is_sel else "    ") + display + "  —  " + zone
-		name_lbl.add_theme_color_override("font_color", _C_GOLD if is_sel else _C_TEXT)
+		name_lbl.add_theme_color_override("font_color", UITheme.gold() if is_sel else UITheme.text())
 
 
 # ── Drop Confirm ──────────────────────────────────────────────────────────────
@@ -390,7 +400,7 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 	add_child(root)
 
 	var bg := ColorRect.new()
-	bg.color = Color(0.0, 0.0, 0.0, 0.72)
+	bg.color = UITheme.overlay(0.72)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
 
@@ -399,8 +409,8 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	var style := StyleBoxFlat.new()
-	style.bg_color     = _C_PANEL
-	style.border_color = _C_BORDER
+	style.bg_color     = UITheme.bg(0.97)
+	style.border_color = UITheme.border()
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
 	style.set_content_margin_all(32)
@@ -413,18 +423,12 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 	panel.add_child(vbox)
 
 	var display: String = bounty.get("display_name", bounty.get("id", ""))
-	var title := _lbl("Drop  \"%s\"?" % display, 26, _C_GOLD)
+	var title := _lbl("Drop  \"%s\"?" % display, 26, UITheme.gold())
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)
 
-	var sep_style := StyleBoxFlat.new()
-	sep_style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.40)
-	sep_style.content_margin_top    = 1.0
-	sep_style.content_margin_bottom = 1.0
-	var sep := HSeparator.new()
-	sep.add_theme_stylebox_override("separator", sep_style)
-	vbox.add_child(sep)
+	vbox.add_child(_hsep())
 
 	var warn := _lbl(
 		"Dropping this contract will reset all kill progress\nand return it to the bounty board.",
@@ -443,7 +447,7 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 		_close_confirm()
 
 	for pair: Array in [["Yes, drop it", on_yes], ["No, keep it", on_no]]:
-		var lbl := _lbl(pair[0] as String, 22, _C_DIM)
+		var lbl := _lbl(pair[0] as String, 22, UITheme.dim())
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var cb: Callable = pair[1] as Callable
 		lbl.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -462,7 +466,7 @@ func _show_drop_confirm(bounty: Dictionary) -> void:
 func _highlight_confirm() -> void:
 	for i in _confirm_rows.size():
 		_confirm_rows[i].add_theme_color_override(
-			"font_color", _C_GOLD if i == _confirm_sel else _C_DIM
+			"font_color", UITheme.gold() if i == _confirm_sel else UITheme.dim()
 		)
 
 
@@ -512,8 +516,9 @@ func _lbl(text: String, size: int, color: Color) -> Label:
 
 func _hsep() -> HSeparator:
 	var s     := HSeparator.new()
+	var bc    : Color = UITheme.border()
 	var style := StyleBoxFlat.new()
-	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.40)
+	style.bg_color              = Color(bc.r, bc.g, bc.b, 0.40)
 	style.content_margin_top    = 1.0
 	style.content_margin_bottom = 1.0
 	s.add_theme_stylebox_override("separator", style)
@@ -522,8 +527,9 @@ func _hsep() -> HSeparator:
 
 func _vsep() -> VSeparator:
 	var s     := VSeparator.new()
+	var bc    : Color = UITheme.border()
 	var style := StyleBoxFlat.new()
-	style.bg_color               = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.45)
+	style.bg_color               = Color(bc.r, bc.g, bc.b, 0.45)
 	style.content_margin_left    = 1.0
 	style.content_margin_right   = 1.0
 	s.add_theme_stylebox_override("separator", style)
@@ -532,8 +538,8 @@ func _vsep() -> VSeparator:
 
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = _C_BG
+	sb.bg_color = UITheme.bg(0.97)
 	sb.set_border_width_all(2)
-	sb.border_color = _C_BORDER
+	sb.border_color = UITheme.border()
 	sb.set_corner_radius_all(6)
 	return sb

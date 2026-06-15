@@ -5,23 +5,22 @@ signal closed
 const _TURNIN_SCENE := preload("res://ui/bounty_turnin.tscn")
 const _FONT_PATH    := "res://fonts/almendra.regular.ttf"
 
-# ── Shared palette ─────────────────────────────────────────────────────────────
-const _C_BG     := Color(0.09, 0.07, 0.05, 0.96)
-const _C_BORDER := Color(0.52, 0.40, 0.20, 1.0)
-const _C_GOLD   := Color(0.88, 0.73, 0.38, 1.0)
-const _C_TEXT   := Color(0.82, 0.76, 0.64, 1.0)
-const _C_DIMMED := Color(0.48, 0.42, 0.32, 0.55)
-const _C_HINT   := Color(0.42, 0.38, 0.30, 1.0)
+# Semantic colours — same in both themes.
+const _C_HINT := Color(0.42, 0.38, 0.30, 1.0)
 
 @onready var _panel      : PanelContainer = $Panel
 @onready var _name_label : Label          = $Panel/MarginContainer/VBox/NameLabel
 @onready var _text_label : RichTextLabel  = $Panel/MarginContainer/VBox/TextLabel
 @onready var _responses  : VBoxContainer  = $Panel/MarginContainer/VBox/Responses
 
-var _font    : Font
-var _nodes   : Dictionary = {}
-var _current : Dictionary = {}
-var _npc_name: String     = ""
+var _font      : Font
+var _nodes     : Dictionary = {}
+var _current   : Dictionary = {}
+var _npc_name  : String     = ""
+
+var _panel_sb  : StyleBoxFlat
+var _sep_sb    : StyleBoxFlat
+var _hint_lbl  : Label
 
 var _selected_idx       : int   = 0
 var _response_labels    : Array = []
@@ -32,33 +31,51 @@ func _ready() -> void:
 	if ResourceLoader.exists(_FONT_PATH):
 		_font = load(_FONT_PATH)
 
-	_panel.add_theme_stylebox_override("panel", _panel_style())
+	_panel_sb = _panel_style()
+	_panel.add_theme_stylebox_override("panel", _panel_sb)
 
 	_name_label.add_theme_font_size_override("font_size", 22)
-	_name_label.add_theme_color_override("font_color", _C_GOLD)
 	if _font:
 		_name_label.add_theme_font_override("font", _font)
 
 	_text_label.add_theme_font_size_override("normal_font_size", 18)
-	_text_label.add_theme_color_override("default_color", _C_TEXT)
 	if _font:
 		_text_label.add_theme_font_override("normal_font", _font)
 
-	var sep_style := _sep_style()
+	_sep_sb = _sep_style()
 	for sep in [$Panel/MarginContainer/VBox/HSeparator,
 				$Panel/MarginContainer/VBox/HSeparator2]:
-		sep.add_theme_stylebox_override("separator", sep_style)
+		sep.add_theme_stylebox_override("separator", _sep_sb)
 
-	var hint := Label.new()
-	hint.text = "↑↓  Navigate     [A]  Select"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", _C_HINT)
+	_hint_lbl = Label.new()
+	_hint_lbl.text = "↑↓  Navigate     [A]  Select"
+	_hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint_lbl.add_theme_font_size_override("font_size", 12)
+	_hint_lbl.add_theme_color_override("font_color", _C_HINT)
 	if _font:
-		hint.add_theme_font_override("font", _font)
-	_name_label.get_parent().add_child(hint)
+		_hint_lbl.add_theme_font_override("font", _font)
+	_name_label.get_parent().add_child(_hint_lbl)
+
+	_apply_theme()
+	SceneManager.theme_changed.connect(_apply_theme)
 
 	_panel.hide()
+
+
+# ── Theme ─────────────────────────────────────────────────────────────────────
+
+func _apply_theme() -> void:
+	if _panel_sb:
+		_panel_sb.bg_color     = UITheme.bg(0.96)
+		_panel_sb.border_color = UITheme.border()
+	if _sep_sb:
+		var bc: Color = UITheme.border()
+		_sep_sb.bg_color = Color(bc.r, bc.g, bc.b, 0.55)
+	if _name_label:
+		_name_label.add_theme_color_override("font_color", UITheme.gold())
+	if _text_label:
+		_text_label.add_theme_color_override("default_color", UITheme.text())
+	_update_cursor()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -143,8 +160,8 @@ func _update_cursor() -> void:
 	for i in _response_labels.size():
 		var sel := (i == _selected_idx)
 		_response_labels[i].add_theme_color_override(
-			"font_color", _C_GOLD if sel else _C_DIMMED)
-		_response_underlines[i].color = _C_GOLD if sel else Color.TRANSPARENT
+			"font_color", UITheme.gold() if sel else UITheme.dim(0.55))
+		_response_underlines[i].color = UITheme.gold() if sel else Color.TRANSPARENT
 
 
 func _navigate(dir: int) -> void:
@@ -249,12 +266,12 @@ func _lock_player(lock: bool) -> void:
 
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color            = _C_BG
+	sb.bg_color            = UITheme.bg(0.96)
 	sb.border_width_left   = 2
 	sb.border_width_right  = 2
 	sb.border_width_top    = 2
 	sb.border_width_bottom = 2
-	sb.border_color               = _C_BORDER
+	sb.border_color               = UITheme.border()
 	sb.corner_radius_top_left     = 5
 	sb.corner_radius_top_right    = 5
 	sb.corner_radius_bottom_left  = 5
@@ -263,8 +280,9 @@ func _panel_style() -> StyleBoxFlat:
 
 
 func _sep_style() -> StyleBoxFlat:
+	var bc: Color = UITheme.border()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color             = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.55)
+	sb.bg_color              = Color(bc.r, bc.g, bc.b, 0.55)
 	sb.content_margin_top    = 1.0
 	sb.content_margin_bottom = 1.0
 	return sb

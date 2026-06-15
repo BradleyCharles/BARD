@@ -15,12 +15,15 @@ const PADDING   : float = 10.0
 const CAM_ZOOM  : float = 3.5   ## must match Camera2D.zoom set in field.gd
 const VIEW_SCALE: float = 2.0   ## minimap shows this many times the player viewport
 
-const _C_PANEL_BG  := Color(0.06, 0.04, 0.03, 0.88)
-const _C_BORDER    := Color(0.40, 0.30, 0.14, 0.75)
-const _C_MAP_BG    := Color(0.08, 0.14, 0.06, 0.95)
-const _C_PLAYER    := Color(0.95, 0.85, 0.45, 1.0)
-const _C_ENEMY     := Color(0.85, 0.15, 0.15, 1.0)
-const _C_BOSS      := Color(1.0,  0.45, 0.10, 1.0)
+# Themed panel colours — updated by _apply_theme().
+var _C_PANEL_BG : Color = Color(0.06, 0.04, 0.03, 0.88)
+var _C_BORDER   : Color = Color(0.40, 0.30, 0.14, 0.75)
+
+# Semantic map colours — same in both themes.
+const _C_MAP_BG  := Color(0.08, 0.14, 0.06, 0.95)
+const _C_PLAYER  := Color(0.95, 0.85, 0.45, 1.0)
+const _C_ENEMY   := Color(0.85, 0.15, 0.15, 1.0)
+const _C_BOSS    := Color(1.0,  0.45, 0.10, 1.0)
 
 var _world_rect  : Rect2      = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
 var _panel_h     : float      = 0.0
@@ -35,6 +38,8 @@ var _tile_texture : ImageTexture
 
 func _ready() -> void:
 	layer = 4
+	_apply_theme()
+	SceneManager.theme_changed.connect(_apply_theme)
 	_recalc_map_dims()
 
 	var ref := Control.new()
@@ -51,6 +56,13 @@ func _ready() -> void:
 	_canvas.draw.connect(_on_draw)
 	ref.add_child(_canvas)
 	_apply_canvas_offsets()
+
+
+func _apply_theme() -> void:
+	_C_PANEL_BG = UITheme.bg(0.88)
+	_C_BORDER   = UITheme.border_dim()
+	if _canvas:
+		_canvas.queue_redraw()
 
 
 ## Called by field.gd after add_child.

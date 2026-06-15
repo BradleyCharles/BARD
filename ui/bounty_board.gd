@@ -5,16 +5,9 @@ signal board_closed
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG       := Color(0.09, 0.07, 0.05, 0.97)
-const _C_BORDER   := Color(0.52, 0.40, 0.20, 1.0)
-const _C_GOLD     := Color(0.88, 0.73, 0.38, 1.0)
-const _C_SECTION  := Color(0.60, 0.50, 0.28, 1.0)
-const _C_TEXT     := Color(0.82, 0.76, 0.64, 1.0)
-const _C_DIMMED   := Color(0.48, 0.42, 0.32, 0.45)
-const _C_EMPTY    := Color(0.50, 0.46, 0.38, 1.0)
-const _C_HINT     := Color(0.42, 0.38, 0.30, 1.0)
-const _C_PROGRESS := Color(0.78, 0.70, 0.38, 1.0)
+# Semantic status colours — same in both themes.
 const _C_COMPLETE := Color(0.48, 0.74, 0.42, 1.0)
+const _C_PROGRESS := Color(0.78, 0.70, 0.38, 1.0)
 const _C_WARNING  := Color(0.85, 0.35, 0.25, 1.0)
 
 const _ZONES      := ["zone_a", "zone_b", "zone_c"]
@@ -37,6 +30,8 @@ var _tex_vampire3 : Texture2D
 
 var _font         : Font
 var _root         : Control
+var _dim_rect     : ColorRect
+var _panel_sb     : StyleBoxFlat
 var _scroll       : ScrollContainer
 var _list         : VBoxContainer
 var _active_label : Label
@@ -70,6 +65,7 @@ func _ready() -> void:
 		if _is_open:
 			_refresh.call_deferred()
 	)
+	SceneManager.theme_changed.connect(_apply_theme)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -143,18 +139,19 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
-	var dim := ColorRect.new()
-	dim.color = Color(0.0, 0.0, 0.0, 0.60)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	_root.add_child(dim)
+	_dim_rect = ColorRect.new()
+	_dim_rect.color = UITheme.overlay(0.60)
+	_dim_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dim_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_dim_rect)
 
 	var panel := PanelContainer.new()
 	panel.anchor_left   = 0.04
 	panel.anchor_top    = 0.04
 	panel.anchor_right  = 0.96
 	panel.anchor_bottom = 0.96
-	panel.add_theme_stylebox_override("panel", _panel_style())
+	_panel_sb = _panel_style()
+	panel.add_theme_stylebox_override("panel", _panel_sb)
 	_root.add_child(panel)
 
 	var outer := MarginContainer.new()
@@ -166,27 +163,24 @@ func _build_ui() -> void:
 	main_vbox.add_theme_constant_override("separation", 8)
 	outer.add_child(main_vbox)
 
-	# ── Header ──
 	var header := HBoxContainer.new()
 	main_vbox.add_child(header)
 
-	var title := _lbl("The Bounty Board", 30, _C_GOLD)
+	var title := _lbl("The Bounty Board", 30, UITheme.gold())
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
-	_active_label = _lbl("ACTIVE  0 / 3", 20, _C_GOLD)
+	_active_label = _lbl("ACTIVE  0 / 3", 20, UITheme.gold())
 	_active_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	header.add_child(_active_label)
 
 	main_vbox.add_child(_hsep())
 
-	# ── Content split ──
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 0)
 	main_vbox.add_child(content)
 
-	# Left: scrollable list
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_horizontal    = Control.SIZE_EXPAND_FILL
 	_scroll.size_flags_vertical      = Control.SIZE_EXPAND_FILL
@@ -199,10 +193,8 @@ func _build_ui() -> void:
 	_list.add_theme_constant_override("separation", 2)
 	_scroll.add_child(_list)
 
-	# Vertical divider
 	content.add_child(_vsep())
 
-	# Right: detail pane
 	var right_margin := MarginContainer.new()
 	right_margin.size_flags_horizontal    = Control.SIZE_EXPAND_FILL
 	right_margin.size_flags_vertical      = Control.SIZE_EXPAND_FILL
@@ -220,9 +212,21 @@ func _build_ui() -> void:
 
 	main_vbox.add_child(_hsep())
 
-	var hint := _lbl("↑↓  Navigate     [A]  Accept Contract     [B]  Close", 14, _C_HINT)
+	var hint := _lbl(
+		"↑↓  Navigate     [A]  Accept Contract     [B]  Close", 14, UITheme.hint()
+	)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	main_vbox.add_child(hint)
+
+
+func _apply_theme() -> void:
+	if _dim_rect:
+		_dim_rect.color = UITheme.overlay(0.60)
+	if _panel_sb:
+		_panel_sb.bg_color     = UITheme.bg(0.97)
+		_panel_sb.border_color = UITheme.border()
+	if _is_open:
+		_refresh()
 
 
 # ── Refresh ───────────────────────────────────────────────────────────────────
@@ -255,12 +259,15 @@ func _refresh() -> void:
 			_ZONE_LABELS.get(z, z),
 			"  [Occupied]" if occupied else ""
 		]
-		var zone_hdr := _lbl(header_text, 15, _C_SECTION if not occupied else _C_DIMMED)
+		var zone_hdr := _lbl(
+			header_text, 15,
+			UITheme.section() if not occupied else UITheme.dim()
+		)
 		zone_hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_list.add_child(zone_hdr)
 
 		if zone_bounties.is_empty():
-			_list.add_child(_lbl("  No contracts posted.", 15, _C_EMPTY))
+			_list.add_child(_lbl("  No contracts posted.", 15, UITheme.dim()))
 		else:
 			for bounty: Dictionary in zone_bounties:
 				var row: HBoxContainer = _bounty_row(bounty, occupied)
@@ -273,12 +280,12 @@ func _refresh() -> void:
 		_list.add_child(_zone_gap())
 
 	_list.add_child(_hsep())
-	_list.add_child(_lbl("ACTIVE CONTRACTS", 15, _C_SECTION))
+	_list.add_child(_lbl("ACTIVE CONTRACTS", 15, UITheme.section()))
 
 	var real_active: Array = active.filter(
 		func(b: Dictionary) -> bool: return b.get("status") != "turned_in")
 	if real_active.is_empty():
-		_list.add_child(_lbl("  None.", 15, _C_EMPTY))
+		_list.add_child(_lbl("  None.", 15, UITheme.dim()))
 	else:
 		for bounty: Dictionary in real_active:
 			_list.add_child(_active_row(bounty))
@@ -315,8 +322,8 @@ func _bounty_row(bounty: Dictionary, dimmed: bool) -> HBoxContainer:
 	text_col.add_theme_constant_override("separation", 3)
 	row.add_child(text_col)
 
-	var col    : Color = _C_DIMMED if dimmed else _C_TEXT
-	var tagcol : Color = _C_DIMMED if dimmed else _C_SECTION
+	var col   : Color = UITheme.dim() if dimmed else UITheme.text()
+	var tagcol: Color = UITheme.dim() if dimmed else UITheme.section()
 
 	text_col.add_child(_lbl(display + " spotted", 20, col))
 	var diff  : String = SceneManager.difficulty_label(monster_type)
@@ -351,7 +358,7 @@ func _active_row(bounty: Dictionary) -> HBoxContainer:
 	var total  : int    = int(bounty.get("quantity", 0))
 	var status : String = bounty.get("status", "active")
 
-	text_col.add_child(_lbl(display + "  —  " + zone, 16, _C_TEXT))
+	text_col.add_child(_lbl(display + "  —  " + zone, 16, UITheme.text()))
 
 	var prog_text : String
 	var prog_color: Color
@@ -374,7 +381,7 @@ func _update_detail(bounty: Dictionary) -> void:
 		child.queue_free()
 
 	if bounty.is_empty():
-		var empty := _lbl("No contracts available.", 18, _C_EMPTY)
+		var empty := _lbl("No contracts available.", 18, UITheme.dim())
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_detail_pane.add_child(empty)
 		return
@@ -399,24 +406,24 @@ func _update_detail(bounty: Dictionary) -> void:
 		img.stretch_mode          = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		_detail_pane.add_child(img)
 
-	var name_lbl := _lbl(display, 24, _C_GOLD)
+	var name_lbl := _lbl(display, 24, UITheme.gold())
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detail_pane.add_child(name_lbl)
 
-	_detail_pane.add_child(_lbl("%s  ·  %s  ·  %s" % [zone_s, diff, size_s], 15, _C_SECTION))
-
+	_detail_pane.add_child(
+		_lbl("%s  ·  %s  ·  %s" % [zone_s, diff, size_s], 15, UITheme.section())
+	)
 	_detail_pane.add_child(_hsep())
 
-	var flavor_lbl := _lbl(flavor, 16, _C_TEXT)
+	var flavor_lbl := _lbl(flavor, 16, UITheme.text())
 	flavor_lbl.autowrap_mode         = TextServer.AUTOWRAP_WORD_SMART
 	flavor_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detail_pane.add_child(flavor_lbl)
 
 	_detail_pane.add_child(_hsep())
 
-	_detail_pane.add_child(_lbl("Target:  %d %s" % [quantity, monster_type], 16, _C_TEXT))
-	_detail_pane.add_child(_lbl("Reward:  %s" % reward, 16, _C_GOLD))
-
+	_detail_pane.add_child(_lbl("Target:  %d %s" % [quantity, monster_type], 16, UITheme.text()))
+	_detail_pane.add_child(_lbl("Reward:  %s" % reward, 16, UITheme.gold()))
 	_detail_pane.add_child(_hsep())
 
 	if _is_zone_occupied(zone):
@@ -424,7 +431,7 @@ func _update_detail(bounty: Dictionary) -> void:
 		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_detail_pane.add_child(warn)
 	else:
-		var accept_lbl := _lbl("[A]  Accept Contract", 15, _C_HINT)
+		var accept_lbl := _lbl("[A]  Accept Contract", 15, UITheme.hint())
 		accept_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_detail_pane.add_child(accept_lbl)
 
@@ -449,7 +456,9 @@ func _update_cursor() -> void:
 		var is_sel : bool   = (bounty == sel)
 		var display: String = bounty.get("display_name", bounty.get("id", ""))
 		name_lbl.text = ("▶  " if is_sel else "    ") + display + " spotted"
-		name_lbl.add_theme_color_override("font_color", _C_GOLD if is_sel else _C_TEXT)
+		name_lbl.add_theme_color_override(
+			"font_color", UITheme.gold() if is_sel else UITheme.text()
+		)
 
 
 func _update_active_counter(active: Array) -> void:
@@ -506,7 +515,8 @@ func _lbl(text: String, size: int, color: Color) -> Label:
 func _hsep() -> HSeparator:
 	var s     := HSeparator.new()
 	var style := StyleBoxFlat.new()
-	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.40)
+	var bc    : Color = UITheme.border()
+	style.bg_color              = Color(bc.r, bc.g, bc.b, 0.40)
 	style.content_margin_top    = 1.0
 	style.content_margin_bottom = 1.0
 	s.add_theme_stylebox_override("separator", style)
@@ -516,7 +526,8 @@ func _hsep() -> HSeparator:
 func _vsep() -> VSeparator:
 	var s     := VSeparator.new()
 	var style := StyleBoxFlat.new()
-	style.bg_color               = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.45)
+	var bc    : Color = UITheme.border()
+	style.bg_color               = Color(bc.r, bc.g, bc.b, 0.45)
 	style.content_margin_left    = 1.0
 	style.content_margin_right   = 1.0
 	s.add_theme_stylebox_override("separator", style)
@@ -531,9 +542,9 @@ func _zone_gap() -> Control:
 
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = _C_BG
+	sb.bg_color = UITheme.bg(0.97)
 	sb.set_border_width_all(2)
-	sb.border_color = _C_BORDER
+	sb.border_color = UITheme.border()
 	sb.set_corner_radius_all(6)
 	return sb
 

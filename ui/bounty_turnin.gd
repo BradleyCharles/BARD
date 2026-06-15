@@ -2,17 +2,13 @@ extends CanvasLayer
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG       := Color(0.09, 0.07, 0.05, 0.96)
-const _C_BORDER   := Color(0.52, 0.40, 0.20, 1.0)
-const _C_GOLD     := Color(0.88, 0.73, 0.38, 1.0)
-const _C_TEXT     := Color(0.82, 0.76, 0.64, 1.0)
-const _C_DIMMED   := Color(0.48, 0.42, 0.32, 0.55)
-const _C_HINT     := Color(0.42, 0.38, 0.30, 1.0)
+# Semantic colours — same in both themes.
 const _C_COMPLETE := Color(0.48, 0.74, 0.42, 1.0)
 const _C_REWARD   := Color(0.55, 0.85, 0.45, 1.0)
 
 var _font      : Font
 var _root      : Control
+var _panel_sb  : StyleBoxFlat
 var _list      : VBoxContainer
 var _is_open   : bool = false
 
@@ -32,6 +28,7 @@ func _ready() -> void:
 		if _is_open:
 			_refresh.call_deferred()
 	)
+	SceneManager.theme_changed.connect(_apply_theme)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -91,7 +88,7 @@ func _build_ui() -> void:
 	add_child(_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.0, 0.0, 0.0, 0.52)
+	dim.color = UITheme.overlay(0.52)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(dim)
@@ -101,7 +98,8 @@ func _build_ui() -> void:
 	panel.anchor_top    = 0.15
 	panel.anchor_right  = 0.80
 	panel.anchor_bottom = 0.85
-	panel.add_theme_stylebox_override("panel", _panel_style())
+	_panel_sb = _panel_style()
+	panel.add_theme_stylebox_override("panel", _panel_sb)
 	_root.add_child(panel)
 
 	var margin := MarginContainer.new()
@@ -115,11 +113,13 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 10)
 	margin.add_child(vbox)
 
-	var title := _label("Completed Contracts", 28, _C_GOLD)
+	var title := _label("Completed Contracts", 28, UITheme.gold())
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
-	var sub := _label("Select a contract to turn it in and collect your Scripts.", 14, _C_HINT)
+	var sub := _label(
+		"Select a contract to turn it in and collect your Scripts.", 14, UITheme.hint()
+	)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(sub)
 
@@ -131,9 +131,17 @@ func _build_ui() -> void:
 
 	vbox.add_child(_sep())
 
-	var hint := _label("↑↓  Navigate     [A]  Turn In     [B]  Close", 13, _C_HINT)
+	var hint := _label("↑↓  Navigate     [A]  Turn In     [B]  Close", 13, UITheme.hint())
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(hint)
+
+
+func _apply_theme() -> void:
+	if _panel_sb:
+		_panel_sb.bg_color     = UITheme.bg(0.96)
+		_panel_sb.border_color = UITheme.border()
+	if _is_open:
+		_refresh()
 
 
 # ── Refresh ───────────────────────────────────────────────────────────────────
@@ -167,12 +175,12 @@ func _bounty_row(bounty: Dictionary, idx: int) -> VBoxContainer:
 	hbox.add_theme_constant_override("separation", 14)
 	col.add_child(hbox)
 
-	var flavor := _label(bounty.get("flavor", ""), 15, _C_TEXT)
+	var flavor := _label(bounty.get("flavor", ""), 15, UITheme.text())
 	flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	flavor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hbox.add_child(flavor)
 
-	var reward    := SceneManager.scripts_for_bounty(bounty)
+	var reward     := SceneManager.scripts_for_bounty(bounty)
 	var reward_lbl := _label("+%d Scripts" % reward, 15, _C_REWARD)
 	reward_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	reward_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -181,7 +189,7 @@ func _bounty_row(bounty: Dictionary, idx: int) -> VBoxContainer:
 	var underline := ColorRect.new()
 	underline.custom_minimum_size   = Vector2(0.0, 2.0)
 	underline.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	underline.color = _C_GOLD if idx == _selected_idx else Color.TRANSPARENT
+	underline.color = UITheme.gold() if idx == _selected_idx else Color.TRANSPARENT
 	col.add_child(underline)
 
 	_row_labels.append(flavor)
@@ -194,10 +202,10 @@ func _update_cursor() -> void:
 	for i in _row_labels.size():
 		var sel := (i == _selected_idx)
 		_row_labels[i].add_theme_color_override(
-			"font_color", _C_GOLD if sel else _C_TEXT)
+			"font_color", UITheme.gold() if sel else UITheme.text())
 		_row_rewards[i].add_theme_color_override(
-			"font_color", _C_GOLD if sel else _C_REWARD)
-		_row_underlines[i].color = _C_GOLD if sel else Color.TRANSPARENT
+			"font_color", UITheme.gold() if sel else _C_REWARD)
+		_row_underlines[i].color = UITheme.gold() if sel else Color.TRANSPARENT
 
 
 # ── Style Helpers ─────────────────────────────────────────────────────────────
@@ -213,9 +221,10 @@ func _label(text: String, size: int, color: Color) -> Label:
 
 
 func _sep() -> HSeparator:
-	var s := HSeparator.new()
+	var s  := HSeparator.new()
+	var bc : Color = UITheme.border()
 	var style := StyleBoxFlat.new()
-	style.bg_color              = Color(_C_BORDER.r, _C_BORDER.g, _C_BORDER.b, 0.55)
+	style.bg_color              = Color(bc.r, bc.g, bc.b, 0.55)
 	style.content_margin_top    = 1.0
 	style.content_margin_bottom = 1.0
 	s.add_theme_stylebox_override("separator", style)
@@ -224,12 +233,12 @@ func _sep() -> HSeparator:
 
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color            = _C_BG
+	sb.bg_color            = UITheme.bg(0.96)
 	sb.border_width_left   = 2
 	sb.border_width_right  = 2
 	sb.border_width_top    = 2
 	sb.border_width_bottom = 2
-	sb.border_color               = _C_BORDER
+	sb.border_color               = UITheme.border()
 	sb.corner_radius_top_left     = 5
 	sb.corner_radius_top_right    = 5
 	sb.corner_radius_bottom_left  = 5

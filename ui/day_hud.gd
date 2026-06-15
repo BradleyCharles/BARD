@@ -6,11 +6,8 @@ extends CanvasLayer
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG     := Color(0.06, 0.04, 0.03, 0.80)
-const _C_BORDER := Color(0.40, 0.30, 0.14, 0.65)
-const _C_TEXT   := Color(0.95, 0.85, 0.45, 1.0)
-
-var _label : Label
+var _label       : Label
+var _panel_style : StyleBoxFlat
 
 
 func _ready() -> void:
@@ -20,6 +17,7 @@ func _ready() -> void:
 		font = load(_FONT_PATH)
 	_build_ui(font)
 	SceneManager.day_updated.connect(_update)
+	SceneManager.theme_changed.connect(_apply_theme)
 	_update()
 
 
@@ -39,21 +37,28 @@ func _build_ui(font: Font) -> void:
 	panel.offset_left = 10.0
 	panel.offset_top  = 170.0
 
-	var style := StyleBoxFlat.new()
-	style.bg_color     = _C_BG
-	style.border_color = _C_BORDER
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(8)
-	panel.add_theme_stylebox_override("panel", style)
+	_panel_style = StyleBoxFlat.new()
+	_panel_style.set_border_width_all(1)
+	_panel_style.set_corner_radius_all(4)
+	_panel_style.set_content_margin_all(8)
+	panel.add_theme_stylebox_override("panel", _panel_style)
 	ref.add_child(panel)
 
 	_label = Label.new()
-	_label.add_theme_color_override("font_color", _C_TEXT)
 	_label.add_theme_font_size_override("font_size", 23)
 	if font:
 		_label.add_theme_font_override("font", font)
 	panel.add_child(_label)
+
+	_apply_theme()
+
+
+func _apply_theme() -> void:
+	if _panel_style:
+		_panel_style.bg_color     = UITheme.bg(0.80)
+		_panel_style.border_color = UITheme.border_dim()
+	if _label:
+		_label.add_theme_color_override("font_color", UITheme.gold())
 
 
 func _update() -> void:

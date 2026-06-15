@@ -6,8 +6,6 @@ extends CanvasLayer
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG            := Color(0.06, 0.04, 0.03, 0.80)
-const _C_BORDER        := Color(0.40, 0.30, 0.14, 0.65)
 const _C_ACTIVE_BORDER := Color(0.95, 0.85, 0.45, 0.90)
 const _C_ACTIVE_TEXT   := Color(0.95, 0.85, 0.45, 1.0)
 const _C_LOCKED_TEXT   := Color(0.40, 0.38, 0.32, 0.70)
@@ -27,6 +25,7 @@ func _ready() -> void:
 		_font = load(_FONT_PATH)
 	_build_ui()
 	SceneManager.inventory_updated.connect(_rebuild)
+	SceneManager.theme_changed.connect(_rebuild)
 	call_deferred("_connect_player")
 
 
@@ -60,7 +59,7 @@ func _build_ui() -> void:
 		var panel := PanelContainer.new()
 		panel.custom_minimum_size = Vector2(88, 54)
 
-		var style := _make_style(_C_BORDER, 2)
+		var style := _make_style(UITheme.border_dim(), 2)
 		panel.add_theme_stylebox_override("panel", style)
 		hbox.add_child(panel)
 
@@ -80,7 +79,7 @@ func _build_ui() -> void:
 
 func _make_style(border_color: Color, border_width: int) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color     = _C_BG
+	s.bg_color     = UITheme.bg(0.80)
 	s.border_color = border_color
 	s.set_border_width_all(border_width)
 	s.set_corner_radius_all(4)
@@ -108,11 +107,11 @@ func _rebuild() -> void:
 			lbl.add_theme_color_override("font_color", _C_ACTIVE_TEXT)
 			lbl.text = WEAPON_LABELS.get(weapon_id, weapon_id)
 		elif is_owned:
-			panel.add_theme_stylebox_override("panel", _make_style(_C_BORDER, 2))
+			panel.add_theme_stylebox_override("panel", _make_style(UITheme.border_dim(), 2))
 			lbl.add_theme_color_override("font_color", _C_ACTIVE_TEXT)
 			lbl.text = WEAPON_LABELS.get(weapon_id, weapon_id)
 		else:
-			panel.add_theme_stylebox_override("panel", _make_style(_C_BORDER, 1))
+			panel.add_theme_stylebox_override("panel", _make_style(UITheme.border_dim(), 1))
 			lbl.add_theme_color_override("font_color", _C_LOCKED_TEXT)
 			lbl.text = WEAPON_LABELS.get(weapon_id, weapon_id) + " [lock]"
 

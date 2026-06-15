@@ -1,19 +1,19 @@
 extends CanvasLayer
 
-const _FONT_PATH := "res://fonts/almendra.regular.ttf"
-const BAR_WIDTH  : float = 600.0
-const BAR_HEIGHT : float = 22.0
+const _FONT_PATH  := "res://fonts/almendra.regular.ttf"
+const BAR_WIDTH   : float = 600.0
+const BAR_HEIGHT  : float = 22.0
 
-const _C_BG       := Color(0.06, 0.04, 0.03, 0.92)
+# Red boss border and fill are semantic — same in both themes.
 const _C_BORDER   := Color(0.60, 0.20, 0.20, 0.85)
 const _C_BAR_BG   := Color(0.20, 0.08, 0.08, 1.0)
 const _C_BAR_FILL := Color(0.90, 0.15, 0.15, 1.0)
-const _C_TEXT     := Color(1.00, 0.80, 0.80, 1.0)
 
-var _font     : Font      = null
-var _fill_rect: ColorRect = null
-var _label    : Label     = null
-var _boss_ref : Node      = null
+var _font        : Font      = null
+var _fill_rect   : ColorRect = null
+var _label       : Label     = null
+var _boss_ref    : Node      = null
+var _panel_style : StyleBoxFlat = null
 
 
 func _ready() -> void:
@@ -21,6 +21,7 @@ func _ready() -> void:
 	if ResourceLoader.exists(_FONT_PATH):
 		_font = load(_FONT_PATH)
 	_build_ui()
+	SceneManager.theme_changed.connect(_apply_theme)
 	hide()
 
 
@@ -50,13 +51,12 @@ func _build_ui() -> void:
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.offset_top     = 14.0
 
-	var style := StyleBoxFlat.new()
-	style.bg_color   = _C_BG
-	style.border_color = _C_BORDER
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(10)
-	panel.add_theme_stylebox_override("panel", style)
+	_panel_style = StyleBoxFlat.new()
+	_panel_style.border_color = _C_BORDER
+	_panel_style.set_border_width_all(2)
+	_panel_style.set_corner_radius_all(4)
+	_panel_style.set_content_margin_all(10)
+	panel.add_theme_stylebox_override("panel", _panel_style)
 	ref.add_child(panel)
 
 	var vbox := VBoxContainer.new()
@@ -67,13 +67,12 @@ func _build_ui() -> void:
 	_label.text                 = "BOSS"
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.add_theme_font_size_override("font_size", 22)
-	_label.add_theme_color_override("font_color", _C_TEXT)
 	if _font:
 		_label.add_theme_font_override("font", _font)
 	vbox.add_child(_label)
 
 	var bar_bg := ColorRect.new()
-	bar_bg.color              = _C_BAR_BG
+	bar_bg.color               = _C_BAR_BG
 	bar_bg.custom_minimum_size = Vector2(BAR_WIDTH, BAR_HEIGHT)
 	vbox.add_child(bar_bg)
 
@@ -82,6 +81,15 @@ func _build_ui() -> void:
 	_fill_rect.size  = Vector2(BAR_WIDTH, BAR_HEIGHT)
 	_fill_rect.set_anchors_preset(Control.PRESET_LEFT_WIDE)
 	bar_bg.add_child(_fill_rect)
+
+	_apply_theme()
+
+
+func _apply_theme() -> void:
+	if _panel_style:
+		_panel_style.bg_color = UITheme.bg(0.92)
+	if _label:
+		_label.add_theme_color_override("font_color", UITheme.text())
 
 
 func _update() -> void:

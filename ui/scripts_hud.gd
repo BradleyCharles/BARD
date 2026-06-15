@@ -4,14 +4,12 @@ extends CanvasLayer
 
 const _FONT_PATH := "res://fonts/almendra.regular.ttf"
 
-const _C_BG     := Color(0.06, 0.04, 0.03, 0.80)
-const _C_BORDER := Color(0.40, 0.30, 0.14, 0.65)
-const _C_TEXT   := Color(0.95, 0.85, 0.45, 1.0)
-const _C_GOOP   := Color(0.70, 0.50, 0.90, 1.0)
+const _C_GOOP := Color(0.70, 0.50, 0.90, 1.0)
 
 var _font        : Font
 var _scripts_lbl : Label
 var _goop_lbl    : Label
+var _panel_style : StyleBoxFlat
 
 
 func _ready() -> void:
@@ -20,6 +18,7 @@ func _ready() -> void:
 	_build_ui()
 	SceneManager.scripts_updated.connect(_update)
 	SceneManager.inventory_updated.connect(_update)
+	SceneManager.theme_changed.connect(_apply_theme)
 	_update()
 
 
@@ -41,13 +40,11 @@ func _build_ui() -> void:
 	panel.offset_left  = 10.0
 	panel.offset_top   = 90.0
 
-	var style := StyleBoxFlat.new()
-	style.bg_color     = _C_BG
-	style.border_color = _C_BORDER
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(8)
-	panel.add_theme_stylebox_override("panel", style)
+	_panel_style = StyleBoxFlat.new()
+	_panel_style.set_border_width_all(1)
+	_panel_style.set_corner_radius_all(4)
+	_panel_style.set_content_margin_all(8)
+	panel.add_theme_stylebox_override("panel", _panel_style)
 	ref.add_child(panel)
 
 	var vbox := VBoxContainer.new()
@@ -55,7 +52,6 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	_scripts_lbl = Label.new()
-	_scripts_lbl.add_theme_color_override("font_color", _C_TEXT)
 	_scripts_lbl.add_theme_font_size_override("font_size", 27)
 	if _font:
 		_scripts_lbl.add_theme_font_override("font", _font)
@@ -68,6 +64,16 @@ func _build_ui() -> void:
 		_goop_lbl.add_theme_font_override("font", _font)
 	_goop_lbl.hide()
 	vbox.add_child(_goop_lbl)
+
+	_apply_theme()
+
+
+func _apply_theme() -> void:
+	if _panel_style:
+		_panel_style.bg_color     = UITheme.bg(0.80)
+		_panel_style.border_color = UITheme.border_dim()
+	if _scripts_lbl:
+		_scripts_lbl.add_theme_color_override("font_color", UITheme.gold())
 
 
 func _update() -> void:
