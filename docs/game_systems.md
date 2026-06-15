@@ -442,7 +442,7 @@ Only **named (non-wandering) NPCs** get a `StaticBody2D` child (layer 8, mask 0,
 **Owner:** `ui/dialog_box.gd` + `ui/dialog_box.tscn`  
 **Layer:** 10
 
-A fixed-size (1000×292 px) bottom-center overlay. Added to group `"dialogue_box"` so NPCs can find it with `get_first_node_in_group()`.
+A fixed-size (1300×400 px) bottom-center overlay sized for TV display. Added to group `"dialogue_box"` so NPCs can find it with `get_first_node_in_group()`.
 
 ### Open / close
 

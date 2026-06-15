@@ -90,9 +90,15 @@ def get_player_name() -> str:
         except (json.JSONDecodeError, KeyError):
             pass
 
-    print("\n── Player Name ──────────────────────────────────────────────")
-    print("Enter the hero's name, or press Enter to generate one.")
-    choice = input("Name: ").strip()
+    if sys.stdin.isatty():
+        print("\n── Player Name ──────────────────────────────────────────────")
+        print("Enter the hero's name, or press Enter to generate one.")
+        try:
+            choice = input("Name: ").strip()
+        except EOFError:
+            choice = ""
+    else:
+        choice = ""
 
     if choice:
         return choice

@@ -12,9 +12,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -500.0
-offset_top = -300.0
-offset_right = 500.0
+offset_left = -650.0
+offset_top = -370.0
+offset_right = 650.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -37,7 +37,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="TextLabel" type="RichTextLabel" parent="Panel/MarginContainer/VBox" unique_id=1796470843]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 bbcode_enabled = true
 scroll_active = false

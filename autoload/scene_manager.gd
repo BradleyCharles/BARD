@@ -178,9 +178,9 @@ func _process(delta: float) -> void:
 
 	if _poll_elapsed >= POLL_INTERVAL:
 		_poll_elapsed = 0.0
-		_check_flags()
 		if _pipeline_mode == "eod":
 			_poll_progress()
+		_check_flags()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

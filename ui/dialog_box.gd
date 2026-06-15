@@ -5,8 +5,6 @@ signal closed
 const _TURNIN_SCENE := preload("res://ui/bounty_turnin.tscn")
 const _FONT_PATH    := "res://fonts/almendra.regular.ttf"
 
-# Semantic colours — same in both themes.
-const _C_HINT := Color(0.42, 0.38, 0.30, 1.0)
 
 @onready var _panel      : PanelContainer = $Panel
 @onready var _name_label : Label          = $Panel/MarginContainer/VBox/NameLabel
@@ -20,7 +18,6 @@ var _npc_name  : String     = ""
 
 var _panel_sb  : StyleBoxFlat
 var _sep_sb    : StyleBoxFlat
-var _hint_lbl  : Label
 
 var _selected_idx       : int   = 0
 var _response_labels    : Array = []
@@ -34,11 +31,11 @@ func _ready() -> void:
 	_panel_sb = _panel_style()
 	_panel.add_theme_stylebox_override("panel", _panel_sb)
 
-	_name_label.add_theme_font_size_override("font_size", 22)
+	_name_label.add_theme_font_size_override("font_size", 32)
 	if _font:
 		_name_label.add_theme_font_override("font", _font)
 
-	_text_label.add_theme_font_size_override("normal_font_size", 18)
+	_text_label.add_theme_font_size_override("normal_font_size", 26)
 	if _font:
 		_text_label.add_theme_font_override("normal_font", _font)
 
@@ -46,15 +43,6 @@ func _ready() -> void:
 	for sep in [$Panel/MarginContainer/VBox/HSeparator,
 				$Panel/MarginContainer/VBox/HSeparator2]:
 		sep.add_theme_stylebox_override("separator", _sep_sb)
-
-	_hint_lbl = Label.new()
-	_hint_lbl.text = "↑↓  Navigate     [A]  Select"
-	_hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hint_lbl.add_theme_font_size_override("font_size", 12)
-	_hint_lbl.add_theme_color_override("font_color", _C_HINT)
-	if _font:
-		_hint_lbl.add_theme_font_override("font", _font)
-	_name_label.get_parent().add_child(_hint_lbl)
 
 	_apply_theme()
 	SceneManager.theme_changed.connect(_apply_theme)
@@ -131,7 +119,7 @@ func _show_responses() -> void:
 		var lbl := Label.new()
 		lbl.text = r.get("text", "")
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl.add_theme_font_size_override("font_size", 19)
+		lbl.add_theme_font_size_override("font_size", 26)
 		if _font:
 			lbl.add_theme_font_override("font", _font)
 		row.add_child(lbl)

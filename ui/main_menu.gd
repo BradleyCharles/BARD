@@ -316,7 +316,7 @@ func _start_new_game() -> void:
 	await get_tree().process_frame
 
 	var project_path : String = ProjectSettings.globalize_path("res://")
-	for stale: String in ["worldgen_progress.json", "pipeline_ready.flag"]:
+	for stale: String in ["worldgen_progress.json", "pipeline_ready.flag", "pipeline_crashed.flag"]:
 		var p := project_path + stale
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
