@@ -22,9 +22,18 @@ const _ZONE_LABELS: Dictionary = {
 	"zone_a": "Zone A", "zone_b": "Zone B", "zone_c": "Zone C"
 }
 
-var _tex_slime1 : Texture2D
-var _tex_slime2 : Texture2D
-var _tex_slime3 : Texture2D
+var _tex_slime1   : Texture2D
+var _tex_slime2   : Texture2D
+var _tex_slime3   : Texture2D
+var _tex_orc1     : Texture2D
+var _tex_orc2     : Texture2D
+var _tex_orc3     : Texture2D
+var _tex_plant1   : Texture2D
+var _tex_plant2   : Texture2D
+var _tex_plant3   : Texture2D
+var _tex_vampire1 : Texture2D
+var _tex_vampire2 : Texture2D
+var _tex_vampire3 : Texture2D
 
 var _font         : Font
 var _root         : Control
@@ -43,9 +52,18 @@ var _input_guard  : bool       = false
 func _ready() -> void:
 	if ResourceLoader.exists(_FONT_PATH):
 		_font = load(_FONT_PATH)
-	_tex_slime1 = _load_tex("res://assets/Bounty_Board/Slime1_bounty.png")
-	_tex_slime2 = _load_tex("res://assets/Bounty_Board/Slime2_bounty.png")
-	_tex_slime3 = _load_tex("res://assets/Bounty_Board/Slime3_bounty.png")
+	_tex_slime1   = _load_tex("res://assets/Bounty_Board/Slime1_bounty.png")
+	_tex_slime2   = _load_tex("res://assets/Bounty_Board/Slime2_bounty.png")
+	_tex_slime3   = _load_tex("res://assets/Bounty_Board/Slime3_bounty.png")
+	_tex_orc1     = _load_tex("res://assets/Bounty_Board/Orc1_bounty.png")
+	_tex_orc2     = _load_tex("res://assets/Bounty_Board/Orc2_bounty.png")
+	_tex_orc3     = _load_tex("res://assets/Bounty_Board/Orc3_bounty.png")
+	_tex_plant1   = _load_tex("res://assets/Bounty_Board/Plant1_bounty.png")
+	_tex_plant2   = _load_tex("res://assets/Bounty_Board/Plant2_bounty.png")
+	_tex_plant3   = _load_tex("res://assets/Bounty_Board/Plant3_bounty.png")
+	_tex_vampire1 = _load_tex("res://assets/Bounty_Board/vampire1_bounty.png")
+	_tex_vampire2 = _load_tex("res://assets/Bounty_Board/vampire2_bounty.png")
+	_tex_vampire3 = _load_tex("res://assets/Bounty_Board/vampire3_bounty.png")
 	_build_ui()
 	_root.hide()
 	SceneManager.bounties_updated.connect(func() -> void:
@@ -396,7 +414,7 @@ func _update_detail(bounty: Dictionary) -> void:
 
 	_detail_pane.add_child(_hsep())
 
-	_detail_pane.add_child(_lbl("Target:  %d slimes" % quantity, 16, _C_TEXT))
+	_detail_pane.add_child(_lbl("Target:  %d %s" % [quantity, monster_type], 16, _C_TEXT))
 	_detail_pane.add_child(_lbl("Reward:  %s" % reward, 16, _C_GOLD))
 
 	_detail_pane.add_child(_hsep())
@@ -460,9 +478,18 @@ func _load_tex(path: String) -> Texture2D:
 
 func _get_texture(monster_type: String) -> Texture2D:
 	match monster_type:
-		"slime1": return _tex_slime1
-		"slime2": return _tex_slime2
-		"slime3": return _tex_slime3
+		"slime1":   return _tex_slime1
+		"slime2":   return _tex_slime2
+		"slime3":   return _tex_slime3
+		"orc1":     return _tex_orc1
+		"orc2":     return _tex_orc2
+		"orc3":     return _tex_orc3
+		"plant1":   return _tex_plant1
+		"plant2":   return _tex_plant2
+		"plant3":   return _tex_plant3
+		"vampire1": return _tex_vampire1
+		"vampire2": return _tex_vampire2
+		"vampire3": return _tex_vampire3
 	return null
 
 
