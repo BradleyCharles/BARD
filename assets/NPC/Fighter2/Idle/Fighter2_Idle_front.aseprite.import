@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://cyv3bvnphxf71"
-path="res://.godot/imported/Fighter2_Idle_front.aseprite-2d907515d137fb7efe0dd742660d8ae6.res"
+path="res://.godot/imported/Fighter2_Idle_front.aseprite-0730fadff22f002ecdc6715504bbc4e0.res"
 
 [deps]
 
-source_file="res://assets/Fighter2/Idle/Fighter2_Idle_front.aseprite"
-dest_files=["res://.godot/imported/Fighter2_Idle_front.aseprite-2d907515d137fb7efe0dd742660d8ae6.res"]
+source_file="res://assets/NPC/Fighter2/Idle/Fighter2_Idle_front.aseprite"
+dest_files=["res://.godot/imported/Fighter2_Idle_front.aseprite-0730fadff22f002ecdc6715504bbc4e0.res"]
 
 [params]
 

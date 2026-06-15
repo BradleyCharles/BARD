@@ -823,7 +823,9 @@ func _show_crash_message(_message: String) -> void:
 				var done: int    = int(d.get("completed",   0))
 				var tot : int    = int(d.get("total",       0))
 				if npc != "":
-					diagnostic = "\n(Timed out while generating: %s — %d/%d complete)" % [npc, done, tot]
+					diagnostic = \
+						"\n(Timed out while generating: %s — %d/%d complete)" \
+						% [npc, done, tot]
 			f.close()
 
 	print("SceneManager: pipeline crash details — " + _message)
@@ -890,6 +892,12 @@ func _transition_to(scene_path: String) -> void:
 	if _transitioning:
 		return
 	_transitioning = true
+
+	for player in get_tree().get_nodes_in_group("scene_music"):
+		var p : AudioStreamPlayer = player as AudioStreamPlayer
+		if p != null and p.playing:
+			var tw := create_tween()
+			tw.tween_property(p, "volume_db", -60.0, 0.6)
 
 	var area_name := _get_area_name(scene_path)
 	var ls        := _loading_packed.instantiate()

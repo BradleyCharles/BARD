@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://bpi8n5drlrgjh"
-path="res://.godot/imported/Attacked_right_Manequin4.aseprite-7326f7f39b34e34288ff4617f0264968.res"
+path="res://.godot/imported/Attacked_right_Manequin4.aseprite-2281487fde88d987a1b27b6a17323eed.res"
 
 [deps]
 
-source_file="res://assets/Mannequins/Manequin1/Attacked_right_Manequin4.aseprite"
-dest_files=["res://.godot/imported/Attacked_right_Manequin4.aseprite-7326f7f39b34e34288ff4617f0264968.res"]
+source_file="res://assets/NPC/Mannequins/Manequin1/Attacked_right_Manequin4.aseprite"
+dest_files=["res://.godot/imported/Attacked_right_Manequin4.aseprite-2281487fde88d987a1b27b6a17323eed.res"]
 
 [params]
 

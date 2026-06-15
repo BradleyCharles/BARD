@@ -74,7 +74,14 @@ func take_damage(amount: int, knockback_vec: Vector2) -> void:
 	_hurt_timer = 0.15
 	modulate = Color(1.0, 0.4, 0.4, 1.0)
 	if health <= 0:
+		_disable_for_death()
 		_on_died()
+
+
+func _disable_for_death() -> void:
+	collision_layer = 0
+	collision_mask  = 0
+	remove_from_group("ground_mobs")
 
 
 func _on_died() -> void:

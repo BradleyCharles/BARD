@@ -28,6 +28,8 @@ This is the authoritative map of how each feature works end-to-end, so implement
 19. [Game Over Screen](#19-game-over-screen)
 20. [Pipeline Progress Bar](#20-pipeline-progress-bar)
 21. [Boss Summon Tracker HUD](#21-boss-summon-tracker-hud)
+22. [Interaction Indicator](#22-interaction-indicator)
+23. [Zone Music](#23-zone-music)
 
 ---
 
@@ -839,6 +841,7 @@ player presses SELECT in field scene (_unhandled_input)
 | Zone A (Orcs & Plants) | Teleports player to center of `zone_a` Rect2 |
 | Zone B (Vampires) | Teleports player to center of `zone_b` Rect2 |
 | Zone C (Slimes) | Teleports player to center of `zone_c` Rect2 |
+| Town | Closes menu and calls `SceneManager.go_to_town()` |
 | Cancel | Closes menu, no action |
 
 ### Input
@@ -901,6 +904,63 @@ field.gd._on_mob_died()
 - `set_family` silently no-ops for unknown family keys.
 - Once a boss spawns (`spawned = true`), that family's row is hidden permanently for the session — there is no respawn.
 - The tracker is instantiated in `field.gd._ready()` using the same script-on-CanvasLayer pattern as the minimap.
+
+---
+
+---
+
+## 22. Interaction Indicator
+
+**Owner:** `ui/interaction_indicator.gd` (instantiated by `world/town.gd`)  
+**Layer:** 30 (top-center, town only)
+
+A small dark panel shown at the top-center of the screen when the player walks into an NPC's or bounty board's detection radius. Replaces the old per-NPC floating `[A] Name` / `[A] Bounty Board` prompt.
+
+### Flow
+
+```
+Player enters DetectionArea
+  → npc_base._on_area_entered() / bounty_board_object._on_body_entered()
+      → find node in group "interaction_indicator"
+      → call show_interactable(name, self)
+          • stores self as _current_source
+          • sets label text, shows panel
+
+Player exits DetectionArea
+  → hide_interactable(self)
+      • only hides if self == _current_source (prevents stale close from secondary NPC)
+```
+
+### What to keep in mind
+- Only one source is shown at a time. The last NPC to enter range wins.
+- When dialogue opens, `_hide_indicator()` is called so the panel does not overlap the dialogue box.
+- On dialogue close, if the player is still in range, `_show_indicator()` restores the panel.
+- The indicator is **only added in town** (`town.gd`). Field has no NPCs — no indicator is needed there.
+
+---
+
+## 23. Zone Music
+
+**Owner:** `world/field.gd` + `world/town.gd`
+
+Each scene creates a single `AudioStreamPlayer` in `_ready()`. All tracks loop.
+
+### Town
+`town.gd._start_music()` loads and plays `assets/Music/Town/03 - Definitely Our Town.wav` at −6 dB. The player persists until the scene is freed.
+
+### Field
+`field.gd._start_music(_MUSIC_FIELD)` loads and plays `assets/Music/Field/14 - Tales of Firelight Town.wav` on scene load.
+
+Every `_process()` frame, `_update_zone_music()` checks which zone the player is currently standing in (testing against `_zone_rects`). On zone change, `_start_music()` is called with the new track:
+
+| Player zone | Music file |
+|-------------|-----------|
+| No zone (open field) | `assets/Music/Field/14 - Tales of Firelight Town.wav` |
+| Zone A (Orcs & Plants) | `assets/Music/ZoneA/09 - Battle 2.wav` |
+| Zone B (Vampires) | `assets/Music/ZoneB/13 - Decisive Battle 1 - Don't Be Afraid.wav` |
+| Zone C (Slimes) | `assets/Music/ZoneC/12 - Frozen Abyss.wav` |
+
+`_start_music()` only replaces the stream when the path actually changes, preventing restarts while staying in the same zone.
 
 ---
 

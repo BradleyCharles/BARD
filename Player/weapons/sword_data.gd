@@ -19,3 +19,9 @@ const SHAKE_FREQUENCY: float  = 400.0
 # Vector2 cannot be a GDScript const — static var is required for object types
 static var hitbox      : Vector2 = Vector2(60.0, 40.0)  # Width x Height (collision)
 static var sprite_size : Vector2 = Vector2(35.0, 55.0)  # Height x Width (animation)
+static var sfx_paths   : Array[String] = [
+	"res://assets/SFX/sword1.wav",
+	"res://assets/SFX/sword2.wav",
+	"res://assets/SFX/sword3.wav",
+	"res://assets/SFX/sword4.wav",
+]

@@ -85,6 +85,7 @@ func _build_ui() -> void:
 	_add_zone_option(vbox, "Zone A  (Orcs & Plants)", "zone_a")
 	_add_zone_option(vbox, "Zone B  (Vampires)", "zone_b")
 	_add_zone_option(vbox, "Zone C  (Slimes)", "zone_c")
+	_add_label_option(vbox, "Town", _go_to_town)
 
 	var cancel := Label.new()
 	cancel.text = "Cancel"
@@ -101,6 +102,11 @@ func _build_ui() -> void:
 
 
 func _add_zone_option(vbox: VBoxContainer, label_text: String, zone: String) -> void:
+	var z := zone
+	_add_label_option(vbox, label_text, func() -> void: _teleport_to(z))
+
+
+func _add_label_option(vbox: VBoxContainer, label_text: String, action: Callable) -> void:
 	var lbl := Label.new()
 	lbl.text = label_text
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -110,8 +116,7 @@ func _add_zone_option(vbox: VBoxContainer, label_text: String, zone: String) -> 
 		lbl.add_theme_font_override("font", _font)
 	vbox.add_child(lbl)
 	_rows.append(lbl)
-	var z := zone
-	_actions.append(func() -> void: _teleport_to(z))
+	_actions.append(action)
 
 
 func _highlight(idx: int) -> void:
@@ -159,6 +164,11 @@ func _teleport_to(zone: String) -> void:
 	# Place player just inside the edge of the zone nearest its center
 	_player.position = rect.get_center()
 	_close()
+
+
+func _go_to_town() -> void:
+	_close()
+	SceneManager.go_to_town()
 
 
 func _close() -> void:

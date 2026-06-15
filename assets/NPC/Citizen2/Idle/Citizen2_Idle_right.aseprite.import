@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://djbquk56s5q4p"
-path="res://.godot/imported/Citizen2_Idle_right.aseprite-6dc9f8f280f2e89bef4f78a9f93e326e.res"
+path="res://.godot/imported/Citizen2_Idle_right.aseprite-4ba548a89d13a69995e35fc9a7fc3c18.res"
 
 [deps]
 
-source_file="res://assets/Citizen2/Idle/Citizen2_Idle_right.aseprite"
-dest_files=["res://.godot/imported/Citizen2_Idle_right.aseprite-6dc9f8f280f2e89bef4f78a9f93e326e.res"]
+source_file="res://assets/NPC/Citizen2/Idle/Citizen2_Idle_right.aseprite"
+dest_files=["res://.godot/imported/Citizen2_Idle_right.aseprite-4ba548a89d13a69995e35fc9a7fc3c18.res"]
 
 [params]
 

@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://b336vi5rc5g0b"
-path="res://.godot/imported/Citizen1_Walk_back.aseprite-e5a631df644e1d0e5343739486caede9.res"
+path="res://.godot/imported/Citizen1_Walk_back.aseprite-28e409775dce27ac4112c5d61d1f9cb0.res"
 
 [deps]
 
-source_file="res://assets/Citizen1/Walk/Citizen1_Walk_back.aseprite"
-dest_files=["res://.godot/imported/Citizen1_Walk_back.aseprite-e5a631df644e1d0e5343739486caede9.res"]
+source_file="res://assets/NPC/Citizen1/Walk/Citizen1_Walk_back.aseprite"
+dest_files=["res://.godot/imported/Citizen1_Walk_back.aseprite-28e409775dce27ac4112c5d61d1f9cb0.res"]
 
 [params]
 

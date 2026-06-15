@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://dshraivtavnd"
-path="res://.godot/imported/Fighter_sword1_right.aseprite-85e5e24eace6d5b7ba752fd54f361b50.res"
+path="res://.godot/imported/Fighter_sword1_right.aseprite-624d9088ec54b7e719dbcd4859167e75.res"
 
 [deps]
 
-source_file="res://assets/Fighter1_sword/Fighter_sword1_right.aseprite"
-dest_files=["res://.godot/imported/Fighter_sword1_right.aseprite-85e5e24eace6d5b7ba752fd54f361b50.res"]
+source_file="res://assets/NPC/Fighter1_sword/Fighter_sword1_right.aseprite"
+dest_files=["res://.godot/imported/Fighter_sword1_right.aseprite-624d9088ec54b7e719dbcd4859167e75.res"]
 
 [params]
 

@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://dcks4fx086kq"
-path="res://.godot/imported/Talking_person1.aseprite-812014126ec94ec5e7932a000d5e1db3.res"
+path="res://.godot/imported/Talking_person1.aseprite-712d3a5978099f316a1fd1100f593107.res"
 
 [deps]
 
-source_file="res://assets/Talking_person1/Talking_person1.aseprite"
-dest_files=["res://.godot/imported/Talking_person1.aseprite-812014126ec94ec5e7932a000d5e1db3.res"]
+source_file="res://assets/NPC/Talking_person1/Talking_person1.aseprite"
+dest_files=["res://.godot/imported/Talking_person1.aseprite-712d3a5978099f316a1fd1100f593107.res"]
 
 [params]
 

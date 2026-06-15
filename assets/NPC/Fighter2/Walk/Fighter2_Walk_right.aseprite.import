@@ -3,12 +3,12 @@
 importer="aseprite_wizard.plugin.spriteframes"
 type="SpriteFrames"
 uid="uid://7mdbw2jidf5q"
-path="res://.godot/imported/Fighter2_Walk_right.aseprite-d46e5f6f1888859306e9c58cf0ae3bdd.res"
+path="res://.godot/imported/Fighter2_Walk_right.aseprite-fd212f591fb26e8a12db5bbc1ce3fb68.res"
 
 [deps]
 
-source_file="res://assets/Fighter2/Walk/Fighter2_Walk_right.aseprite"
-dest_files=["res://.godot/imported/Fighter2_Walk_right.aseprite-d46e5f6f1888859306e9c58cf0ae3bdd.res"]
+source_file="res://assets/NPC/Fighter2/Walk/Fighter2_Walk_right.aseprite"
+dest_files=["res://.godot/imported/Fighter2_Walk_right.aseprite-fd212f591fb26e8a12db5bbc1ce3fb68.res"]
 
 [params]
 

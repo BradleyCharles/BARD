@@ -17,9 +17,11 @@ const _C_GOLD      := Color(0.95, 0.85, 0.45, 1.0)
 const _C_DIM       := Color(0.60, 0.55, 0.45, 1.0)
 const _C_DISABLED  := Color(0.35, 0.32, 0.28, 1.0)
 
+const _MUSIC_PATH  := "res://assets/Music/Main_menu/02 - Title Theme.wav"
 const PYTHON_EXE   := "python3"
 
 var _font      : Font
+var _music     : AudioStreamPlayer = null
 var _font_bold : Font
 var _canvas    : CanvasLayer
 var _buttons   : Array[Label] = []
@@ -49,6 +51,7 @@ func _ready() -> void:
 	_canvas.layer = 10
 	add_child(_canvas)
 	_build_ui()
+	_start_music()
 
 
 func _build_ui() -> void:
@@ -286,6 +289,23 @@ func _build_slot_picker(title_text: String, on_select: Callable) -> Control:
 	_picker_actions.append(_close_picker)
 
 	return root
+
+
+# ── Music ─────────────────────────────────────────────────────────────────────
+
+func _start_music() -> void:
+	if not ResourceLoader.exists(_MUSIC_PATH):
+		push_warning("main_menu.gd: music file not found -- %s" % _MUSIC_PATH)
+		return
+	_music = AudioStreamPlayer.new()
+	_music.stream    = load(_MUSIC_PATH)
+	_music.volume_db = -60.0
+	_music.finished.connect(_music.play)
+	add_child(_music)
+	_music.add_to_group("scene_music")
+	_music.play()
+	var tw := create_tween()
+	tw.tween_property(_music, "volume_db", -6.0, 0.8)
 
 
 # ── New Game ──────────────────────────────────────────────────────────────────

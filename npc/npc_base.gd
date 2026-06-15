@@ -32,6 +32,10 @@ extends Node2D
 @export var detection_radius: float  = 40.0
 ## True for anonymous background NPCs that wander but carry no dialogue.
 @export var is_wanderer     : bool   = false
+## Override which sprite set to use. Leave empty to derive from npc_role / is_wanderer.
+## Valid keys: "swordsman_lvl1", "swordsman_lvl2", "fighter2",
+##             "citizen1", "citizen2", "talking_person1"
+@export var sprite_set      : String = ""
 
 
 # ── Hardcoded root nodes per NPC role ─────────────────────────────────────────
@@ -164,8 +168,6 @@ const ROLE_ROOT_NODES : Dictionary = {
 @onready var _detection : Area2D           = $DetectionArea
 @onready var _name_lbl  : Label            = $NameLabel
 
-var _prompt_lbl : Label
-
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
@@ -203,18 +205,7 @@ func _ready() -> void:
 		(shape.shape as CircleShape2D).radius = detection_radius
 
 	_name_lbl.text    = npc_name
-	_name_lbl.visible = true
-
-	if not is_wanderer:
-		_prompt_lbl = Label.new()
-		_prompt_lbl.text = "[A] Talk"
-		_prompt_lbl.position = _name_lbl.position + Vector2(0.0, 20.0)
-		_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_prompt_lbl.add_theme_font_size_override("font_size", 13)
-		_prompt_lbl.add_theme_color_override(
-			"font_color", Color(0.88, 0.73, 0.38, 1.0))
-		_prompt_lbl.visible = false
-		add_child(_prompt_lbl)
+	_name_lbl.visible = false
 
 	_load_dialogue()
 
@@ -327,8 +318,8 @@ func _on_area_entered(area: Area2D) -> void:
 	if not _is_player_area(area):
 		return
 	_player_in_range = true
-	if _prompt_lbl:
-		_prompt_lbl.visible = true
+	if not is_wanderer:
+		_show_indicator()
 	if npc_id != "" and not SceneManager.get_flag("met_" + npc_id.to_lower()):
 		SceneManager.set_flag("met_" + npc_id.to_lower(), true)
 
@@ -337,8 +328,8 @@ func _on_area_exited(area: Area2D) -> void:
 	if not _is_player_area(area):
 		return
 	_player_in_range = false
-	if _prompt_lbl:
-		_prompt_lbl.visible = false
+	if not is_wanderer:
+		_hide_indicator()
 	_close_dialogue()
 
 
@@ -360,8 +351,7 @@ func _open_dialogue() -> void:
 		_patch_guild_commander_root()
 	elif npc_role == "blacksmith":
 		_patch_blacksmith_root()
-	if _prompt_lbl:
-		_prompt_lbl.visible = false
+	_hide_indicator()
 	if not _dialogue_box.closed.is_connected(_on_dialogue_closed):
 		_dialogue_box.closed.connect(_on_dialogue_closed)
 	var start_node := "root" if ROLE_ROOT_NODES.has(npc_role) else "greeting"
@@ -411,8 +401,8 @@ func _patch_blacksmith_root() -> void:
 
 
 func _on_dialogue_closed() -> void:
-	if _prompt_lbl and _player_in_range:
-		_prompt_lbl.visible = true
+	if _player_in_range:
+		_show_indicator()
 	_dialogue_box = null
 
 
@@ -517,6 +507,32 @@ func _pick_wander_direction() -> void:
 		_try_play("idle_right")
 
 
+# ── Interaction indicator ─────────────────────────────────────────────────────
+
+func _get_indicator() -> Object:
+	return get_tree().get_first_node_in_group("interaction_indicator")
+
+
+func _role_title() -> String:
+	match npc_role:
+		"innkeeper":       return "Innkeeper"
+		"blacksmith":      return "Blacksmith"
+		"guild_commander": return "Guild Commander"
+	return ""
+
+
+func _show_indicator() -> void:
+	var ind : Object = _get_indicator()
+	if ind != null:
+		ind.call("show_interactable", npc_name, self, _role_title())
+
+
+func _hide_indicator() -> void:
+	var ind : Object = _get_indicator()
+	if ind != null:
+		ind.call("hide_interactable", self)
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 func _add_physics_body() -> void:
@@ -538,16 +554,59 @@ func _try_play(anim: String) -> void:
 
 # ── Sprite setup ──────────────────────────────────────────────────────────────
 
-func _build_sprite_frames() -> void:
-	var level: String = "Swordsman_lvl1" if is_wanderer else "Swordsman_lvl2"
-	var base: String = "res://assets/%s/%s_Idle/%s_Idle_" % [level, level, level]
+func _resolve_sprite_set() -> String:
+	if sprite_set != "":
+		return sprite_set
+	if is_wanderer:
+		return "swordsman_lvl1"
+	match npc_role:
+		"innkeeper":       return "citizen1"
+		"blacksmith":      return "citizen2"
+		"guild_commander": return "talking_person1"
+	return "swordsman_lvl2"
 
+
+func _build_sprite_frames() -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
+	var key := _resolve_sprite_set()
 
-	_copy_anim(sf, "idle_down",  base + "front.aseprite",      8.0, true)
-	_copy_anim(sf, "idle_right", base + "side_right.aseprite", 8.0, true)
-	_copy_anim(sf, "idle_up",    base + "back.aseprite",       8.0, true)
+	match key:
+		"swordsman_lvl1":
+			var b := "res://assets/Swordsman_lvl1/Swordsman_lvl1_Idle/Swordsman_lvl1_Idle_"
+			_copy_anim(sf, "idle_down",  b + "front.aseprite",      8.0, true)
+			_copy_anim(sf, "idle_right", b + "side_right.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_up",    b + "back.aseprite",       8.0, true)
+		"swordsman_lvl2":
+			var b := "res://assets/Swordsman_lvl2/Swordsman_lvl2_Idle/Swordsman_lvl2_Idle_"
+			_copy_anim(sf, "idle_down",  b + "front.aseprite",      8.0, true)
+			_copy_anim(sf, "idle_right", b + "side_right.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_up",    b + "back.aseprite",       8.0, true)
+		"fighter2":
+			var b := "res://assets/NPC/Fighter2/Idle/Fighter2_Idle_"
+			_copy_anim(sf, "idle_down",  b + "front.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_right", b + "right.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_up",    b + "back.aseprite",  8.0, true)
+		"citizen1":
+			var b := "res://assets/NPC/Citizen1/Idle/Citizen1_Idle_"
+			_copy_anim(sf, "idle_down",  b + "front.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_right", b + "right.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_up",    b + "back.aseprite",  8.0, true)
+		"citizen2":
+			var b := "res://assets/NPC/Citizen2/Idle/Citizen2_Idle_"
+			_copy_anim(sf, "idle_down",  b + "front.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_right", b + "right.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_up",    b + "back.aseprite",  8.0, true)
+		"talking_person1":
+			var p := "res://assets/NPC/Talking_person1/Talking_person1.aseprite"
+			_copy_anim(sf, "idle_down",  p, 8.0, true)
+			_copy_anim(sf, "idle_right", p, 8.0, true)
+			_copy_anim(sf, "idle_up",    p, 8.0, true)
+		_:
+			var b := "res://assets/Swordsman_lvl2/Swordsman_lvl2_Idle/Swordsman_lvl2_Idle_"
+			_copy_anim(sf, "idle_down",  b + "front.aseprite",      8.0, true)
+			_copy_anim(sf, "idle_right", b + "side_right.aseprite", 8.0, true)
+			_copy_anim(sf, "idle_up",    b + "back.aseprite",       8.0, true)
 
 	_sprite.sprite_frames = sf
 

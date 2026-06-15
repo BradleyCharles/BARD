@@ -96,7 +96,6 @@ BARD/
 │   ├── vampire2.gd / .tscn       # Vampire2: stalker AI, HP=10, dmg=2, zone_b
 │   ├── vampire3.gd / .tscn       # Vampire3: stalker AI, HP=16, dmg=3, zone_b
 │   ├── vampire3_boss.gd / .tscn  # Vampire3 Boss: HP=40, orbit+life drain, drops 15 Goop — after 10 vampire kills
-│   ├── mob_demo.gd               # Testing-only display mob: idle sprite + hitbox circle, no AI/physics
 │   └── mob.tscn                  # Unused legacy mob scene
 ├── npc/                          # NPC base system
 │   ├── npc_base.gd               # Proximity detection, dialogue loading/merging, wandering
@@ -144,7 +143,8 @@ BARD/
 │   ├── boss_health_bar.tscn
 │   ├── boss_tracker.gd           # Bottom-left boss summon tracker HUD (field only; instantiated by field.gd)
 │   ├── minimap.gd                # Bottom-right minimap (field scene only; instantiated by field.gd)
-│   ├── teleport_menu.gd          # Testing-only teleport menu (SELECT key; instantiated by field.gd when testing_mode ON)
+│   ├── teleport_menu.gd          # Testing-only teleport menu (SELECT key; instantiated by field.gd when testing_mode ON) — options: Zone A/B/C + Town
+│   ├── interaction_indicator.gd  # Top-center CanvasLayer HUD; shows NPC/interactable name when player is in range (layer 30, town only)
 │   ├── loading_screen.gd         # Overlay shown while pipeline runs
 │   ├── loading_screen.tscn
 │   └── game_over_screen.gd       # Full-screen GAME OVER overlay (CanvasLayer, layer 200)
@@ -299,10 +299,12 @@ Centralizes all input action name strings. Use `PlayerInput.ATTACK` etc. everywh
 
 Each weapon is a GDScript file with `class_name` and typed constants. Use `sword_data.gd` as the template when adding a new weapon.
 
-| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX | HITBOX_OFFSET | MOVE_MODIFIER | HITSTOP | SHAKE_INTENSITY | SHAKE_DURATION | SHAKE_FREQUENCY |
-|------|----|--------|-----------|-----------|--------|---------------|---------------|---------|-----------------|----------------|-----------------|
-| `sword_data.gd` | `"sword"` | 3 | 30.0 | 100.0 | 60×40 px | 30.0 px | 0.4 (40%) | 0.05 s | 3.0 | 0.12 s | 200.0 |
-| `axe_data.gd` | `"axe"` | 6 | 15.0 | 200.0 | 35×70 px | 45.0 px | 0.0 (stop) | 0.12 s | 8.0 | 0.22 s | 80.0 |
+| File | ID | DAMAGE | SWING_FPS | KNOCKBACK | HITBOX | HITBOX_OFFSET | MOVE_MODIFIER | HITSTOP | SHAKE_INTENSITY | SHAKE_DURATION | SHAKE_FREQUENCY | SFX |
+|------|----|--------|-----------|-----------|--------|---------------|---------------|---------|-----------------|----------------|-----------------|-----|
+| `sword_data.gd` | `"sword"` | 3 | 30.0 | 100.0 | 60×40 px | 30.0 px | 0.4 (40%) | 0.05 s | 3.0 | 0.12 s | 200.0 | sword1–4.wav (random) |
+| `axe_data.gd` | `"axe"` | 6 | 15.0 | 200.0 | 35×70 px | 45.0 px | 0.0 (stop) | 0.12 s | 8.0 | 0.22 s | 80.0 | axe1–4.wav (random) |
+
+`sfx_paths` (`static var Array[String]`) in each data file lists 4 WAV paths under `assets/SFX/`. `player.gd` stores them in `_weapon_stats["sfx_paths"]` and picks one with `randi()` at the start of every swing via `_play_swing_sfx()`.
 
 ---
 
@@ -310,9 +312,9 @@ Each weapon is a GDScript file with `class_name` and typed constants. Use `sword
 
 Single reusable scene for all named NPCs and anonymous wanderers.
 
-**Exports:** `npc_role`, `npc_id`, `npc_name`, `dialogue_file`, `detection_radius`, `is_wanderer`
+**Exports:** `npc_role`, `npc_id`, `npc_name`, `dialogue_file`, `detection_radius`, `is_wanderer`, `sprite_set`
 
-**Interaction model (press-to-talk):** `DetectionArea` proximity shows the NPC name label and a `[A] Talk` prompt. Dialogue does NOT auto-open on approach. The player presses `interact` (A / E) to open dialogue. Walking away while dialogue is open closes it automatically. Prompt re-appears when dialogue closes if player is still in range.
+**Interaction model (press-to-talk):** `DetectionArea` proximity calls `interaction_indicator.show_interactable(npc_name, self)` (top-center HUD) — no floating label or prompt on the NPC. Dialogue does NOT auto-open on approach. The player presses `interact` (A / E) to open dialogue. Walking away while dialogue is open closes it automatically. Indicator re-appears when dialogue closes if player is still in range.
 
 **Dialogue loading:** Reads `dialogue/{npc_id}_day{N}.json` and merges with hardcoded role menus:
 - `innkeeper`: sleep, browse shop, talk, goodbye
@@ -325,11 +327,20 @@ Single reusable scene for all named NPCs and anonymous wanderers.
 
 **`reload_dialogue()`:** Reloads from `dialogue/{npc_id}_day{N}.json` without re-instantiating. Called by `SceneManager._reload_all_dialogue()` after each pipeline run.
 
-**Wanderers:** Background NPCs with `is_wanderer = true` wander at `WANDER_SPEED = 38 px/s`, picking new direction every 2.5–6 s (30% idle chance), carrying no dialogue. Use `assets/Swordsman_lvl1/` sprites.
+**Wanderers:** Background NPCs with `is_wanderer = true` wander at `WANDER_SPEED = 38 px/s`, picking new direction every 2.5–6 s (30% idle chance), carrying no dialogue.
 
-**Sprite assignment by NPC type:**
-- Wanderers → `assets/Swordsman_lvl1/` (idle animations: front/back/side_right)
-- Named NPCs (innkeeper, blacksmith, guild master) → `assets/Swordsman_lvl2/` (same layout)
+**Sprite assignment (resolved by `_resolve_sprite_set()`):**
+
+| `sprite_set` export / NPC | Sprite folder |
+|---------------------------|---------------|
+| `"fighter2"` (Wanderer1) | `assets/NPC/Fighter2/Idle/` |
+| `"swordsman_lvl1"` (Wanderer2, default for wanderers) | `assets/Swordsman_lvl1/Swordsman_lvl1_Idle/` |
+| `"swordsman_lvl2"` (Wanderer3) | `assets/Swordsman_lvl2/Swordsman_lvl2_Idle/` |
+| `"citizen1"` / innkeeper role | `assets/NPC/Citizen1/Idle/` |
+| `"citizen2"` / blacksmith role | `assets/NPC/Citizen2/Idle/` |
+| `"talking_person1"` / guild_commander role | `assets/NPC/Talking_person1/Talking_person1.aseprite` |
+
+All NPC sprites load only idle animations (front/back/right directions).
 
 ---
 
@@ -353,7 +364,7 @@ Fixed-size (1000×292 px) bottom-center overlay (layer 10). Added to group `dial
 
 ### 5. Bounty Board — `ui/bounty_board.gd` + `world/bounty_board_object.gd`
 
-**BountyBoardObject** (`world/bounty_board_object.gd`): World-placed Node2D. Proximity detection (radius 140 px); shows `[A] Bounty Board` prompt; `interact` (A / E) instantiates and opens `bounty_board.tscn`.
+**BountyBoardObject** (`world/bounty_board_object.gd`): World-placed Node2D. Proximity detection (radius 140 px); calls `interaction_indicator.show_interactable("Bounty Board", self)` when player is in range; `interact` (A / E) instantiates and opens `bounty_board.tscn`.
 
 **BountyBoard** (`ui/bounty_board.gd`): Full-screen CanvasLayer overlay (dark parchment palette) listing:
 - **AVAILABLE** section: D-pad ↑↓ navigates; selected row highlighted in gold with 2 px underline; `interact` (A / E) accepts. No buttons.
@@ -448,7 +459,8 @@ Base class (extends `RigidBody2D`) for all enemy types.
 **Exports:** `max_health`, `personality`, `aggro_radius`, `pack_radius`, `pack_threshold`
 
 **Key methods:**
-- `take_damage(amount, knockback_vec)`: decrement health, apply impulse, flash red for 0.15 s, call `_on_died()` if health ≤ 0
+- `take_damage(amount, knockback_vec)`: decrement health, apply impulse, flash red for 0.15 s; if health ≤ 0, calls `_disable_for_death()` then `_on_died()`
+- `_disable_for_death()`: sets `collision_layer = 0`, `collision_mask = 0`, removes from `"ground_mobs"` group — called immediately when health reaches 0 so the player cannot collide with or hit a dying mob
 - `_on_died()`: emit `died(self)`, call `queue_free()`
 - `_direction_to_player_with_noise(speed)`: normalized direction to player with ±15° sine noise × speed
 - `_nav_move(speed)`: like `_direction_to_player_with_noise` but paths via `NavigationAgent2D` when a baked `NavigationRegion2D` is present; falls back to direct movement if no nav map exists
@@ -554,7 +566,37 @@ Top-center CanvasLayer (layer 6). Two slots: sword, axe. Built entirely in code.
 
 ---
 
-### 25. Minimap — `ui/minimap.gd`
+### 25. Interaction Indicator — `ui/interaction_indicator.gd`
+
+Top-center CanvasLayer (layer 30), **town scene only**. Instantiated by `town.gd._ready()`.
+
+Shows a small dark panel at the top of the screen with the NPC name and an `[E] Interact` hint whenever the player enters an NPC's or bounty board's detection area. Auto-hides when the player leaves.
+
+**API (called via group `"interaction_indicator"`):**
+- `show_interactable(label_text, source)` — display with the given name; stores `source` so only the current owner can hide it
+- `hide_interactable(source)` — hides only if `source` matches the current owner
+
+Replaces the old per-NPC floating `[A] Name` prompt and the bounty board's `[A] Bounty Board` label.
+
+---
+
+### 26. Zone Music — `world/field.gd` + `world/town.gd`
+
+Music is loaded and played directly in the scene scripts using an `AudioStreamPlayer` added at runtime.
+
+| Scene | Default music | Zone override |
+|-------|--------------|---------------|
+| Town (`town.gd`) | `assets/Music/Town/03 - Definitely Our Town.wav` | — |
+| Field (`field.gd`) | `assets/Music/Field/14 - Tales of Firelight Town.wav` | Zone A / B / C |
+| Field → Zone A | — | `assets/Music/ZoneA/09 - Battle 2.wav` |
+| Field → Zone B | — | `assets/Music/ZoneB/13 - Decisive Battle 1 - Don't Be Afraid.wav` |
+| Field → Zone C | — | `assets/Music/ZoneC/12 - Frozen Abyss.wav` |
+
+Zone detection is done in `field.gd._process()` via `_update_zone_music()`: player position is checked against `_zone_rects`; music only switches when the active zone changes.
+
+---
+
+### 28. Minimap — `ui/minimap.gd`
 
 Bottom-right CanvasLayer (layer 4), **field scene only**. Instantiated by `field.gd._ready()`.
 

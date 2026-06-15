@@ -1,6 +1,11 @@
 extends Node
 
 ## The Ashfield — monster hunting area.
+
+const _MUSIC_FIELD  := "res://assets/Music/Field/14 - Tales of Firelight Town.wav"
+const _MUSIC_ZONE_A := "res://assets/Music/ZoneA/09 - Battle 2.wav"
+const _MUSIC_ZONE_B := "res://assets/Music/ZoneB/13 - Decisive Battle 1 - Don't Be Afraid.wav"
+const _MUSIC_ZONE_C := "res://assets/Music/ZoneC/12 - Frozen Abyss.wav"
 ## This script drives the field scene (world/field.tscn).
 ##
 ## Scene structure (build in editor):
@@ -56,7 +61,6 @@ const SPAWN_MARGIN         : float = 40.0
 const BOSS_KILL_THRESHOLD  : int   = 10
 const MAX_MOBS_PER_ZONE    : int   = 5
 const MAX_TESTING_MOBS     : int   = 10
-const DEMO_ROW_SPACING     : float = 120.0
 
 # ── Kill counters & boss flags ────────────────────────────────────────────────
 
@@ -91,12 +95,19 @@ var _testing_timer : Timer      = null
 @onready var _terrain_nw      : ColorRect = $ZoneA
 @onready var _terrain_ne      : ColorRect = $ZoneB
 @onready var _terrain_se      : ColorRect = $ZoneC
-@onready var _terrain_testing : ColorRect = $ZoneTesting
 
 var _pause_menu    : CanvasLayer = null
 var _minimap       : CanvasLayer = null
 var _teleport_menu : CanvasLayer = null
 var _boss_tracker  : CanvasLayer = null
+
+# ── Music ─────────────────────────────────────────────────────────────────────
+
+const _FADE_TIME   : float             = 0.8
+const _MUSIC_VOL   : float             = -6.0
+var _music         : AudioStreamPlayer = null
+var _active_zone   : String            = ""
+var _fade_tween    : Tween             = null
 
 # ── Camera shake ──────────────────────────────────────────────────────────────
 
@@ -110,6 +121,7 @@ var _shake_origin    : Vector2   = Vector2.ZERO
 
 func _ready() -> void:
 	_player.start(Vector2(800.0, 1500.0), true)
+	_player.footstep_surface = "grass"
 
 	_camera = _player.get_node("Camera2D") as Camera2D
 	_camera.zoom = Vector2(3.5, 3.5)
@@ -134,7 +146,7 @@ func _ready() -> void:
 	_minimap = CanvasLayer.new()
 	_minimap.set_script(mm_script)
 	add_child(_minimap)
-	(_minimap as Object).call("init", _playable_rect, _zone_rects, _build_minimap_tile_layers())
+	(_minimap as Object).call("init", _playable_rect, _build_minimap_tile_layers())
 
 	var bt_script : GDScript = load("res://ui/boss_tracker.gd")
 	_boss_tracker = CanvasLayer.new()
@@ -149,19 +161,22 @@ func _ready() -> void:
 	SceneManager.bounties_updated.connect(_on_bounties_updated)
 	SceneManager.testing_mode_changed.connect(_on_testing_mode_changed)
 
+	_fade_to_music(_MUSIC_FIELD)
+
 
 func _process(delta: float) -> void:
-	if _shake_duration <= 0.0 or _camera == null:
-		return
-	_shake_elapsed += delta
-	var remaining: float = _shake_duration - _shake_elapsed
-	if remaining <= 0.0:
-		_shake_duration = 0.0
-		_camera.offset  = _shake_origin
-		return
-	var decay: float = remaining / _shake_duration
-	var wave: float  = sin(_shake_elapsed * _shake_frequency)
-	_camera.offset   = _shake_origin + Vector2(wave, -wave * 0.5) * _shake_intensity * decay
+	if _shake_duration > 0.0 and _camera != null:
+		_shake_elapsed += delta
+		var remaining: float = _shake_duration - _shake_elapsed
+		if remaining <= 0.0:
+			_shake_duration = 0.0
+			_camera.offset  = _shake_origin
+		else:
+			var decay: float = remaining / _shake_duration
+			var wave: float  = sin(_shake_elapsed * _shake_frequency)
+			_camera.offset   = _shake_origin + Vector2(wave, -wave * 0.5) * _shake_intensity * decay
+
+	_update_zone_music()
 
 
 func _start_shake(intensity: float, duration: float, frequency: float) -> void:
@@ -309,7 +324,6 @@ func _on_testing_mode_changed(enabled: bool) -> void:
 
 
 func _start_testing_spawning() -> void:
-	_spawn_hitbox_demo_row()
 	for zone in _zone_rects:
 		_fill_testing_zone(zone)
 
@@ -377,7 +391,6 @@ func _testing_random_mob(zone: String) -> String:
 	var roll := randf()
 	match zone:
 		"zone_a":
-			# Orcs and plants: tiers weighted 50/30/20, then coin-flip orc vs plant
 			var tier: String
 			if roll < 0.5:   tier = "1"
 			elif roll < 0.8: tier = "2"
@@ -392,30 +405,6 @@ func _testing_random_mob(zone: String) -> String:
 			if roll < 0.8:   return "slime2"
 			return "slime3"
 	return "slime1"
-
-
-# ── Hitbox demo row ──────────────────────────────────────────────────────────
-
-func _spawn_hitbox_demo_row() -> void:
-	var demo_script: GDScript = load("res://mob/mob_demo.gd") as GDScript
-	if demo_script == null:
-		return
-	var families: Array = [
-		["slime1",   "slime2",   "slime3",   "slime3_boss"],
-		["orc1",     "orc2",     "orc3",     "orc3_boss"],
-		["plant1",   "plant2",   "plant3",   "plant3_boss"],
-		["vampire1", "vampire2", "vampire3", "vampire3_boss"],
-	]
-	var origin: Vector2 = _terrain_testing.position + Vector2(SPAWN_MARGIN, SPAWN_MARGIN)
-	for row: int in families.size():
-		var family: Array = families[row]
-		for col: int in family.size():
-			var mob: Node2D = Node2D.new()
-			mob.set_script(demo_script)
-			mob.set_meta("is_testing_mob", true)
-			mob.position = origin + Vector2(col * DEMO_ROW_SPACING, row * DEMO_ROW_SPACING)
-			_mob_container.add_child(mob)
-			mob.call("init", family[col])
 
 
 # ── Teleport menu ─────────────────────────────────────────────────────────────
@@ -555,6 +544,63 @@ func _build_minimap_tile_layers() -> Array:
 
 func get_zone_rects() -> Dictionary:
 	return _zone_rects
+
+
+# ── Music ─────────────────────────────────────────────────────────────────────
+
+func _fade_to_music(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		push_warning("field.gd: music file not found -- %s" % path)
+		return
+	var stream : AudioStream = load(path)
+	if _music != null and _music.stream == stream and _music.playing:
+		return
+	if _fade_tween != null:
+		_fade_tween.kill()
+		_fade_tween = null
+	if _music == null:
+		_music = AudioStreamPlayer.new()
+		_music.finished.connect(_music.play)
+		add_child(_music)
+		_music.add_to_group("scene_music")
+	if not _music.playing:
+		_music.stream    = stream
+		_music.volume_db = -60.0
+		_music.play()
+		_fade_tween = create_tween()
+		_fade_tween.tween_property(_music, "volume_db", _MUSIC_VOL, _FADE_TIME)
+		return
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(_music, "volume_db", -60.0, _FADE_TIME)
+	_fade_tween.tween_callback(func() -> void:
+		_music.stream    = stream
+		_music.volume_db = -60.0
+		_music.play()
+		var tw : Tween = create_tween()
+		_fade_tween    = tw
+		tw.tween_property(_music, "volume_db", _MUSIC_VOL, _FADE_TIME)
+	)
+
+
+func _update_zone_music() -> void:
+	if _player == null or not is_instance_valid(_player):
+		return
+	var pos: Vector2 = (_player as Node2D).global_position
+	var zone_in: String = ""
+	for zone: String in _zone_rects:
+		if (_zone_rects[zone] as Rect2).has_point(pos):
+			zone_in = zone
+			break
+
+	if zone_in == _active_zone:
+		return
+	_active_zone = zone_in
+
+	match zone_in:
+		"zone_a": _fade_to_music(_MUSIC_ZONE_A)
+		"zone_b": _fade_to_music(_MUSIC_ZONE_B)
+		"zone_c": _fade_to_music(_MUSIC_ZONE_C)
+		_:        _fade_to_music(_MUSIC_FIELD)
 
 
 func _update_boss_tracker() -> void:

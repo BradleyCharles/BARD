@@ -3818,14 +3818,17 @@ shape = SubResource("RectangleShape2D_mfqvo")
 [node name="Wanderer1" parent="." unique_id=1732173090 instance=ExtResource("2_7cdph")]
 position = Vector2(1027, 826)
 is_wanderer = true
+sprite_set = "fighter2"
 
 [node name="Wanderer2" parent="." unique_id=718400555 instance=ExtResource("2_7cdph")]
 position = Vector2(783, 689)
 is_wanderer = true
+sprite_set = "swordsman_lvl1"
 
 [node name="Wanderer3" parent="." unique_id=419390655 instance=ExtResource("2_7cdph")]
 position = Vector2(761, 856)
 is_wanderer = true
+sprite_set = "swordsman_lvl2"
 
 [node name="Innkeeper" parent="." unique_id=555111001 instance=ExtResource("2_7cdph")]
 position = Vector2(599, 657)

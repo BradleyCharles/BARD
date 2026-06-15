@@ -18,16 +18,11 @@ const VIEW_SCALE: float = 2.0   ## minimap shows this many times the player view
 const _C_PANEL_BG  := Color(0.06, 0.04, 0.03, 0.88)
 const _C_BORDER    := Color(0.40, 0.30, 0.14, 0.75)
 const _C_MAP_BG    := Color(0.08, 0.14, 0.06, 0.95)
-const _C_ZONE_A    := Color(0.25, 0.45, 0.20, 0.40)
-const _C_ZONE_B    := Color(0.20, 0.35, 0.45, 0.40)
-const _C_ZONE_C    := Color(0.45, 0.20, 0.20, 0.40)
-const _C_ZONE_EDGE := Color(0.55, 0.55, 0.55, 0.30)
 const _C_PLAYER    := Color(0.95, 0.85, 0.45, 1.0)
 const _C_ENEMY     := Color(0.85, 0.15, 0.15, 1.0)
 const _C_BOSS      := Color(1.0,  0.45, 0.10, 1.0)
 
 var _world_rect  : Rect2      = Rect2(Vector2.ZERO, Vector2(3840.0, 2160.0))
-var _zone_rects  : Dictionary = {}
 var _panel_h     : float      = 0.0
 var _map_w       : float      = 0.0
 var _map_h       : float      = 0.0
@@ -60,9 +55,8 @@ func _ready() -> void:
 
 ## Called by field.gd after add_child.
 ## tile_layers: Array of {node: TileMapLayer, color: Color}
-func init(world_rect: Rect2, zones: Dictionary, tile_layers: Array = []) -> void:
+func init(world_rect: Rect2, tile_layers: Array = []) -> void:
 	_world_rect = world_rect
-	_zone_rects = zones
 	_recalc_map_dims()
 	_apply_canvas_offsets()
 	_bake_tile_texture(tile_layers)
@@ -172,18 +166,7 @@ func _on_draw() -> void:
 		_canvas.draw_texture_rect_region(
 				_tile_texture, Rect2(_map_origin, Vector2(_map_w, _map_h)), src_rect)
 
-	# 4. Zone highlights (semi-transparent, drawn over terrain)
-	var zone_colors : Array = [_C_ZONE_A, _C_ZONE_B, _C_ZONE_C]
-	var zi : int = 0
-	for zone_key in ["zone_a", "zone_b", "zone_c"]:
-		if _zone_rects.has(zone_key):
-			var zr    : Rect2 = _zone_rects[zone_key]
-			var zrect := Rect2(_to_map(zr.position), _to_map(zr.end) - _to_map(zr.position))
-			_canvas.draw_rect(zrect, zone_colors[zi])
-			_canvas.draw_rect(zrect, _C_ZONE_EDGE, false, 1.0)
-		zi += 1
-
-	# 5. Panel border
+	# 4. Panel border
 	_canvas.draw_rect(Rect2(Vector2.ZERO, panel_size), _C_BORDER, false, 1.5)
 
 	if not is_inside_tree():

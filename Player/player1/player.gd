@@ -56,6 +56,36 @@ var _weapon_sprite  : AnimatedSprite2D = null
 var _player_radius      : float = 0.0
 var _post_unpause_grace : float = 0.0
 var _hitstop_active     : bool  = false
+var _sfx_player         : AudioStreamPlayer = null
+var _hurt_sfx_player    : AudioStreamPlayer = null
+
+const _HURT_SFX : Array[String] = [
+	"res://assets/SFX/Impact 1.wav",
+	"res://assets/SFX/Impact 2.wav",
+	"res://assets/SFX/Impact 3.wav",
+	"res://assets/SFX/Impact 4.wav",
+]
+
+# ── Footstep SFX ───────────────────────────────────────────────────────────────
+
+const _WALK_STEP_INTERVAL : float = 0.42
+const _RUN_STEP_INTERVAL  : float = 0.26
+
+const _FOOTSTEP_SFX : Dictionary = {
+	"forest": [
+		"res://assets/SFX/Forest 1.wav",
+		"res://assets/SFX/Forest 2.wav",
+	],
+	"grass": [
+		"res://assets/SFX/Grass 1.wav",
+		"res://assets/SFX/Grass 2.wav",
+	],
+}
+
+var footstep_surface     : String = ""
+var _footstep_player     : AudioStreamPlayer = null
+var _footstep_timer      : Timer  = null
+var _footstep_is_running : bool   = false
 
 
 func _notification(what: int) -> void:
@@ -87,6 +117,7 @@ func _ready() -> void:
 			"hitbox_offset":   SwordData.HITBOX_OFFSET,
 			"move_modifier":   SwordData.MOVE_MODIFIER,
 			"hitstop":         SwordData.HITSTOP,
+			"sfx_paths":       SwordData.sfx_paths,
 		},
 		AxeData.ID: {
 			"damage":          AxeData.DAMAGE,
@@ -102,6 +133,7 @@ func _ready() -> void:
 			"hitbox_offset":   AxeData.HITBOX_OFFSET,
 			"move_modifier":   AxeData.MOVE_MODIFIER,
 			"hitstop":         AxeData.HITSTOP,
+			"sfx_paths":       AxeData.sfx_paths,
 		},
 	}
 	add_to_group("player")
@@ -119,6 +151,19 @@ func _ready() -> void:
 	add_child(_weapon_sprite)
 	_build_weapon_frames()
 	_weapon_sprite.animation_finished.connect(_on_weapon_anim_finished)
+	_sfx_player = AudioStreamPlayer.new()
+	_sfx_player.volume_db = 0.0
+	add_child(_sfx_player)
+	_hurt_sfx_player = AudioStreamPlayer.new()
+	_hurt_sfx_player.volume_db = 0.0
+	add_child(_hurt_sfx_player)
+	_footstep_player = AudioStreamPlayer.new()
+	_footstep_player.volume_db = -10.0
+	add_child(_footstep_player)
+	_footstep_timer = Timer.new()
+	_footstep_timer.one_shot = false
+	_footstep_timer.timeout.connect(_on_footstep_tick)
+	add_child(_footstep_timer)
 	hide()
 
 
@@ -141,10 +186,10 @@ func _build_sprite_frames() -> void:
 	_copy_anim(sf, "run_up",      B + "Run/Swordsman_lvl3_Run_back.aseprite",           12.0, true)
 	_copy_anim(sf, "run_down",    B + "Run/Swordsman_lvl3_Run_front.aseprite",          12.0, true)
 
-	var B_atk := B + "Attack/Swordsman_lvl3_attack_"
-	_copy_anim(sf, "attack",      B_atk + "side_right.aseprite", 20.0, false)
-	_copy_anim(sf, "attack_up",   B_atk + "back.aseprite",       20.0, false)
-	_copy_anim(sf, "attack_down", B_atk + "front.aseprite",      20.0, false)
+	var b_atk := B + "Attack/Swordsman_lvl3_attack_"
+	_copy_anim(sf, "attack",      b_atk + "side_right.aseprite", 20.0, false)
+	_copy_anim(sf, "attack_up",   b_atk + "back.aseprite",       20.0, false)
+	_copy_anim(sf, "attack_down", b_atk + "front.aseprite",      20.0, false)
 
 	_copy_anim(sf, "hurt",  B + "Hurt/Swordsman_lvl3_Hurt_side_right.aseprite",  12.0, false)
 	_copy_anim(sf, "death", B + "Death/Swordsman_lvl3_Death_side_right.aseprite", 10.0, false)
@@ -277,6 +322,8 @@ func _process(delta: float) -> void:
 	if _state not in [PlayerState.ATTACK, PlayerState.HURT, PlayerState.DODGE] and not is_dying:
 		_update_animation(move_vel)
 
+	_update_footstep_audio(move_vel, is_running)
+
 
 func _update_animation(move_dir: Vector2) -> void:
 	var anim: String
@@ -327,11 +374,60 @@ func _cycle_weapon() -> void:
 
 # ── Attack ─────────────────────────────────────────────────────────────────────
 
+func _update_footstep_audio(move_vel: Vector2, running: bool) -> void:
+	var stepping : bool = _state == PlayerState.MOVE \
+			and move_vel.length() > 1.0 \
+			and not is_dying \
+			and footstep_surface != ""
+	if not stepping:
+		if not _footstep_timer.is_stopped():
+			_footstep_timer.stop()
+		return
+	var interval : float = _RUN_STEP_INTERVAL if running else _WALK_STEP_INTERVAL
+	if _footstep_timer.is_stopped():
+		_footstep_timer.wait_time = interval
+		_footstep_timer.start()
+		_on_footstep_tick()
+	elif running != _footstep_is_running:
+		_footstep_timer.wait_time = interval
+	_footstep_is_running = running
+
+
+func _on_footstep_tick() -> void:
+	var paths : Array = _FOOTSTEP_SFX.get(footstep_surface, [])
+	if paths.is_empty() or _footstep_player == null:
+		return
+	var path : String = paths[randi() % paths.size()]
+	if ResourceLoader.exists(path):
+		_footstep_player.stream = load(path)
+		_footstep_player.play()
+
+
+func _play_hurt_sfx() -> void:
+	if _hurt_sfx_player == null or _HURT_SFX.is_empty():
+		return
+	var path: String = _HURT_SFX[randi() % _HURT_SFX.size()]
+	if ResourceLoader.exists(path):
+		_hurt_sfx_player.stream = load(path)
+		_hurt_sfx_player.play()
+
+
+func _play_swing_sfx(stats: Dictionary) -> void:
+	var paths: Array = stats.get("sfx_paths", [])
+	if paths.is_empty() or _sfx_player == null:
+		return
+	var path: String = paths[randi() % paths.size()]
+	if ResourceLoader.exists(path):
+		_sfx_player.stream = load(path)
+		_sfx_player.play()
+
+
 func _start_attack() -> void:
 	_sword.monitoring = false
 	_set_state(PlayerState.ATTACK)
 
 	var stats: Dictionary = _weapon_stats.get(active_weapon, _weapon_stats[SwordData.ID])
+	_play_swing_sfx(stats)
 
 	# Snap facing to nearest of 8 directions (every 45°)
 	var snapped_angle: float = round(facing.angle() / (PI / 4.0)) * (PI / 4.0)
@@ -554,6 +650,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if knockback.length_squared() > 0.0:
 		_knockback_vel  = knockback
 		_knockback_time = PlayerStats.KNOCKBACK_DURATION
+	_play_hurt_sfx()
 	if health <= 0:
 		_start_dying("hit")
 	else:

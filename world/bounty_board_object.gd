@@ -1,14 +1,11 @@
 extends StaticBody2D
 
 @export var detection_radius: float = 60.0
-@export var prompt_offset: Vector2 = Vector2(0.0, -60.0)
 
 const _BOARD_SCENE := "res://ui/bounty_board.tscn"
-const _FONT_PATH   := "res://fonts/almendra.regular.ttf"
 
 var _player_in_range: bool = false
 var _board_instance: Node = null
-var _prompt_lbl: Label
 
 
 func _ready() -> void:
@@ -26,17 +23,6 @@ func _ready() -> void:
 	area.body_exited.connect(_on_body_exited)
 	add_child(area)
 
-	_prompt_lbl = Label.new()
-	_prompt_lbl.text = "[A] Bounty Board"
-	_prompt_lbl.position = prompt_offset
-	_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt_lbl.visible = false
-	if ResourceLoader.exists(_FONT_PATH):
-		_prompt_lbl.add_theme_font_override("font", load(_FONT_PATH))
-	_prompt_lbl.add_theme_font_size_override("font_size", 16)
-	_prompt_lbl.add_theme_color_override("font_color", Color(0.88, 0.73, 0.38, 1.0))
-	add_child(_prompt_lbl)
-
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _player_in_range or _board_instance != null:
@@ -49,13 +35,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_player_in_range = true
-		_prompt_lbl.visible = true
+		_show_indicator()
 
 
 func _on_body_exited(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_player_in_range = false
-		_prompt_lbl.visible = false
+		_hide_indicator()
 
 
 func _open_board() -> void:
@@ -73,3 +59,17 @@ func _on_board_closed() -> void:
 	if _board_instance:
 		_board_instance.queue_free()
 		_board_instance = null
+	if _player_in_range:
+		_show_indicator()
+
+
+func _show_indicator() -> void:
+	var ind : Object = get_tree().get_first_node_in_group("interaction_indicator")
+	if ind != null:
+		ind.call("show_interactable", "Bounty Board", self)
+
+
+func _hide_indicator() -> void:
+	var ind : Object = get_tree().get_first_node_in_group("interaction_indicator")
+	if ind != null:
+		ind.call("hide_interactable", self)
