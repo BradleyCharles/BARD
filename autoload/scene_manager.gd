@@ -43,7 +43,7 @@ var _bounties_turned_in_today: Array      = []
 var player_health     : int  = 100
 var player_max_health : int  = 100
 var testing_mode      : bool = false
-var light_mode        : bool = true
+var light_mode        : bool = false
 
 
 # ── Signals ───────────────────────────────────────────────────────────────────
@@ -422,6 +422,7 @@ func save_game(slot: int, scene_path: String = "") -> void:
 		"owned_weapons":   owned_weapons,
 		"weapon_upgrades": weapon_upgrades,
 		"player_health":   player_health,
+		"testing_mode":    testing_mode,
 		"world_state": {
 			"monsters_killed_today":   monsters_killed_today,
 			"monsters_killed_history": monsters_killed_history,
@@ -458,6 +459,7 @@ func load_game(slot: int) -> bool:
 	scripts           = int(s.get("scripts",       0))
 	slime_goop        = int(s.get("slime_goop",    0))
 	player_health     = int(s.get("player_health", 100))
+	testing_mode      = bool(s.get("testing_mode", false))
 	owned_weapons     = s.get("owned_weapons",  ["sword"])
 	weapon_upgrades   = s.get("weapon_upgrades", {})
 	flags             = s.get("flags",           flags)

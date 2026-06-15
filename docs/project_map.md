@@ -186,7 +186,7 @@ Global singleton (autoloaded). Owns all persistent game state and emits signals 
 | `flags` | Dictionary | Named story/interaction flags |
 | `scripts` | int | Player currency (primary) |
 | `slime_goop` | int | Rare drop currency (from elite/boss slimes) |
-| `testing_mode` | bool | When true, field spawns all mobs for testing; bypasses bounty spawning |
+| `testing_mode` | bool | When true, field spawns all mobs for testing; bypasses bounty spawning. Persisted in save file — stays ON until the player explicitly turns it off |
 | `light_mode` | bool | When true, UI uses the light (cream/parchment) theme; default `true` |
 | `owned_weapons` | Array | Weapon IDs owned by the player (default: `["sword", "axe"]`) |
 | `weapon_upgrades` | Dictionary | Upgrade tier per weapon ID |

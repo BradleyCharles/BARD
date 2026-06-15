@@ -88,6 +88,7 @@ SceneManager.go_to_field() / go_to_town()
 ```
 meta.schema_version, meta.day, meta.scene_path
 player_name, scripts, slime_goop, owned_weapons, weapon_upgrades, player_health
+testing_mode
 world_state.monsters_killed_today, world_state.monsters_killed_history
 available_bounties, active_bounties
 flags
@@ -105,6 +106,7 @@ flags
   "owned_weapons": ["sword", "axe"],
   "weapon_upgrades": { "sword": 1 },
   "player_health": 80,
+  "testing_mode": false,
   "world_state": { "monsters_killed_today": {}, "monsters_killed_history": [{...}] },
   "available_bounties": [...],
   "active_bounties": [...],
