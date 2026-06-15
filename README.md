@@ -127,10 +127,10 @@ For technical depth beyond this overview:
 | 1 | Ollama setup, GPU validation, model serving | Complete |
 | 2 | Godot foundations — player, scenes, NPCs, combat | Complete |
 | 3 | Game state architecture and JSON pipeline | Complete |
-| 4 | LLM dialogue pipeline (academic core) | In Progress |
-| 5 | Combat, enemy types, and boss encounters | Mostly complete |
-| 6 | Bounty board, dialogue delivery, UI overlays | Mostly complete |
-| 7 | Polish and demo preparation | Pending |
+| 4 | LLM dialogue pipeline (academic core) | Complete |
+| 5 | Combat, enemy types, and boss encounters | Complete |
+| 6 | Bounty board, dialogue delivery, UI overlays | Complete |
+| 7 | Polish and demo preparation | Complete |
 
 ---
 

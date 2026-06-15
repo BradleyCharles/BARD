@@ -817,10 +817,10 @@ game_state.json written → pipeline reads it → NPC dialogue references bounti
 | 1 | Environment Setup | Complete |
 | 2 | Godot 4 Foundations | Complete |
 | 3 | Game State Architecture | Complete |
-| 4 | LLM Pipeline (academic core) | In Progress |
-| 5 | Combat & Monsters | Partial |
-| 6 | Dialogue Delivery & Bounty Board | Partial |
-| 7 | Polish & Demo Prep | Pending |
+| 4 | LLM Pipeline (academic core) | Complete |
+| 5 | Combat & Monsters | Complete |
+| 6 | Dialogue Delivery & Bounty Board | Complete |
+| 7 | Polish & Demo Prep | Complete |
 
 ---
 
