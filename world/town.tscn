@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://buyhuqshdn1pn" path="res://world/town.gd" id="1_icu5e"]
 [ext_resource type="PackedScene" uid="uid://csrqtm1lt4yfj" path="res://npc/npc.tscn" id="2_7cdph"]
 [ext_resource type="FontFile" uid="uid://ddwgglepq5c3y" path="res://fonts/almendra.regular.ttf" id="3_4u7cj"]
-[ext_resource type="Texture2D" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark4.png" id="4_8ock0"]
+[ext_resource type="Texture2D" uid="uid://cl50xvlnnng5" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark4.png" id="4_8ock0"]
 [ext_resource type="PackedScene" uid="uid://bdsx8578jxv78" path="res://Player/player1/player.tscn" id="4_js14o"]
 [ext_resource type="PackedScene" uid="uid://b6kyjdax715ba" path="res://ui/dialog_box.tscn" id="5_kmbyx"]
 [ext_resource type="PackedScene" uid="uid://coxbni81lv4i5" path="res://ui/bounty_tracker.tscn" id="6_js14o"]
@@ -12,11 +12,11 @@
 [ext_resource type="Texture2D" uid="uid://gy1qmki4dmvr" path="res://assets/World_decorations/bushes/Assets_shadow_source.png" id="8_blq88"]
 [ext_resource type="PackedScene" path="res://ui/scripts_hud.tscn" id="8_sh"]
 [ext_resource type="PackedScene" path="res://ui/health_bar.tscn" id="9_hb"]
-[ext_resource type="Texture2D" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark1.png" id="10_4ar61"]
+[ext_resource type="Texture2D" uid="uid://6j3p1unnqso6" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark1.png" id="10_4ar61"]
 [ext_resource type="Texture2D" uid="uid://dxal6j8ia14w6" path="res://assets/guildhall/Walls_street.png" id="10_p48rf"]
-[ext_resource type="Texture2D" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark2.png" id="11_j3rx4"]
+[ext_resource type="Texture2D" uid="uid://4dhs15w15oh8" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark2.png" id="11_j3rx4"]
 [ext_resource type="Texture2D" uid="uid://cy2douuig1w5f" path="res://assets/guildhall/Exterior.png" id="11_new06"]
-[ext_resource type="Texture2D" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark3.png" id="12_d3avf"]
+[ext_resource type="Texture2D" uid="uid://brpglwfs8rir8" path="res://assets/World_decorations/rocks/Rock1_grass_shadow_dark3.png" id="12_d3avf"]
 [ext_resource type="Texture2D" uid="uid://df20ugkcfxq1f" path="res://assets/guildhall/Windows_doors.png" id="12_loaj6"]
 [ext_resource type="Texture2D" uid="uid://bkpjdiq1f8pyk" path="res://assets/guildhall/Decorative_cracks.png" id="13_ybh1r"]
 [ext_resource type="Script" uid="uid://cq50ebm3yjy4m" path="res://world/building_door.gd" id="14_loaj6"]
@@ -3827,8 +3827,22 @@ is_wanderer = true
 position = Vector2(761, 856)
 is_wanderer = true
 
+[node name="Innkeeper" parent="." unique_id=555111001 instance=ExtResource("2_7cdph")]
+position = Vector2(637, 750)
+npc_role = "innkeeper"
+npc_name = "Innkeeper"
+
+[node name="GuildCommander" parent="." unique_id=555111002 instance=ExtResource("2_7cdph")]
+position = Vector2(1054, 810)
+npc_role = "guild_commander"
+npc_name = "Guild Commander"
+
+[node name="Blacksmith" parent="." unique_id=555111003 instance=ExtResource("2_7cdph")]
+position = Vector2(615, 985)
+npc_role = "blacksmith"
+npc_name = "Blacksmith"
+
 [node name="Player" parent="." unique_id=1012316895 instance=ExtResource("4_js14o")]
-visible = false
 position = Vector2(900, 900)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1835709435]
@@ -3838,10 +3852,8 @@ position_smoothing_enabled = true
 position_smoothing_speed = 6.0
 
 [node name="DialogBox" parent="." unique_id=220697160 instance=ExtResource("5_kmbyx")]
-visible = false
 
 [node name="DayLabel" type="Label" parent="." unique_id=1236564372]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -3854,13 +3866,10 @@ theme_override_fonts/font = ExtResource("3_4u7cj")
 theme_override_font_sizes/font_size = 32
 
 [node name="BountyTracker" parent="." unique_id=1168553287 instance=ExtResource("6_js14o")]
-visible = false
 
 [node name="ScriptsHud" parent="." unique_id=786172596 instance=ExtResource("8_sh")]
-visible = false
 
 [node name="HealthBar" parent="." unique_id=1410853798 instance=ExtResource("9_hb")]
-visible = false
 
 [node name="Guildhall" type="StaticBody2D" parent="." unique_id=2135554177]
 position = Vector2(1054, 690)

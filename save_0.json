@@ -337,7 +337,7 @@
 	},
 	"meta": {
 		"day": 1,
-		"scene_path": "res://world/field.tscn",
+		"scene_path": "res://world/town.tscn",
 		"schema_version": "1.0"
 	},
 	"owned_weapons": [
@@ -354,8 +354,8 @@
 	"world_state": {
 		"monsters_killed_history": [],
 		"monsters_killed_today": {
-			"slime1": 1,
-			"slime3": 1
+			"slime1": 1.0,
+			"slime3": 1.0
 		}
 	}
 }
