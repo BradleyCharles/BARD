@@ -30,7 +30,6 @@ import json
 import logging
 import sys
 import traceback
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -73,17 +72,17 @@ logger = logging.getLogger(__name__)
 
 # ── Flag file paths ───────────────────────────────────────────────────────────
 
-FLAG_READY    = PROJECT_ROOT / "pipeline_ready.flag"
-FLAG_FAILED   = PROJECT_ROOT / "pipeline_failed.flag"
-FLAG_CRASHED  = PROJECT_ROOT / "pipeline_crashed.flag"
-PROGRESS_FILE = PROJECT_ROOT / "pipeline_progress.json"
+FLAG_READY      = PROJECT_ROOT / "pipeline_ready.flag"
+FLAG_FAILED     = PROJECT_ROOT / "pipeline_failed.flag"
+FLAG_CRASHED    = PROJECT_ROOT / "pipeline_crashed.flag"
+FLAG_CONNECTED  = PROJECT_ROOT / "pipeline_connected.flag"
+PROGRESS_FILE   = PROJECT_ROOT / "pipeline_progress.json"
 
 AMBIENT_EXCHANGE_COUNT = 10
-NPC_TIMEOUT_SECONDS    = 90
 
 
 def clear_flags() -> None:
-    for f in (FLAG_READY, FLAG_FAILED, FLAG_CRASHED, PROGRESS_FILE):
+    for f in (FLAG_READY, FLAG_FAILED, FLAG_CRASHED, FLAG_CONNECTED, PROGRESS_FILE):
         f.unlink(missing_ok=True)
 
 
@@ -644,6 +643,7 @@ def main() -> None:
             logger.error("Ollama unavailable and auto-start failed. All NPC dialogue will use previous-day fallbacks.")
 
     had_failures = not llm_ok
+    write_flag(FLAG_CONNECTED)
 
     # Load required data
     game_state  = load_json(GAME_STATE_FILE,  "game_state.json")
@@ -683,25 +683,14 @@ def main() -> None:
 
         new_fact = None
         try:
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(
-                    process_npc,
-                    npc_id     = npc_id,
-                    npc_config = npc_config,
-                    game_state = game_state,
-                    world_lore = world_lore,
-                    rumors     = rumors,
-                    town_id    = town_id,
-                )
-                new_fact = future.result(timeout=NPC_TIMEOUT_SECONDS)
-        except FuturesTimeoutError:
-            logger.error(
-                "NPC %s timed out after %ds. Using previous dialogue.",
-                npc_name, NPC_TIMEOUT_SECONDS,
+            new_fact = process_npc(
+                npc_id     = npc_id,
+                npc_config = npc_config,
+                game_state = game_state,
+                world_lore = world_lore,
+                rumors     = rumors,
+                town_id    = town_id,
             )
-            had_failures = True
-            write_progress(idx + 1, total_npcs, npc_name)
-            continue
         except Exception as exc:
             logger.error("Unexpected error processing %s: %s", npc_name, exc)
             had_failures = True

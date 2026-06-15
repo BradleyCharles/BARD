@@ -176,7 +176,7 @@ def call_ollama(prompt: str, system: str = "", model: str = OLLAMA_MODEL) -> str
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+            response = requests.post(OLLAMA_URL, json=payload, timeout=None)
             response.raise_for_status()
             raw = response.json().get("response", "")
             return strip_thinking(raw)

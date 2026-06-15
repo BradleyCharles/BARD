@@ -208,6 +208,7 @@ Godot                          Python pipeline
 
 | File | Meaning |
 |------|---------|
+| `pipeline_connected.flag` | LLM reachable — Godot watchdog disabled (consumed on read) |
 | `pipeline_ready.flag` | Success — Godot may proceed |
 | `pipeline_failed.flag` | Partial success — fallback dialogue used |
 | `pipeline_crashed.flag` | Unhandled exception — crash overlay shown |
@@ -216,7 +217,7 @@ Godot                          Python pipeline
 | `pipeline_chronicle_crashed.flag` | Chronicle crash |
 
 ### Timeout
-180 seconds (`PIPELINE_TIMEOUT`). If the pipeline hasn't written any flag within that time, Godot treats it as a crash and shows an error overlay.
+`PIPELINE_TIMEOUT` (180 s) applies only until the LLM is confirmed reachable. Once `pipeline_connected.flag` appears, the watchdog is disabled and generation runs to completion with no time limit. If the connected flag never arrives within 180 s (Python never starts, Ollama never comes up), Godot treats it as a crash and shows an error overlay.
 
 ### LLM backend
 - **Runtime:** Ollama, local GPU
@@ -290,7 +291,7 @@ For each named NPC in `world_registry.json` → `towns.thornwall.npcs`:
 9. update_npc_facts(game_state, npc_id, new_fact, day)
 ```
 
-Each NPC has a **90-second timeout** (`NPC_TIMEOUT_SECONDS`). Timeout → use previous dialogue, mark `had_failures = True`.
+Each NPC is processed sequentially with no timeout — once the LLM is connected it runs until complete. Errors (exceptions from `process_npc`) fall back to previous dialogue and mark `had_failures = True`.
 
 ### Dialogue JSON schema (generated)
 ```json

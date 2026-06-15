@@ -79,9 +79,10 @@ const PIPELINE_SCRIPTS : Dictionary = {
 
 const PIPELINE_FLAGS : Dictionary = {
 	"eod": {
-		"ready":   "pipeline_ready.flag",
-		"failed":  "pipeline_failed.flag",
-		"crashed": "pipeline_crashed.flag",
+		"connected": "pipeline_connected.flag",
+		"ready":     "pipeline_ready.flag",
+		"failed":    "pipeline_failed.flag",
+		"crashed":   "pipeline_crashed.flag",
 	},
 	"chronicle": {
 		"ready":   "pipeline_chronicle_ready.flag",
@@ -103,11 +104,12 @@ var _transitioning   := false
 
 var _day_hud : CanvasLayer = null
 
-var _pipeline_mode    : String = ""
-var _pipeline_pid     : int    = -1
-var _poll_elapsed     : float  = 0.0
-var _timeout_elapsed  : float  = 0.0
-var _pipeline_running : bool   = false
+var _pipeline_mode      : String = ""
+var _pipeline_pid       : int    = -1
+var _poll_elapsed       : float  = 0.0
+var _timeout_elapsed    : float  = 0.0
+var _pipeline_running   : bool   = false
+var _pipeline_connected : bool   = false
 
 var _dot_timer   : float  = 0.0
 var _dot_count   : int    = 0
@@ -167,7 +169,7 @@ func _process(delta: float) -> void:
 		if _overlay_label:
 			_overlay_label.text = _base_text + ".".repeat(_dot_count)
 
-	if _timeout_elapsed >= PIPELINE_TIMEOUT:
+	if not _pipeline_connected and _timeout_elapsed >= PIPELINE_TIMEOUT:
 		_on_pipeline_result(
 			"crashed",
 			"Pipeline timed out after %d seconds." % int(PIPELINE_TIMEOUT)
@@ -568,12 +570,13 @@ func _start_pipeline(mode: String) -> void:
 
 func _launch_pipeline(mode: String) -> void:
 	var script        :String= _project_path + PIPELINE_SCRIPTS[mode]
-	_pipeline_pid      = OS.create_process(PYTHON_EXE, [script])
-	_pipeline_running  = true
-	_poll_elapsed      = 0.0
-	_timeout_elapsed   = 0.0
-	_dot_timer         = 0.0
-	_dot_count         = 0
+	_pipeline_pid       = OS.create_process(PYTHON_EXE, [script])
+	_pipeline_running   = true
+	_pipeline_connected = false
+	_poll_elapsed       = 0.0
+	_timeout_elapsed    = 0.0
+	_dot_timer          = 0.0
+	_dot_count          = 0
 	set_process(true)
 	print("SceneManager: %s pipeline launched (pid %d)" % [mode, _pipeline_pid])
 
@@ -594,6 +597,11 @@ func _clear_flags(mode: String) -> void:
 
 func _check_flags() -> void:
 	var names : Dictionary = PIPELINE_FLAGS.get(_pipeline_mode, {})
+	if not _pipeline_connected:
+		var connected_flag := _flag_path(names.get("connected", ""))
+		if connected_flag != "" and FileAccess.file_exists(connected_flag):
+			_pipeline_connected = true
+			DirAccess.remove_absolute(connected_flag)
 	if FileAccess.file_exists(_flag_path(names.get("ready", ""))):
 		_on_pipeline_result("ready", "")
 	elif FileAccess.file_exists(_flag_path(names.get("failed", ""))):
