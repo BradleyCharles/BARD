@@ -34,5 +34,113 @@
 		"Ash Crusher",
 		"Char Behemoth",
 		"Cinder Beast"
+	],
+	"orc1": [
+		"Grit Charger",
+		"Ash Runner",
+		"Iron Scout",
+		"Bone Raider",
+		"Dust Grunt",
+		"Scar Dasher",
+		"Mud Brawler",
+		"Flint Rusher",
+		"Bark Crusher",
+		"Stone Sprinter"
+	],
+	"orc2": [
+		"Steel Warband",
+		"Iron Brigade",
+		"Bronze Horde",
+		"Ember Veteran",
+		"Forge Raider",
+		"Tempered Brute",
+		"Slag Phalanx",
+		"Burnished Marauder",
+		"Hammer Veteran",
+		"Cinder Warband"
+	],
+	"orc3": [
+		"Iron Warchief",
+		"Obsidian Overlord",
+		"Granite Juggernaut",
+		"Ruin Bringer",
+		"Siege Warlord",
+		"Apex Crusher",
+		"Titan Warboss",
+		"Dominion Warmaster",
+		"Blackiron Chieftain",
+		"Dread Overlord"
+	],
+	"plant1": [
+		"Briar Creep",
+		"Thistle Crawler",
+		"Vine Seep",
+		"Moss Stalker",
+		"Root Sneak",
+		"Thatch Crawler",
+		"Thorn Cling",
+		"Weed Creep",
+		"Bark Latch",
+		"Fern Grasp"
+	],
+	"plant2": [
+		"Thorn Cluster",
+		"Briar Grove",
+		"Spike Growth",
+		"Nettle Mass",
+		"Barbed Stand",
+		"Razor Thicket",
+		"Prickle Host",
+		"Spur Bloom",
+		"Quill Spread",
+		"Jagged Canopy"
+	],
+	"plant3": [
+		"Crown of Thorns",
+		"Blight Bloom",
+		"Death Canopy",
+		"Venom Spread",
+		"Plague Growth",
+		"Ruin Bloom",
+		"Carnage Thicket",
+		"Fell Canopy",
+		"Doom Growth",
+		"Bane Bloom"
+	],
+	"vampire1": [
+		"Pale Drifter",
+		"Shadow Circler",
+		"Dusk Stalker",
+		"Mist Lurker",
+		"Grey Orbiter",
+		"Twilight Creep",
+		"Wan Prowler",
+		"Shade Circler",
+		"Dim Stalker",
+		"Fog Lurker"
+	],
+	"vampire2": [
+		"Sable Darter",
+		"Night Dasher",
+		"Black Racer",
+		"Dusk Striker",
+		"Void Drifter",
+		"Obsidian Flash",
+		"Shade Darter",
+		"Eclipse Dasher",
+		"Midnight Sprinter",
+		"Dark Plunge"
+	],
+	"vampire3": [
+		"Ancient Predator",
+		"Elder Blood",
+		"Dread Ancient",
+		"Fell Elder",
+		"Apex Revenant",
+		"Void Ancient",
+		"Dusk Sovereign",
+		"Eternal Hunger",
+		"Abyssal Elder",
+		"Dark Sovereign"
 	]
 }

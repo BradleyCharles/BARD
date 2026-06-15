@@ -256,9 +256,12 @@ func _load_mob_names() -> Dictionary:
 
 func difficulty_label(monster_type: String) -> String:
 	match monster_type:
-		"slime1": return "Easy"
-		"slime2": return "Medium"
-		"slime3": return "Hard"
+		"slime1":            return "Easy"
+		"slime2":            return "Medium"
+		"slime3":            return "Hard"
+		"orc1", "plant1", "vampire1": return "Medium"
+		"orc2", "plant2", "vampire2": return "Hard"
+		"orc3", "plant3", "vampire3": return "Very Hard"
 	return ""
 
 

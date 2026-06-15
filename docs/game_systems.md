@@ -270,8 +270,8 @@ For each named NPC in `world_registry.json` → `towns.thornwall.npcs`:
 2. load_variant(variant_id)                   ← from archetypes/generated/
 3. build_prompt(variant, world_lore, game_state, npc_id, town_id, rumors)
       • system prompt: NPC identity + role + town lore seed
-      • user prompt:   day number, kill report, bounty status, met-flags,
-                       NPC recollection facts, circulating rumors,
+      • user prompt:   day number, kill report (all four mob families — slimes/orcs/plants/vampires),
+                       bounty status, met-flags, NPC recollection facts, circulating rumors,
                        role-specific context (guild records / inn context)
 4. call_ollama_json(prompt, system)           ← HTTP POST to Ollama
 5. validate_dialogue(result)                  ← schema check
@@ -531,6 +531,14 @@ Kill progress is always lost on drop — the bounty returns to the board in its 
 - `zone_a` (18 entries): Orc1/2/3 × small/medium/large + Plant1/2/3 × small/medium/large
 - `zone_b` (9 entries): Vampire1/2/3 × small/medium/large
 Not modified at runtime.
+
+### Display names
+
+Each bounty is assigned a random flavour name at accept/refresh time from `data/mob_names.json` (10 names per monster type, all 12 types covered). The name is stored as `display_name` on the bounty dict and shown in the board UI and the pause bounty screen.
+
+`SceneManager.difficulty_label(monster_type)` maps type to difficulty string shown in the board detail pane:
+- `slime1` → Easy; `slime2` → Medium; `slime3` → Hard
+- `orc1/plant1/vampire1` → Medium; `orc2/plant2/vampire2` → Hard; `orc3/plant3/vampire3` → Very Hard
 
 ### Reward tiers
 

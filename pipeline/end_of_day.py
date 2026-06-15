@@ -48,6 +48,9 @@ from config import (
 from ollama_client import call_ollama_json, call_ollama, verify_connection, try_start_ollama
 from nl_descriptors import (
     describe_slime_kills,
+    describe_orc_kills,
+    describe_plant_kills,
+    describe_vampire_kills,
     describe_field_activity,
     describe_kill_history,
     describe_bounties,
@@ -229,10 +232,16 @@ def build_prompt(
     town_facts   = world_lore.get("towns", {}).get(town_id, {}).get("lore_facts", [])
     lore_section = "\n".join(f"  - {f}" for f in world_facts + town_facts)
 
-    slime_count   = kills.get("slime1", 0)
+    slime_count   = sum(kills.get(t, 0) for t in ("slime1", "slime2", "slime3"))
+    orc_count     = sum(kills.get(t, 0) for t in ("orc1", "orc2", "orc3"))
+    plant_count   = sum(kills.get(t, 0) for t in ("plant1", "plant2", "plant3"))
+    vampire_count = sum(kills.get(t, 0) for t in ("vampire1", "vampire2", "vampire3"))
     total_kills   = sum(kills.values())
     field_nl      = describe_field_activity(total_kills)
     slime_nl      = describe_slime_kills(slime_count)
+    orc_nl        = describe_orc_kills(orc_count)
+    plant_nl      = describe_plant_kills(plant_count)
+    vampire_nl    = describe_vampire_kills(vampire_count)
     history_nl    = describe_kill_history(history, "slime1")
     bounty_nl     = describe_bounties(game_state)
     day_nl        = describe_day(day)
@@ -266,6 +275,9 @@ def build_prompt(
 [Today's field report]
   {field_nl}
   {slime_nl}
+  {orc_nl}
+  {plant_nl}
+  {vampire_nl}
   {history_nl}
 
 [Bounty status]
@@ -413,14 +425,18 @@ def generate_recollection(
     fragment  = variant.get("system_prompt_fragment", "")
     day       = game_state.get("meta", {}).get("day", 1)
     kills     = game_state.get("world_state", {}).get("monsters_killed_today", {})
-    slime_nl  = describe_slime_kills(kills.get("slime1", 0))
+    slime_nl   = describe_slime_kills(sum(kills.get(t, 0) for t in ("slime1", "slime2", "slime3")))
+    orc_nl     = describe_orc_kills(sum(kills.get(t, 0) for t in ("orc1", "orc2", "orc3")))
+    plant_nl   = describe_plant_kills(sum(kills.get(t, 0) for t in ("plant1", "plant2", "plant3")))
+    vampire_nl = describe_vampire_kills(sum(kills.get(t, 0) for t in ("vampire1", "vampire2", "vampire3")))
+    kill_report = " ".join([slime_nl, orc_nl, plant_nl, vampire_nl])
 
     system = (
         f"You are {name}. {fragment} "
         "Respond ONLY with a JSON object. No preamble, no markdown."
     )
     prompt = (
-        f"The hunter visited you today (Day {day}). {slime_nl} "
+        f"The hunter visited you today (Day {day}). {kill_report} "
         "Write a single sentence capturing your subjective impression of the hunter "
         "from today's interaction. This is your personal recollection, not a fact report.\n\n"
         "Respond ONLY with: {\"recollection\": \"your one sentence here\"}"
@@ -541,7 +557,6 @@ def generate_ambient_exchanges(game_state: dict, rumors: list[dict]) -> None:
     """
     day      = game_state.get("meta", {}).get("day", 1)
     kills    = game_state.get("world_state", {}).get("monsters_killed_today", {})
-    slimes   = kills.get("slime1", 0)
     out_path = DIALOGUE_DIR / f"villager_ambient_day{day}.json"
 
     rumor_snippets = [r.get("text", "") for r in rumors[:5] if r.get("text")]
@@ -550,9 +565,22 @@ def generate_ambient_exchanges(game_state: dict, rumors: list[dict]) -> None:
         if rumor_snippets else "  No notable rumors circulating."
     )
 
+    slimes   = sum(kills.get(t, 0) for t in ("slime1", "slime2", "slime3"))
+    orcs     = sum(kills.get(t, 0) for t in ("orc1", "orc2", "orc3"))
+    plants   = sum(kills.get(t, 0) for t in ("plant1", "plant2", "plant3"))
+    vampires = sum(kills.get(t, 0) for t in ("vampire1", "vampire2", "vampire3"))
+    kill_parts: list[str] = []
+    if slimes > 0:
+        kill_parts.append(f"{slimes} slimes")
+    if orcs > 0:
+        kill_parts.append(f"{orcs} orcs")
+    if plants > 0:
+        kill_parts.append(f"{plants} plant creatures")
+    if vampires > 0:
+        kill_parts.append(f"{vampires} vampires")
     slime_note = (
-        f"The hunter reportedly slew {slimes} slimes today in the field."
-        if slimes > 0 else "The field has been quiet today."
+        f"The hunter reportedly slew {', '.join(kill_parts)} today in the field."
+        if kill_parts else "The field has been quiet today."
     )
 
     system = (
