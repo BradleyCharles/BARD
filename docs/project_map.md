@@ -154,7 +154,8 @@ BARD/
 │   ├── bounty_board_object.gd    # World object: proximity detect → open bounty_board
 │   ├── bounty_board_object.tscn
 │   ├── town.gd                   # Thornwall: NPC setup from registry, dialogue reload
-│   └── town.tscn
+│   ├── town.tscn
+│   └── building_door.gd          # Attached to Inn/Guildhall/Blacksmith StaticBody2D nodes; entry disabled (interiors unbuilt)
 ├── game_state.json               # Live game state: day, kills, bounties, flags, npc_facts
 ├── world_registry.json           # NPC-to-town assignments, variant IDs, display names
 ├── world_lore.json               # Generated world lore injected into LLM prompts

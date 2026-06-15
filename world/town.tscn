@@ -3828,17 +3828,17 @@ position = Vector2(761, 856)
 is_wanderer = true
 
 [node name="Innkeeper" parent="." unique_id=555111001 instance=ExtResource("2_7cdph")]
-position = Vector2(637, 750)
+position = Vector2(599, 657)
 npc_role = "innkeeper"
 npc_name = "Innkeeper"
 
 [node name="GuildCommander" parent="." unique_id=555111002 instance=ExtResource("2_7cdph")]
-position = Vector2(1054, 810)
+position = Vector2(997, 740)
 npc_role = "guild_commander"
 npc_name = "Guild Commander"
 
 [node name="Blacksmith" parent="." unique_id=555111003 instance=ExtResource("2_7cdph")]
-position = Vector2(615, 985)
+position = Vector2(559, 963)
 npc_role = "blacksmith"
 npc_name = "Blacksmith"
 
