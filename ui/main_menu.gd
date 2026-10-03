@@ -84,7 +84,7 @@ func _build_ui() -> void:
 	center.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "A Hunter's Chronicle"
+	subtitle.text = "Powered by BARD — Behaviour-Adaptive Roguelite Dialogue"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 24)
 	subtitle.add_theme_color_override("font_color", _C_DIM)
